@@ -39,7 +39,7 @@
         const profile = await liff.getProfile();
         
         // ส่งข้อมูลไปที่ Supabase
-        const response = await fetch('ใส่_URL_ของ_Edge_Function_ของคุณ_ที่นี่', {
+        const response = await fetch('https://iberkiyorordyculsjyu.supabase.co/functions/v1/line-webhook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
