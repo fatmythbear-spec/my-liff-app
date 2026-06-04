@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก Fat Myth Bear</title>
+    <!-- โหลด LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        h2 { color: #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #06c755; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>สมัครสมาชิก</h2>
+    <p>กรอกข้อมูลเพื่อรับสิทธิพิเศษจาก Fat Myth Bear</p>
+    <input type="text" id="name" placeholder="ชื่อ-นามสกุล">
+    <input type="tel" id="tel" placeholder="เบอร์โทรศัพท์">
+    <button onclick="submitForm()">ยืนยันการสมัคร</button>
+</div>
+
+<script>
+    async function submitForm() {
+        const name = document.getElementById('name').value;
+        const tel = document.getElementById('tel').value;
+        
+        // ตรงนี้เดี๋ยวเราจะเชื่อมต่อไปที่ Supabase ในขั้นตอนถัดไปครับ!
+        alert("สมัครสมาชิกสำเร็จ! (กำลังเชื่อมต่อระบบ)");
+        liff.closeWindow(); // ปิดหน้าต่าง LIFF หลังสมัครเสร็จ
+    }
+
+    // เริ่มต้นใช้งาน LIFF
+    liff.init({ liffId: "YOUR_LIFF_ID_HERE" });
+</script>
+
+</body>
+</html>
