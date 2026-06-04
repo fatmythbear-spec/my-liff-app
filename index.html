@@ -30,15 +30,20 @@
     const tel = document.getElementById('tel').value;
 
     if (!name || !tel) {
-        alert("กรุณากรอกข้อมูลให้ครบครับ");
+        alert("กรุณากรอกชื่อและเบอร์โทรศัพท์");
         return;
     }
 
     try {
-        // ดึงข้อมูล User ID จาก LINE
+        // 1. ตรวจสอบว่า LIFF พร้อมใช้งานหรือไม่
+        if (!liff.isLoggedIn()) {
+            liff.login();
+            return;
+        }
+
         const profile = await liff.getProfile();
         
-        // ส่งข้อมูลไปที่ Supabase
+        // 2. ใช้ URL ฟังก์ชันที่คุณคัดลอกมา
         const response = await fetch('https://iberkiyorordyculsjyu.supabase.co/functions/v1/line-webhook', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -49,18 +54,20 @@
             })
         });
 
+        // 3. เช็คผลลัพธ์
         if (response.ok) {
             alert("สมัครสมาชิกสำเร็จ!");
             liff.closeWindow();
         } else {
-            alert("เกิดข้อผิดพลาดในการส่งข้อมูล");
+            const errorText = await response.text();
+            console.error("Server Error:", errorText);
+            alert("ระบบตอบกลับผิดพลาด: " + errorText);
         }
-    } catch (error) {
-        console.error(error);
-        alert("ไม่สามารถเชื่อมต่อระบบได้");
+    } catch (err) {
+        console.error("Connection Error:", err);
+        alert("ไม่สามารถเชื่อมต่อ Supabase ได้: ตรวจสอบ CORS หรือ Network");
     }
 }
-
     // เริ่มต้นใช้งาน LIFF
     liff.init({ liffId: "2010298031-TOsCbkzl" });
 </script>
