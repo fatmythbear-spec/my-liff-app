@@ -26,13 +26,30 @@
 
 <script>
     async function submitForm() {
-        const name = document.getElementById('name').value;
-        const tel = document.getElementById('tel').value;
-        
-        // ตรงนี้เดี๋ยวเราจะเชื่อมต่อไปที่ Supabase ในขั้นตอนถัดไปครับ!
-        alert("สมัครสมาชิกสำเร็จ! (กำลังเชื่อมต่อระบบ)");
-        liff.closeWindow(); // ปิดหน้าต่าง LIFF หลังสมัครเสร็จ
+    const name = document.getElementById('name').value;
+    const tel = document.getElementById('tel').value;
+    
+    // ดึงข้อมูล User จาก LINE
+    const profile = await liff.getProfile();
+    
+    // ส่งข้อมูลไปที่ Supabase
+    const response = await fetch('YOUR_SUPABASE_FUNCTION_URL_HERE', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            line_user_id: profile.userId,
+            full_name: name,
+            tel: tel
+        })
+    });
+
+    if (response.ok) {
+        alert("สมัครสมาชิกสำเร็จ!");
+        liff.closeWindow();
+    } else {
+        alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
     }
+}
 
     // เริ่มต้นใช้งาน LIFF
     liff.init({ liffId: "2010298031-TOsCbkzl" });
