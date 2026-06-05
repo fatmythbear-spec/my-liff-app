@@ -26,37 +26,39 @@
     </table>
 
     <script>
-        // 1. ตั้งค่าการเชื่อมต่อ
+        // 1. ตั้งค่าการเชื่อมต่อ (ใช้อันนี้ตัวเดียวเท่านั้น)
         const supabaseUrl = 'https://iberkiyorordyculsjyu.supabase.co';
         const supabaseAnonKey = 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov';
         
-        // 2. สร้าง Client เพียงครั้งเดียว
+        // 2. สร้าง Client (ประกาศเพียงครั้งเดียว)
         const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
         // 3. ฟังก์ชันดึงข้อมูล
         async function fetchMembers() {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('full_name, tel, created_at');
-            
-            if (error) {
-                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error.message);
-                return;
-            }
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('full_name, tel, created_at');
+                
+                if (error) throw error;
 
-            const list = document.getElementById('member-list');
-            list.innerHTML = ""; // ล้างข้อมูลเก่า
-            
-            if (data && data.length > 0) {
-                data.forEach(member => {
-                    list.innerHTML += `<tr>
-                        <td>${member.full_name || '-'}</td>
-                        <td>${member.tel || '-'}</td>
-                        <td>${member.created_at ? new Date(member.created_at).toLocaleDateString() : '-'}</td>
-                    </tr>`;
-                });
-            } else {
-                list.innerHTML = "<tr><td colspan='3'>ยังไม่มีข้อมูลสมาชิก</td></tr>";
+                const list = document.getElementById('member-list');
+                list.innerHTML = ""; 
+                
+                if (data && data.length > 0) {
+                    data.forEach(member => {
+                        const date = member.created_at ? new Date(member.created_at).toLocaleDateString() : '-';
+                        list.innerHTML += `<tr>
+                            <td>${member.full_name || '-'}</td>
+                            <td>${member.tel || '-'}</td>
+                            <td>${date}</td>
+                        </tr>`;
+                    });
+                } else {
+                    list.innerHTML = "<tr><td colspan='3'>ยังไม่มีข้อมูลสมาชิก</td></tr>";
+                }
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", err.message);
             }
         }
         
