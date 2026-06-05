@@ -27,7 +27,7 @@
 
     <script>
         // ใส่ค่า Supabase URL และ Anon Key ของคุณตรงนี้ (หาได้ใน Supabase > Settings > API)
-        const supabase = supabase.createClient('https://iberkiyorordyculsjyu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImliZXJraXlvcm9yZHljdWxzanl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1ODIzMDksImV4cCI6MjA5NjE1ODMwOX0.CFZZK7gWvDvDSEayskwxUpXSilAm9INLFr1dFKLsCy4');
+        const supabase = supabase.createClient('https://iberkiyorordyculsjyu.supabase.co', 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov');
 
         async function fetchMembers() {
             const { data, error } = await supabase.from('profiles').select('*');
