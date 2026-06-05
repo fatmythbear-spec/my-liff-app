@@ -2,191 +2,101 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard - สมาชิกทั้งหมด</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Fat Myth Bear</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-        h2 { color: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; padding: 20px; }
 
-        .stats {
-            background: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 16px 24px;
-            display: inline-block;
-            margin-bottom: 16px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #555;
+        .header {
+            background: #1a1a2e; color: white;
+            border-radius: 16px; padding: 20px 24px;
+            margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .stats span { color: #e74c3c; font-size: 28px; }
+        .header-title { font-size: 20px; font-weight: 700; }
+        .header-sub   { font-size: 13px; opacity: 0.6; margin-top: 2px; }
+        .admin-badge  { background: #e74c3c; color: white; padding: 4px 14px; border-radius: 99px; font-size: 13px; }
 
+        /* Stats Row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card {
+            background: white; border-radius: 14px; padding: 16px 20px; text-align: center;
+        }
+        .stat-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+        .stat-val   { font-size: 26px; font-weight: 700; color: #1a1a2e; }
+        .stat-val.bronze  { color: #cd7f32; }
+        .stat-val.silver  { color: #a8a9ad; }
+        .stat-val.gold    { color: #daa520; }
+        .stat-val.platinum{ color: #667eea; }
+
+        /* Toolbar */
         .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
+            background: white; border-radius: 14px; padding: 16px 20px;
+            margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
         }
         input[type="text"] {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            width: 260px;
+            padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; flex: 1; min-width: 200px; outline: none;
         }
-        button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
+        input[type="text"]:focus { border-color: #06c755; }
+        select {
+            padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; background: white; cursor: pointer;
+        }
+        .btn {
+            padding: 9px 18px; border: none; border-radius: 8px;
+            font-size: 14px; cursor: pointer; font-weight: 600;
         }
         .btn-export { background: #27ae60; color: white; }
         .btn-export:hover { background: #219150; }
 
-        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        th, td { border-bottom: 1px solid #eee; padding: 12px 14px; text-align: left; }
-        th { background-color: #f4f4f4; font-weight: bold; color: #444; }
+        /* Table */
+        .table-wrap { background: white; border-radius: 14px; overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            background: #f8f8f8; padding: 12px 16px; text-align: left;
+            font-size: 13px; color: #666; border-bottom: 1px solid #eee;
+        }
+        td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; color: #333; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #fafafa; }
 
+        .tier-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 99px; font-size: 12px; font-weight: 600;
+        }
+        .tier-Bronze   { background: #cd7f3220; color: #a0522d; }
+        .tier-Silver   { background: #a8a9ad20; color: #666; }
+        .tier-Gold     { background: #ffd70025; color: #b8860b; }
+        .tier-Platinum { background: #667eea20; color: #534AB7; }
+
+        .role-badge {
+            display: inline-block; padding: 3px 10px;
+            border-radius: 99px; font-size: 12px;
+        }
+        .role-Customer { background: #e8f5e9; color: #2e7d32; }
+        .role-Staff    { background: #e3f2fd; color: #1565c0; }
+        .role-Admin    { background: #fce4ec; color: #c62828; }
+
         .btn-delete {
-            background: #e74c3c;
-            color: white;
-            padding: 5px 12px;
-            font-size: 13px;
-            border-radius: 5px;
+            background: #fce4ec; color: #c62828;
+            border: none; padding: 5px 12px; border-radius: 6px;
+            font-size: 12px; cursor: pointer;
         }
-        .btn-delete:hover { background: #c0392b; }
+        .btn-delete:hover { background: #e74c3c; color: white; }
 
-        .no-data { color: #999; padding: 20px; text-align: center; }
-    </style>
-</head>
-<body>
-    <h2>รายชื่อสมาชิก Fat Myth Bear</h2>
-
-    <!-- สถิติจำนวนสมาชิก -->
-    <div class="stats">สมาชิกทั้งหมด: <span id="member-count">0</span> คน</div>
-
-    <!-- Toolbar: ค้นหา + Export -->
-    <div class="toolbar">
-        <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()" />
-        <button class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ชื่อ-นามสกุล</th>
-                <th>เบอร์โทรศัพท์</th>
-                <th>ประเภท</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody id="member-list"></tbody>
-    </table>
-
-    <script>
-        const supabaseUrl = 'https://iberkiyorordyculsjyu.supabase.co';
-        const supabaseAnonKey = 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov';
-        const { createClient } = supabase;
-        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-        let allMembers = []; // เก็บข้อมูลทั้งหมดไว้ใน memory
-
-        // ── ดึงข้อมูลจาก Supabase ──
-        async function fetchMembers() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('profiles')
-                    .select('line_user_id, full_name, tel, role');
-
-                if (error) throw error;
-
-                allMembers = data || [];
-                renderTable(allMembers);
-            } catch (err) {
-                document.getElementById('member-list').innerHTML =
-                    `<tr><td colspan="4" class="no-data">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
-            }
+        .btn-role {
+            background: #e3f2fd; color: #1565c0;
+            border: none; padding: 5px 12px; border-radius: 6px;
+            font-size: 12px; cursor: pointer; margin-right: 4px;
         }
+        .btn-role:hover { background: #1565c0; color: white; }
 
-        // ── แสดงตาราง ──
-        function renderTable(members) {
-            const list = document.getElementById('member-list');
-            document.getElementById('member-count').textContent = members.length;
+        .no-data { padding: 40px; text-align: center; color: #aaa; }
 
-            if (members.length === 0) {
-                list.innerHTML = `<tr><td colspan="4" class="no-data">ไม่พบข้อมูลสมาชิก</td></tr>`;
-                return;
-            }
-
-            list.innerHTML = members.map(member => `
-                <tr id="row-${member.line_user_id}">
-                    <td>${member.full_name || '-'}</td>
-                    <td>${member.tel || '-'}</td>
-                    <td>${member.role || '-'}</td>
-                    <td>
-                        <button class="btn-delete" onclick="deleteMember('${member.line_user_id}', '${member.full_name}')">
-                            🗑️ ลบ
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // ── ค้นหาชื่อ ──
-        function filterMembers() {
-            const keyword = document.getElementById('search-input').value.toLowerCase();
-            const filtered = allMembers.filter(m =>
-                (m.full_name || '').toLowerCase().includes(keyword)
-            );
-            renderTable(filtered);
-        }
-
-        // ── ลบสมาชิก ──
-        async function deleteMember(lineUserId, name) {
-            if (!confirm(`ยืนยันลบ "${name}" ออกจากระบบ?`)) return;
-
-            try {
-                const { error } = await supabaseClient
-                    .from('profiles')
-                    .delete()
-                    .eq('line_user_id', lineUserId);
-
-                if (error) throw error;
-
-                // ลบออกจาก array แล้ว render ใหม่
-                allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
-                renderTable(allMembers);
-            } catch (err) {
-                alert('ลบไม่สำเร็จ: ' + err.message);
-            }
-        }
-
-        // ── Export CSV ──
-        function exportCSV() {
-            if (allMembers.length === 0) {
-                alert('ไม่มีข้อมูลให้ Export');
-                return;
-            }
-
-            const header = 'ชื่อ-นามสกุล,เบอร์โทรศัพท์,ประเภท';
-            const rows = allMembers.map(m =>
-                `"${m.full_name || ''}","${m.tel || ''}","${m.role || ''}"`
-            );
-            const csvContent = '\uFEFF' + header + '\n' + rows.join('\n'); // \uFEFF = BOM รองรับภาษาไทยใน Excel
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'members_fatmythbear.csv';
-            link.click();
-            URL.revokeObjectURL(url);
-        }
-
-        fetchMembers();
-    </script>
-</body>
-</html>
+        /* Tab */
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab-btn {
+            padding: 9px 20px; border
