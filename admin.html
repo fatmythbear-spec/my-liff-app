@@ -5,20 +5,82 @@
     <title>Admin Dashboard - สมาชิกทั้งหมด</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        th { background-color: #f4f4f4; }
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+        h2 { color: #333; }
+
+        .stats {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px 24px;
+            display: inline-block;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+        .stats span { color: #e74c3c; font-size: 28px; }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        input[type="text"] {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            width: 260px;
+        }
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .btn-export { background: #27ae60; color: white; }
+        .btn-export:hover { background: #219150; }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        th, td { border-bottom: 1px solid #eee; padding: 12px 14px; text-align: left; }
+        th { background-color: #f4f4f4; font-weight: bold; color: #444; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #fafafa; }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+            padding: 5px 12px;
+            font-size: 13px;
+            border-radius: 5px;
+        }
+        .btn-delete:hover { background: #c0392b; }
+
+        .no-data { color: #999; padding: 20px; text-align: center; }
     </style>
 </head>
 <body>
     <h2>รายชื่อสมาชิก Fat Myth Bear</h2>
+
+    <!-- สถิติจำนวนสมาชิก -->
+    <div class="stats">สมาชิกทั้งหมด: <span id="member-count">0</span> คน</div>
+
+    <!-- Toolbar: ค้นหา + Export -->
+    <div class="toolbar">
+        <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()" />
+        <button class="btn-export" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
     <table>
         <thead>
             <tr>
                 <th>ชื่อ-นามสกุล</th>
                 <th>เบอร์โทรศัพท์</th>
                 <th>ประเภท</th>
+                <th>จัดการ</th>
             </tr>
         </thead>
         <tbody id="member-list"></tbody>
@@ -27,37 +89,101 @@
     <script>
         const supabaseUrl = 'https://iberkiyorordyculsjyu.supabase.co';
         const supabaseAnonKey = 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov';
-
         const { createClient } = supabase;
         const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
+        let allMembers = []; // เก็บข้อมูลทั้งหมดไว้ใน memory
+
+        // ── ดึงข้อมูลจาก Supabase ──
         async function fetchMembers() {
             try {
                 const { data, error } = await supabaseClient
                     .from('profiles')
-                    .select('full_name, tel, role');
+                    .select('line_user_id, full_name, tel, role');
 
                 if (error) throw error;
 
-                const list = document.getElementById('member-list');
-                list.innerHTML = "";
-
-                if (data && data.length > 0) {
-                    data.forEach(member => {
-                        list.innerHTML += `<tr>
-                            <td>${member.full_name || '-'}</td>
-                            <td>${member.tel || '-'}</td>
-                            <td>${member.role || '-'}</td>
-                        </tr>`;
-                    });
-                } else {
-                    list.innerHTML = "<tr><td colspan='3'>ยังไม่มีข้อมูลสมาชิก</td></tr>";
-                }
+                allMembers = data || [];
+                renderTable(allMembers);
             } catch (err) {
-                console.error("เกิดข้อผิดพลาด:", err.message);
                 document.getElementById('member-list').innerHTML =
-                    "<tr><td colspan='3'>เกิดข้อผิดพลาด: " + err.message + "</td></tr>";
+                    `<tr><td colspan="4" class="no-data">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
             }
+        }
+
+        // ── แสดงตาราง ──
+        function renderTable(members) {
+            const list = document.getElementById('member-list');
+            document.getElementById('member-count').textContent = members.length;
+
+            if (members.length === 0) {
+                list.innerHTML = `<tr><td colspan="4" class="no-data">ไม่พบข้อมูลสมาชิก</td></tr>`;
+                return;
+            }
+
+            list.innerHTML = members.map(member => `
+                <tr id="row-${member.line_user_id}">
+                    <td>${member.full_name || '-'}</td>
+                    <td>${member.tel || '-'}</td>
+                    <td>${member.role || '-'}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteMember('${member.line_user_id}', '${member.full_name}')">
+                            🗑️ ลบ
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ── ค้นหาชื่อ ──
+        function filterMembers() {
+            const keyword = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allMembers.filter(m =>
+                (m.full_name || '').toLowerCase().includes(keyword)
+            );
+            renderTable(filtered);
+        }
+
+        // ── ลบสมาชิก ──
+        async function deleteMember(lineUserId, name) {
+            if (!confirm(`ยืนยันลบ "${name}" ออกจากระบบ?`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('profiles')
+                    .delete()
+                    .eq('line_user_id', lineUserId);
+
+                if (error) throw error;
+
+                // ลบออกจาก array แล้ว render ใหม่
+                allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
+                renderTable(allMembers);
+            } catch (err) {
+                alert('ลบไม่สำเร็จ: ' + err.message);
+            }
+        }
+
+        // ── Export CSV ──
+        function exportCSV() {
+            if (allMembers.length === 0) {
+                alert('ไม่มีข้อมูลให้ Export');
+                return;
+            }
+
+            const header = 'ชื่อ-นามสกุล,เบอร์โทรศัพท์,ประเภท';
+            const rows = allMembers.map(m =>
+                `"${m.full_name || ''}","${m.tel || ''}","${m.role || ''}"`
+            );
+            const csvContent = '\uFEFF' + header + '\n' + rows.join('\n'); // \uFEFF = BOM รองรับภาษาไทยใน Excel
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'members_fatmythbear.csv';
+            link.click();
+            URL.revokeObjectURL(url);
         }
 
         fetchMembers();
