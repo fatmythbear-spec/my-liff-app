@@ -18,7 +18,7 @@
             <tr>
                 <th>ชื่อ-นามสกุล</th>
                 <th>เบอร์โทรศัพท์</th>
-                <th>วันที่สมัคร</th>
+                <th>ประเภท</th>
             </tr>
         </thead>
         <tbody id="member-list"></tbody>
@@ -28,7 +28,6 @@
         const supabaseUrl = 'https://iberkiyorordyculsjyu.supabase.co';
         const supabaseAnonKey = 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov';
 
-        // ✅ แก้ตรงนี้: ใช้ supabase.createClient แทนการประกาศชื่อซ้ำ
         const { createClient } = supabase;
         const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -36,7 +35,7 @@
             try {
                 const { data, error } = await supabaseClient
                     .from('profiles')
-                    .select('full_name, tel, created_at');
+                    .select('full_name, tel, role');
 
                 if (error) throw error;
 
@@ -45,20 +44,17 @@
 
                 if (data && data.length > 0) {
                     data.forEach(member => {
-                        const date = member.created_at
-                            ? new Date(member.created_at).toLocaleDateString('th-TH')
-                            : '-';
                         list.innerHTML += `<tr>
                             <td>${member.full_name || '-'}</td>
                             <td>${member.tel || '-'}</td>
-                            <td>${date}</td>
+                            <td>${member.role || '-'}</td>
                         </tr>`;
                     });
                 } else {
                     list.innerHTML = "<tr><td colspan='3'>ยังไม่มีข้อมูลสมาชิก</td></tr>";
                 }
             } catch (err) {
-                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", err.message);
+                console.error("เกิดข้อผิดพลาด:", err.message);
                 document.getElementById('member-list').innerHTML =
                     "<tr><td colspan='3'>เกิดข้อผิดพลาด: " + err.message + "</td></tr>";
             }
