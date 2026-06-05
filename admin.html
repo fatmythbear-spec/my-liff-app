@@ -99,4 +99,248 @@
         /* Tab */
         .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
         .tab-btn {
-            padding: 9px 20px; border
+            padding: 9px 20px; border: none; border-radius: 8px;
+            font-size: 14px; cursor: pointer; background: white; color: #666;
+        }
+        .tab-btn.active { background: #1a1a2e; color: white; }
+
+        /* Transaction Table */
+        .tx-earn   { color: #27ae60; font-weight: 600; }
+        .tx-redeem { color: #e74c3c; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <div class="header-title">Admin Dashboard</div>
+        <div class="header-sub">Fat Myth Bear Loyalty System</div>
+    </div>
+    <span class="admin-badge">ADMIN</span>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-label">สมาชิกทั้งหมด</div>
+        <div class="stat-val" id="stat-total">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Bronze</div>
+        <div class="stat-val bronze" id="stat-bronze">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Silver</div>
+        <div class="stat-val silver" id="stat-silver">-</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Gold+</div>
+        <div class="stat-val gold" id="stat-gold">-</div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('members')">สมาชิก</button>
+    <button class="tab-btn" onclick="switchTab('transactions')">ประวัติแต้ม</button>
+</div>
+
+<!-- Members Tab -->
+<div id="tab-members">
+    <div class="toolbar">
+        <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()" />
+        <select id="tier-filter" onchange="filterMembers()">
+            <option value="">ทุก Tier</option>
+            <option value="Bronze">Bronze</option>
+            <option value="Silver">Silver</option>
+            <option value="Gold">Gold</option>
+            <option value="Platinum">Platinum</option>
+        </select>
+        <button class="btn btn-export" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ชื่อ-นามสกุล</th>
+                    <th>เบอร์โทร</th>
+                    <th>ระดับ</th>
+                    <th>แต้ม</th>
+                    <th>EXP</th>
+                    <th>สิทธิ์</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
+            <tbody id="member-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Transactions Tab -->
+<div id="tab-transactions" style="display:none;">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ชื่อสมาชิก</th>
+                    <th>ประเภท</th>
+                    <th>แต้ม</th>
+                    <th>รายละเอียด</th>
+                    <th>วันที่</th>
+                </tr>
+            </thead>
+            <tbody id="tx-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let allMembers = [];
+
+    // ── Tabs ──
+    function switchTab(tab) {
+        document.getElementById("tab-members").style.display      = tab === "members" ? "block" : "none";
+        document.getElementById("tab-transactions").style.display = tab === "transactions" ? "block" : "none";
+        document.querySelectorAll(".tab-btn").forEach((b, i) => {
+            b.classList.toggle("active", (i === 0 && tab === "members") || (i === 1 && tab === "transactions"));
+        });
+        if (tab === "transactions") fetchTransactions();
+    }
+
+    // ── Fetch Members ──
+    async function fetchMembers() {
+        const { data, error } = await db
+            .from("profiles")
+            .select("line_user_id, full_name, tel, role, current_points, current_exp, tier")
+            .order("current_exp", { ascending: false });
+
+        if (error) { console.error(error); return; }
+        allMembers = data || [];
+
+        // Stats
+        document.getElementById("stat-total").textContent  = allMembers.length;
+        document.getElementById("stat-bronze").textContent = allMembers.filter(m => m.tier === "Bronze").length;
+        document.getElementById("stat-silver").textContent = allMembers.filter(m => m.tier === "Silver").length;
+        document.getElementById("stat-gold").textContent   = allMembers.filter(m => m.tier === "Gold" || m.tier === "Platinum").length;
+
+        renderMembers(allMembers);
+    }
+
+    // ── Render Members ──
+    function renderMembers(members) {
+        const list = document.getElementById("member-list");
+        if (!members.length) {
+            list.innerHTML = `<tr><td colspan="7" class="no-data">ไม่พบข้อมูลสมาชิก</td></tr>`;
+            return;
+        }
+        list.innerHTML = members.map(m => `
+            <tr id="row-${m.line_user_id}">
+                <td>${m.full_name || '-'}</td>
+                <td>${m.tel || '-'}</td>
+                <td><span class="tier-badge tier-${m.tier}">${m.tier}</span></td>
+                <td>${(m.current_points || 0).toLocaleString()}</td>
+                <td>${(m.current_exp || 0).toLocaleString()}</td>
+                <td><span class="role-badge role-${m.role}">${m.role}</span></td>
+                <td>
+                    <button class="btn-role" onclick="changeRole('${m.line_user_id}', '${m.role}')">เปลี่ยนสิทธิ์</button>
+                    <button class="btn-delete" onclick="deleteMember('${m.line_user_id}', '${m.full_name}')">ลบ</button>
+                </td>
+            </tr>
+        `).join("");
+    }
+
+    // ── Filter ──
+    function filterMembers() {
+        const keyword = document.getElementById("search-input").value.toLowerCase();
+        const tier    = document.getElementById("tier-filter").value;
+        const filtered = allMembers.filter(m =>
+            (m.full_name || "").toLowerCase().includes(keyword) &&
+            (tier === "" || m.tier === tier)
+        );
+        renderMembers(filtered);
+    }
+
+    // ── Change Role ──
+    async function changeRole(lineUserId, currentRole) {
+        const roles   = ["Customer", "Staff", "Admin"];
+        const next    = roles[(roles.indexOf(currentRole) + 1) % roles.length];
+        if (!confirm(`เปลี่ยนสิทธิ์เป็น "${next}" ใช่ไหม?`)) return;
+
+        const { error } = await db
+            .from("profiles")
+            .update({ role: next })
+            .eq("line_user_id", lineUserId);
+
+        if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
+        allMembers = allMembers.map(m => m.line_user_id === lineUserId ? { ...m, role: next } : m);
+        renderMembers(allMembers);
+    }
+
+    // ── Delete ──
+    async function deleteMember(lineUserId, name) {
+        if (!confirm(`ยืนยันลบ "${name}" ออกจากระบบ?`)) return;
+        const { error } = await db.from("profiles").delete().eq("line_user_id", lineUserId);
+        if (error) { alert("ลบไม่สำเร็จ: " + error.message); return; }
+        allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
+        fetchMembers();
+    }
+
+    // ── Transactions ──
+    async function fetchTransactions() {
+        const { data, error } = await db
+            .from("point_transactions")
+            .select("line_user_id, points, type, description, created_at")
+            .order("created_at", { ascending: false })
+            .limit(100);
+
+        if (error) { console.error(error); return; }
+
+        // หาชื่อสมาชิก
+        const memberMap = {};
+        allMembers.forEach(m => memberMap[m.line_user_id] = m.full_name);
+
+        const list = document.getElementById("tx-list");
+        if (!data.length) {
+            list.innerHTML = `<tr><td colspan="5" class="no-data">ยังไม่มีประวัติแต้ม</td></tr>`;
+            return;
+        }
+
+        list.innerHTML = data.map(tx => {
+            const date = new Date(tx.created_at).toLocaleString("th-TH");
+            const cls  = tx.type === "earn" ? "tx-earn" : "tx-redeem";
+            const sign = tx.type === "earn" ? "+" : "-";
+            return `<tr>
+                <td>${memberMap[tx.line_user_id] || tx.line_user_id.slice(-8)}</td>
+                <td>${tx.type === "earn" ? "รับแต้ม" : "ใช้แต้ม"}</td>
+                <td class="${cls}">${sign}${tx.points}</td>
+                <td>${tx.description || "-"}</td>
+                <td>${date}</td>
+            </tr>`;
+        }).join("");
+    }
+
+    // ── Export CSV ──
+    function exportCSV() {
+        if (!allMembers.length) { alert("ไม่มีข้อมูล"); return; }
+        const header = "ชื่อ-นามสกุล,เบอร์โทร,ระดับ,แต้ม,EXP,สิทธิ์";
+        const rows = allMembers.map(m =>
+            `"${m.full_name || ""}","${m.tel || ""}","${m.tier}","${m.current_points}","${m.current_exp}","${m.role}"`
+        );
+        const csv  = "\uFEFF" + header + "\n" + rows.join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement("a");
+        a.href = url; a.download = "members_fatmythbear.csv"; a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    fetchMembers();
+</script>
+</body>
+</html>
