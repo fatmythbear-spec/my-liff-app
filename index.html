@@ -9,68 +9,118 @@
         body { font-family: 'Kanit', sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
         .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
         h2 { color: #333; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 12px; background-color: #06c755; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button:disabled { background-color: #aaa; cursor: not-allowed; }
+        .msg { margin-top: 12px; font-size: 14px; color: #666; }
     </style>
 </head>
 <body>
-
 <div class="container">
     <h2>สมัครสมาชิก</h2>
     <p>กรอกข้อมูลเพื่อรับสิทธิพิเศษจาก Fat Myth Bear</p>
     <input type="text" id="name" placeholder="ชื่อ-นามสกุล">
     <input type="tel" id="tel" placeholder="เบอร์โทรศัพท์">
-    <button onclick="submitForm()">ยืนยันการสมัคร</button>
+    <button id="submit-btn" onclick="submitForm()" disabled>กำลังเตรียมระบบ...</button>
+    <p class="msg" id="msg"></p>
 </div>
 
 <script>
-    // 1. เริ่มต้น LIFF ทันทีที่โหลดหน้าเว็บ
-    liff.init({ liffId: "2010298031-TOsCbkzl" })
-        .then(() => console.log("LIFF Ready"))
-        .catch((err) => console.error("LIFF Init Error", err));
+    const LIFF_ID = "2010298031-TOsCbkzl";
+    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    // 2. ฟังก์ชันส่งข้อมูล
+    const btn = document.getElementById('submit-btn');
+    const msg = document.getElementById('msg');
+
+    // ── 1. Init LIFF และ Login อัตโนมัติ ──
+    liff.init({ liffId: LIFF_ID })
+        .then(() => {
+            if (!liff.isLoggedIn()) {
+                liff.login(); // redirect ไป LINE login แล้วกลับมา
+                return;
+            }
+            // พร้อมใช้งาน
+            btn.disabled = false;
+            btn.textContent = "ยืนยันการสมัคร";
+        })
+        .catch((err) => {
+            msg.textContent = "เกิดข้อผิดพลาด: " + err.message;
+        });
+
+    // ── 2. Submit ──
     async function submitForm() {
-        const name = document.getElementById('name').value;
-        const tel = document.getElementById('tel').value;
+        const name = document.getElementById('name').value.trim();
+        const tel = document.getElementById('tel').value.trim();
 
         if (!name || !tel) {
-            alert("กรุณากรอกชื่อและเบอร์โทรศัพท์");
+            msg.textContent = "⚠️ กรุณากรอกชื่อและเบอร์โทรศัพท์ให้ครบ";
             return;
         }
 
+        btn.disabled = true;
+        btn.textContent = "กำลังบันทึก...";
+        msg.textContent = "";
+
         try {
-            // เช็คการ Login
-            if (!liff.isLoggedIn()) {
-                liff.login();
+            const profile = await liff.getProfile();
+
+            // ── เช็คก่อนว่าสมัครแล้วหรือยัง ──
+            const checkRes = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles?line_user_id=eq.${profile.userId}&select=line_user_id`,
+                {
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": "Bearer " + SUPABASE_ANON_KEY
+                    }
+                }
+            );
+            const existing = await checkRes.json();
+
+            if (existing.length > 0) {
+                msg.textContent = "✅ คุณเป็นสมาชิกอยู่แล้ว!";
+                btn.disabled = false;
+                btn.textContent = "ยืนยันการสมัคร";
                 return;
             }
 
-            const profile = await liff.getProfile();
-            
-            // ส่งข้อมูลไปยัง Supabase
-            const response = await fetch('https://iberkiyorordyculsjyu.supabase.co/functions/v1/line-webhook', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    line_user_id: profile.userId,
-                    full_name: name,
-                    tel: tel
-                })
-            });
+            // ── บันทึกลง Supabase ──
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({
+                        line_user_id: profile.userId,
+                        full_name: name,
+                        tel: tel,
+                        role: "Customer"
+                    })
+                }
+            );
 
             if (response.ok) {
-                alert("สมัครสมาชิกสำเร็จ!");
-                liff.closeWindow();
+                msg.textContent = "🎉 สมัครสมาชิกสำเร็จ!";
+                btn.textContent = "สำเร็จแล้ว";
+                setTimeout(() => liff.closeWindow(), 1500);
             } else {
-                const errorText = await response.text();
-                alert("เกิดข้อผิดพลาด: " + errorText);
+                const err = await response.json();
+                msg.textContent = "❌ เกิดข้อผิดพลาด: " + (err.message || JSON.stringify(err));
+                btn.disabled = false;
+                btn.textContent = "ยืนยันการสมัคร";
             }
+
         } catch (err) {
-            alert("ไม่สามารถเชื่อมต่อระบบได้: " + err.message);
+            msg.textContent = "❌ ไม่สามารถเชื่อมต่อระบบได้: " + err.message;
+            btn.disabled = false;
+            btn.textContent = "ยืนยันการสมัคร";
         }
     }
 </script>
-
 </body>
 </html>
