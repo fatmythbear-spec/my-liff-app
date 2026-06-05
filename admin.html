@@ -26,26 +26,44 @@
     </table>
 
     <script>
-        // ใส่ค่า Supabase URL และ Anon Key ของคุณตรงนี้ (หาได้ใน Supabase > Settings > API)
-        const supabase = supabase.createClient('https://iberkiyorordyculsjyu.supabase.co', 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov');
+        // กำหนดค่าการเชื่อมต่อ
+        const supabaseUrl = 'https://iberkiyorordyculsjyu.supabase.co';
+        const supabaseAnonKey = 'sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov';
+
+        // สร้างตัวแปร client เพียงครั้งเดียว
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
         async function fetchMembers() {
-            const { data, error } = await supabase.from('profiles').select('*');
-            
-            if (error) {
-                console.error(error);
-                return;
-            }
+            try {
+                // ดึงข้อมูลจากตาราง profiles
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('full_name, tel, created_at');
+                
+                if (error) throw error;
 
-            const list = document.getElementById('member-list');
-            data.forEach(member => {
-                list.innerHTML += `<tr>
-                    <td>${member.full_name}</td>
-                    <td>${member.tel}</td>
-                    <td>${new Date(member.created_at || Date.now()).toLocaleDateString()}</td>
-                </tr>`;
-            });
+                const list = document.getElementById('member-list');
+                list.innerHTML = ""; // เคลียร์ตารางก่อนเริ่มใส่ข้อมูล
+
+                if (data && data.length > 0) {
+                    data.forEach(member => {
+                        const date = member.created_at ? new Date(member.created_at).toLocaleDateString() : 'ไม่ระบุ';
+                        list.innerHTML += `<tr>
+                            <td>${member.full_name || '-'}</td>
+                            <td>${member.tel || '-'}</td>
+                            <td>${date}</td>
+                        </tr>`;
+                    });
+                } else {
+                    list.innerHTML = "<tr><td colspan='3'>ยังไม่มีข้อมูลสมาชิก</td></tr>";
+                }
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", err.message);
+                alert("ไม่สามารถดึงข้อมูลได้: " + err.message);
+            }
         }
+
+        // เรียกใช้งานฟังก์ชัน
         fetchMembers();
     </script>
 </body>
