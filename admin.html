@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - สมาชิกทั้งหมด</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h2>รายชื่อสมาชิก Fat Myth Bear</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ชื่อ-นามสกุล</th>
+                <th>เบอร์โทรศัพท์</th>
+                <th>วันที่สมัคร</th>
+            </tr>
+        </thead>
+        <tbody id="member-list">
+            </tbody>
+    </table>
+
+    <script>
+        // ใส่ค่า Supabase URL และ Anon Key ของคุณตรงนี้ (หาได้ใน Supabase > Settings > API)
+        const supabase = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+
+        async function fetchMembers() {
+            const { data, error } = await supabase.from('profiles').select('*');
+            
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const list = document.getElementById('member-list');
+            data.forEach(member => {
+                list.innerHTML += `<tr>
+                    <td>${member.full_name}</td>
+                    <td>${member.tel}</td>
+                    <td>${new Date(member.created_at || Date.now()).toLocaleDateString()}</td>
+                </tr>`;
+            });
+        }
+        fetchMembers();
+    </script>
+</body>
+</html>
