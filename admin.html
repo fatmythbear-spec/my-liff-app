@@ -16,97 +16,102 @@
             display: flex; justify-content: space-between; align-items: center;
         }
         .header-title { font-size: 20px; font-weight: 700; }
-        .header-sub   { font-size: 13px; opacity: 0.6; margin-top: 2px; }
-        .admin-badge  { background: #e74c3c; color: white; padding: 4px 14px; border-radius: 99px; font-size: 13px; }
+        .header-sub   { font-size: 12px; opacity: 0.6; margin-top: 2px; }
 
-        /* Stats Row */
-        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
-        .stat-card {
-            background: white; border-radius: 14px; padding: 16px 20px; text-align: center;
+        /* Stats */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px; margin-bottom: 20px;
         }
-        .stat-label { font-size: 12px; color: #999; margin-bottom: 6px; }
-        .stat-val   { font-size: 26px; font-weight: 700; color: #1a1a2e; }
-        .stat-val.bronze  { color: #cd7f32; }
-        .stat-val.silver  { color: #a8a9ad; }
-        .stat-val.gold    { color: #daa520; }
-        .stat-val.platinum{ color: #667eea; }
+        .stat-card {
+            background: white; border-radius: 12px; padding: 16px; text-align: center;
+        }
+        .stat-val   { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+        .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
 
         /* Toolbar */
         .toolbar {
-            background: white; border-radius: 14px; padding: 16px 20px;
-            margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+            background: white; border-radius: 12px; padding: 14px 16px;
+            margin-bottom: 16px;
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
         }
         input[type="text"] {
-            padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px;
-            font-size: 14px; flex: 1; min-width: 200px; outline: none;
+            flex: 1; min-width: 200px; padding: 8px 12px;
+            border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
         }
-        input[type="text"]:focus { border-color: #06c755; }
         select {
-            padding: 9px 14px; border: 1px solid #ddd; border-radius: 8px;
-            font-size: 14px; background: white; cursor: pointer;
+            padding: 8px 12px; border: 1px solid #ddd;
+            border-radius: 8px; font-size: 14px; background: white;
         }
         .btn {
-            padding: 9px 18px; border: none; border-radius: 8px;
+            padding: 8px 16px; border: none; border-radius: 8px;
             font-size: 14px; cursor: pointer; font-weight: 600;
         }
-        .btn-export { background: #27ae60; color: white; }
-        .btn-export:hover { background: #219150; }
+        .btn-green  { background: #06c755; color: white; }
+        .btn-dark   { background: #1a1a2e; color: white; }
 
         /* Table */
-        .table-wrap { background: white; border-radius: 14px; overflow: hidden; }
+        .table-wrap { background: white; border-radius: 12px; overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
         th {
-            background: #f8f8f8; padding: 12px 16px; text-align: left;
-            font-size: 13px; color: #666; border-bottom: 1px solid #eee;
+            background: #f8f8f8; padding: 12px 14px;
+            text-align: left; font-size: 13px; color: #666;
+            border-bottom: 1px solid #eee;
         }
-        td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f0f0; color: #333; }
+        td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
         tr:last-child td { border-bottom: none; }
         tr:hover td { background: #fafafa; }
 
         .tier-badge {
-            display: inline-block; padding: 3px 10px;
-            border-radius: 99px; font-size: 12px; font-weight: 600;
+            display: inline-block; padding: 2px 10px;
+            border-radius: 99px; font-size: 11px; font-weight: 700;
         }
         .tier-Bronze   { background: #cd7f3220; color: #a0522d; }
-        .tier-Silver   { background: #a8a9ad20; color: #666; }
-        .tier-Gold     { background: #ffd70025; color: #b8860b; }
+        .tier-Silver   { background: #a8a9ad20; color: #555; }
+        .tier-Gold     { background: #ffd70030; color: #b8860b; }
         .tier-Platinum { background: #667eea20; color: #534AB7; }
 
-        .role-badge {
-            display: inline-block; padding: 3px 10px;
-            border-radius: 99px; font-size: 12px;
+        .btn-tx {
+            padding: 4px 10px; font-size: 11px; border: none;
+            border-radius: 6px; background: #f0f0f0; cursor: pointer;
         }
-        .role-Customer { background: #e8f5e9; color: #2e7d32; }
-        .role-Staff    { background: #e3f2fd; color: #1565c0; }
-        .role-Admin    { background: #fce4ec; color: #c62828; }
-
-        .btn-delete {
-            background: #fce4ec; color: #c62828;
-            border: none; padding: 5px 12px; border-radius: 6px;
-            font-size: 12px; cursor: pointer;
+        .btn-tx:hover { background: #e0e0e0; }
+        .btn-del {
+            padding: 4px 10px; font-size: 11px; border: none;
+            border-radius: 6px; background: #ffe0e0; color: #c0392b; cursor: pointer;
         }
-        .btn-delete:hover { background: #e74c3c; color: white; }
+        .btn-del:hover { background: #ffcccc; }
 
-        .btn-role {
-            background: #e3f2fd; color: #1565c0;
-            border: none; padding: 5px 12px; border-radius: 6px;
-            font-size: 12px; cursor: pointer; margin-right: 4px;
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 999;
+            align-items: center; justify-content: center;
         }
-        .btn-role:hover { background: #1565c0; color: white; }
-
-        .no-data { padding: 40px; text-align: center; color: #aaa; }
-
-        /* Tab */
-        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-        .tab-btn {
-            padding: 9px 20px; border: none; border-radius: 8px;
-            font-size: 14px; cursor: pointer; background: white; color: #666;
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 16px;
+            padding: 24px; width: 90%; max-width: 560px;
+            max-height: 80vh; overflow-y: auto;
         }
-        .tab-btn.active { background: #1a1a2e; color: white; }
+        .modal-title {
+            font-size: 16px; font-weight: 700; margin-bottom: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-close {
+            background: none; border: none; font-size: 20px;
+            cursor: pointer; color: #999;
+        }
 
-        /* Transaction Table */
-        .tx-earn   { color: #27ae60; font-weight: 600; }
-        .tx-redeem { color: #e74c3c; font-weight: 600; }
+        .tx-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px;
+        }
+        .tx-item:last-child { border-bottom: none; }
+        .tx-earn   { color: #06c755; font-weight: 700; }
+        .tx-redeem { color: #e74c3c; font-weight: 700; }
+
+        .empty { text-align: center; color: #999; padding: 30px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -116,82 +121,73 @@
         <div class="header-title">Admin Dashboard</div>
         <div class="header-sub">Fat Myth Bear Loyalty System</div>
     </div>
-    <span class="admin-badge">ADMIN</span>
+    <button class="btn btn-green" onclick="exportCSV()">📥 Export CSV</button>
 </div>
 
 <!-- Stats -->
-<div class="stats-row">
+<div class="stats-grid">
     <div class="stat-card">
-        <div class="stat-label">สมาชิกทั้งหมด</div>
         <div class="stat-val" id="stat-total">-</div>
+        <div class="stat-label">สมาชิกทั้งหมด</div>
     </div>
     <div class="stat-card">
+        <div class="stat-val" style="color:#cd7f32" id="stat-bronze">-</div>
         <div class="stat-label">Bronze</div>
-        <div class="stat-val bronze" id="stat-bronze">-</div>
     </div>
     <div class="stat-card">
+        <div class="stat-val" style="color:#888" id="stat-silver">-</div>
         <div class="stat-label">Silver</div>
-        <div class="stat-val silver" id="stat-silver">-</div>
     </div>
     <div class="stat-card">
-        <div class="stat-label">Gold+</div>
-        <div class="stat-val gold" id="stat-gold">-</div>
+        <div class="stat-val" style="color:#b8860b" id="stat-gold">-</div>
+        <div class="stat-label">Gold</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-val" style="color:#534AB7" id="stat-platinum">-</div>
+        <div class="stat-label">Platinum</div>
     </div>
 </div>
 
-<!-- Tabs -->
-<div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('members')">สมาชิก</button>
-    <button class="tab-btn" onclick="switchTab('transactions')">ประวัติแต้ม</button>
+<!-- Toolbar -->
+<div class="toolbar">
+    <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()">
+    <select id="tier-filter" onchange="filterMembers()">
+        <option value="">ทุก Tier</option>
+        <option value="Bronze">Bronze</option>
+        <option value="Silver">Silver</option>
+        <option value="Gold">Gold</option>
+        <option value="Platinum">Platinum</option>
+    </select>
+    <button class="btn btn-dark" onclick="runTierUpdate()">🔄 อัปเดต Tier ทั้งหมด</button>
 </div>
 
-<!-- Members Tab -->
-<div id="tab-members">
-    <div class="toolbar">
-        <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()" />
-        <select id="tier-filter" onchange="filterMembers()">
-            <option value="">ทุก Tier</option>
-            <option value="Bronze">Bronze</option>
-            <option value="Silver">Silver</option>
-            <option value="Gold">Gold</option>
-            <option value="Platinum">Platinum</option>
-        </select>
-        <button class="btn btn-export" onclick="exportCSV()">📥 Export CSV</button>
-    </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>ชื่อ-นามสกุล</th>
-                    <th>เบอร์โทร</th>
-                    <th>ระดับ</th>
-                    <th>แต้ม</th>
-                    <th>EXP</th>
-                    <th>สิทธิ์</th>
-                    <th>จัดการ</th>
-                </tr>
-            </thead>
-            <tbody id="member-list"></tbody>
-        </table>
-    </div>
+<!-- Table -->
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>ชื่อ-นามสกุล</th>
+                <th>เบอร์โทร</th>
+                <th>Tier</th>
+                <th>แต้ม</th>
+                <th>EXP</th>
+                <th>สิทธิ์</th>
+                <th>จัดการ</th>
+            </tr>
+        </thead>
+        <tbody id="member-list"></tbody>
+    </table>
 </div>
 
-<!-- Transactions Tab -->
-<div id="tab-transactions" style="display:none;">
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>ชื่อสมาชิก</th>
-                    <th>ประเภท</th>
-                    <th>แต้ม</th>
-                    <th>รายละเอียด</th>
-                    <th>วันที่</th>
-                </tr>
-            </thead>
-            <tbody id="tx-list"></tbody>
-        </table>
+<!-- Transaction Modal -->
+<div class="modal-overlay" id="tx-modal">
+    <div class="modal-box">
+        <div class="modal-title">
+            <span id="tx-modal-title">ประวัติแต้ม</span>
+            <button class="modal-close" onclick="closeTxModal()">✕</button>
+        </div>
+        <div id="tx-list"></div>
     </div>
 </div>
 
@@ -203,53 +199,61 @@
 
     let allMembers = [];
 
-    // ── Tabs ──
-    function switchTab(tab) {
-        document.getElementById("tab-members").style.display      = tab === "members" ? "block" : "none";
-        document.getElementById("tab-transactions").style.display = tab === "transactions" ? "block" : "none";
-        document.querySelectorAll(".tab-btn").forEach((b, i) => {
-            b.classList.toggle("active", (i === 0 && tab === "members") || (i === 1 && tab === "transactions"));
-        });
-        if (tab === "transactions") fetchTransactions();
-    }
-
-    // ── Fetch Members ──
+    // ── โหลดข้อมูล ──
     async function fetchMembers() {
-        const { data, error } = await db
-            .from("profiles")
-            .select("line_user_id, full_name, tel, role, current_points, current_exp, tier")
-            .order("current_exp", { ascending: false });
+        document.getElementById("member-list").innerHTML =
+            `<tr><td colspan="8" class="empty">กำลังโหลด...</td></tr>`;
+        try {
+            const { data, error } = await db
+                .from("profiles")
+                .select("line_user_id, full_name, tel, role, current_points, current_exp, tier")
+                .order("current_exp", { ascending: false });
 
-        if (error) { console.error(error); return; }
-        allMembers = data || [];
-
-        // Stats
-        document.getElementById("stat-total").textContent  = allMembers.length;
-        document.getElementById("stat-bronze").textContent = allMembers.filter(m => m.tier === "Bronze").length;
-        document.getElementById("stat-silver").textContent = allMembers.filter(m => m.tier === "Silver").length;
-        document.getElementById("stat-gold").textContent   = allMembers.filter(m => m.tier === "Gold" || m.tier === "Platinum").length;
-
-        renderMembers(allMembers);
+            if (error) throw error;
+            allMembers = data || [];
+            renderStats(allMembers);
+            renderTable(allMembers);
+        } catch (err) {
+            document.getElementById("member-list").innerHTML =
+                `<tr><td colspan="8" class="empty">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+        }
     }
 
-    // ── Render Members ──
-    function renderMembers(members) {
+    // ── Stats ──
+    function renderStats(members) {
+        document.getElementById("stat-total").textContent    = members.length;
+        document.getElementById("stat-bronze").textContent   = members.filter(m => m.tier === "Bronze").length;
+        document.getElementById("stat-silver").textContent   = members.filter(m => m.tier === "Silver").length;
+        document.getElementById("stat-gold").textContent     = members.filter(m => m.tier === "Gold").length;
+        document.getElementById("stat-platinum").textContent = members.filter(m => m.tier === "Platinum").length;
+    }
+
+    // ── Table ──
+    function renderTable(members) {
         const list = document.getElementById("member-list");
-        if (!members.length) {
-            list.innerHTML = `<tr><td colspan="7" class="no-data">ไม่พบข้อมูลสมาชิก</td></tr>`;
+        if (members.length === 0) {
+            list.innerHTML = `<tr><td colspan="8" class="empty">ไม่พบข้อมูลสมาชิก</td></tr>`;
             return;
         }
-        list.innerHTML = members.map(m => `
-            <tr id="row-${m.line_user_id}">
-                <td>${m.full_name || '-'}</td>
+        list.innerHTML = members.map((m, i) => `
+            <tr>
+                <td style="color:#999">${i + 1}</td>
+                <td style="font-weight:600">${m.full_name || '-'}</td>
                 <td>${m.tel || '-'}</td>
                 <td><span class="tier-badge tier-${m.tier}">${m.tier}</span></td>
-                <td>${(m.current_points || 0).toLocaleString()}</td>
-                <td>${(m.current_exp || 0).toLocaleString()}</td>
-                <td><span class="role-badge role-${m.role}">${m.role}</span></td>
+                <td style="font-weight:700;color:#06c755">${(m.current_points || 0).toLocaleString()}</td>
+                <td style="color:#534AB7">${(m.current_exp || 0).toLocaleString()}</td>
                 <td>
-                    <button class="btn-role" onclick="changeRole('${m.line_user_id}', '${m.role}')">เปลี่ยนสิทธิ์</button>
-                    <button class="btn-delete" onclick="deleteMember('${m.line_user_id}', '${m.full_name}')">ลบ</button>
+                    <select onchange="changeRole('${m.line_user_id}', this.value)"
+                        style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;">
+                        <option ${m.role === 'Customer' ? 'selected' : ''}>Customer</option>
+                        <option ${m.role === 'Staff'    ? 'selected' : ''}>Staff</option>
+                        <option ${m.role === 'Admin'    ? 'selected' : ''}>Admin</option>
+                    </select>
+                </td>
+                <td style="display:flex;gap:6px;">
+                    <button class="btn-tx" onclick="showTx('${m.line_user_id}','${m.full_name}')">📜 ประวัติ</button>
+                    <button class="btn-del" onclick="deleteMember('${m.line_user_id}','${m.full_name}')">🗑️</button>
                 </td>
             </tr>
         `).join("");
@@ -263,76 +267,106 @@
             (m.full_name || "").toLowerCase().includes(keyword) &&
             (tier === "" || m.tier === tier)
         );
-        renderMembers(filtered);
+        renderTable(filtered);
     }
 
     // ── Change Role ──
-    async function changeRole(lineUserId, currentRole) {
-        const roles   = ["Customer", "Staff", "Admin"];
-        const next    = roles[(roles.indexOf(currentRole) + 1) % roles.length];
-        if (!confirm(`เปลี่ยนสิทธิ์เป็น "${next}" ใช่ไหม?`)) return;
-
+    async function changeRole(lineUserId, newRole) {
         const { error } = await db
             .from("profiles")
-            .update({ role: next })
+            .update({ role: newRole })
             .eq("line_user_id", lineUserId);
-
-        if (error) { alert("เกิดข้อผิดพลาด: " + error.message); return; }
-        allMembers = allMembers.map(m => m.line_user_id === lineUserId ? { ...m, role: next } : m);
-        renderMembers(allMembers);
+        if (error) alert("เปลี่ยนสิทธิ์ไม่สำเร็จ: " + error.message);
+        else allMembers.find(m => m.line_user_id === lineUserId).role = newRole;
     }
 
     // ── Delete ──
     async function deleteMember(lineUserId, name) {
         if (!confirm(`ยืนยันลบ "${name}" ออกจากระบบ?`)) return;
-        const { error } = await db.from("profiles").delete().eq("line_user_id", lineUserId);
-        if (error) { alert("ลบไม่สำเร็จ: " + error.message); return; }
-        allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
-        fetchMembers();
+        const { error } = await db
+            .from("profiles").delete().eq("line_user_id", lineUserId);
+        if (error) alert("ลบไม่สำเร็จ: " + error.message);
+        else {
+            allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
+            renderStats(allMembers);
+            renderTable(allMembers);
+        }
     }
 
-    // ── Transactions ──
-    async function fetchTransactions() {
+    // ── Transactions Modal ──
+    async function showTx(lineUserId, name) {
+        document.getElementById("tx-modal-title").textContent = `ประวัติแต้ม: ${name}`;
+        document.getElementById("tx-list").innerHTML = "<p class='empty'>กำลังโหลด...</p>";
+        document.getElementById("tx-modal").classList.add("show");
+
         const { data, error } = await db
             .from("point_transactions")
-            .select("line_user_id, points, type, description, created_at")
+            .select("type, points, description, created_at")
+            .eq("line_user_id", lineUserId)
             .order("created_at", { ascending: false })
-            .limit(100);
+            .limit(50);
 
-        if (error) { console.error(error); return; }
-
-        // หาชื่อสมาชิก
-        const memberMap = {};
-        allMembers.forEach(m => memberMap[m.line_user_id] = m.full_name);
-
-        const list = document.getElementById("tx-list");
-        if (!data.length) {
-            list.innerHTML = `<tr><td colspan="5" class="no-data">ยังไม่มีประวัติแต้ม</td></tr>`;
+        if (error || !data || data.length === 0) {
+            document.getElementById("tx-list").innerHTML = "<p class='empty'>ยังไม่มีประวัติ</p>";
             return;
         }
 
-        list.innerHTML = data.map(tx => {
-            const date = new Date(tx.created_at).toLocaleString("th-TH");
-            const cls  = tx.type === "earn" ? "tx-earn" : "tx-redeem";
-            const sign = tx.type === "earn" ? "+" : "-";
-            return `<tr>
-                <td>${memberMap[tx.line_user_id] || tx.line_user_id.slice(-8)}</td>
-                <td>${tx.type === "earn" ? "รับแต้ม" : "ใช้แต้ม"}</td>
-                <td class="${cls}">${sign}${tx.points}</td>
-                <td>${tx.description || "-"}</td>
-                <td>${date}</td>
-            </tr>`;
+        document.getElementById("tx-list").innerHTML = data.map(tx => {
+            const date = new Date(tx.created_at).toLocaleDateString("th-TH", {
+                day: "numeric", month: "short", year: "numeric",
+                hour: "2-digit", minute: "2-digit"
+            });
+            const isEarn = tx.type === "earn";
+            return `<div class="tx-item">
+                <div>
+                    <div style="font-weight:600">${tx.description || "-"}</div>
+                    <div style="color:#999;font-size:11px">${date}</div>
+                </div>
+                <span class="${isEarn ? 'tx-earn' : 'tx-redeem'}">
+                    ${isEarn ? "+" : "-"}${tx.points} แต้ม
+                </span>
+            </div>`;
         }).join("");
+    }
+
+    function closeTxModal() {
+        document.getElementById("tx-modal").classList.remove("show");
+    }
+
+    // ── Tier Update (Manual Cron) ──
+    async function runTierUpdate() {
+        if (!confirm("อัปเดต Tier สมาชิกทุกคนตาม EXP ปัจจุบัน?")) return;
+        let updated = 0;
+        for (const m of allMembers) {
+            const newTier = calcTier(m.current_exp || 0);
+            if (newTier !== m.tier) {
+                await db.from("profiles")
+                    .update({ tier: newTier })
+                    .eq("line_user_id", m.line_user_id);
+                m.tier = newTier;
+                updated++;
+            }
+        }
+        renderStats(allMembers);
+        renderTable(allMembers);
+        alert(`อัปเดตสำเร็จ! เปลี่ยน Tier ${updated} คน`);
+    }
+
+    function calcTier(exp) {
+        if (exp >= 5000) return "Platinum";
+        if (exp >= 3000) return "Gold";
+        if (exp >= 1000) return "Silver";
+        return "Bronze";
     }
 
     // ── Export CSV ──
     function exportCSV() {
-        if (!allMembers.length) { alert("ไม่มีข้อมูล"); return; }
-        const header = "ชื่อ-นามสกุล,เบอร์โทร,ระดับ,แต้ม,EXP,สิทธิ์";
+        if (allMembers.length === 0) { alert("ไม่มีข้อมูล"); return; }
+        const header = "ชื่อ-นามสกุล,เบอร์โทร,Tier,แต้ม,EXP,สิทธิ์";
         const rows = allMembers.map(m =>
-            `"${m.full_name || ""}","${m.tel || ""}","${m.tier}","${m.current_points}","${m.current_exp}","${m.role}"`
+            `"${m.full_name}","${m.tel}","${m.tier}","${m.current_points}","${m.current_exp}","${m.role}"`
         );
-        const csv  = "\uFEFF" + header + "\n" + rows.join("\n");
+        const csv = "\uFEFF" + header + "\n" + rows.join("\n");
         const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement("a");
