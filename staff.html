@@ -16,10 +16,8 @@
             height: 100vh; gap: 12px; color: #666;
         }
         .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid #ddd;
-            border-top-color: #06c755;
-            border-radius: 50%;
+            width: 40px; height: 40px; border: 4px solid #ddd;
+            border-top-color: #06c755; border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -27,16 +25,15 @@
         #app { display: none; padding: 16px; }
 
         .header {
-            background: #1a1a2e; color: white;
-            border-radius: 16px; padding: 16px 20px;
-            margin-bottom: 16px;
+            background: #1a1a2e; color: white; border-radius: 16px;
+            padding: 16px 20px; margin-bottom: 16px;
             display: flex; justify-content: space-between; align-items: center;
         }
         .header-title { font-size: 18px; font-weight: 700; }
         .header-sub   { font-size: 12px; opacity: 0.7; margin-top: 2px; }
         .staff-badge  {
             background: #06c755; color: white;
-            padding: 4px 12px; border-radius: 99px; font-size: 12px;
+            padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700;
         }
 
         .card {
@@ -45,22 +42,41 @@
         }
         .card-title {
             font-size: 15px; font-weight: 600; color: #333;
-            margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+            margin-bottom: 16px;
         }
 
-        /* Scan Button */
         .scan-btn {
-            width: 100%; padding: 16px;
-            background: #1a1a2e; color: white;
-            border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 600;
+            width: 100%; padding: 16px; background: #1a1a2e; color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
             cursor: pointer; margin-bottom: 12px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .scan-btn:active { opacity: 0.85; }
 
-        /* Member Result */
-        #member-result { display: none; }
+        .divider {
+            text-align: center; color: #999; font-size: 13px;
+            margin: 12px 0; position: relative;
+        }
+        .divider::before, .divider::after {
+            content: ""; position: absolute; top: 50%;
+            width: 42%; height: 1px; background: #eee;
+        }
+        .divider::before { left: 0; }
+        .divider::after  { right: 0; }
+
+        .input-row { display: flex; gap: 8px; margin-top: 8px; }
+        .id-input {
+            flex: 1; padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 16px; text-transform: uppercase;
+            letter-spacing: 2px; text-align: center; outline: none;
+        }
+        .id-input:focus { border-color: #06c755; }
+        .search-btn {
+            padding: 12px 16px; background: #06c755; color: white;
+            border: none; border-radius: 10px; font-size: 14px;
+            font-weight: 700; cursor: pointer; white-space: nowrap;
+        }
+        .id-hint { font-size: 11px; color: #999; text-align: center; margin-top: 6px; }
+
         .member-found {
             background: #f0fff4; border: 1.5px solid #06c755;
             border-radius: 12px; padding: 14px; margin-bottom: 12px;
@@ -73,51 +89,47 @@
         }
         .tier-Bronze   { background: #cd7f3220; color: #a0522d; }
         .tier-Silver   { background: #a8a9ad20; color: #666; }
-        .tier-Gold     { background: #ffd70020; color: #b8860b; }
+        .tier-Gold     { background: #ffd70030; color: #b8860b; }
         .tier-Platinum { background: #667eea20; color: #534AB7; }
 
-        /* Amount Input */
         .amount-label { font-size: 14px; color: #666; margin-bottom: 8px; }
         .amount-input {
-            width: 100%; padding: 14px;
-            border: 1.5px solid #ddd; border-radius: 12px;
-            font-size: 24px; font-weight: 700; text-align: center;
-            color: #333; outline: none;
+            width: 100%; padding: 14px; border: 1.5px solid #ddd;
+            border-radius: 12px; font-size: 28px; font-weight: 700;
+            text-align: center; color: #333; outline: none;
         }
         .amount-input:focus { border-color: #06c755; }
         .amount-hint { font-size: 12px; color: #999; text-align: center; margin-top: 6px; }
 
-        /* Points Preview */
         .points-preview {
             background: #f8f8f8; border-radius: 10px;
             padding: 12px; margin: 12px 0; text-align: center;
         }
         .points-preview-label { font-size: 13px; color: #666; }
-        .points-preview-val   { font-size: 28px; font-weight: 700; color: #06c755; }
+        .points-preview-val   { font-size: 32px; font-weight: 700; color: #06c755; }
         .points-preview-warn  { font-size: 11px; color: #e67e22; margin-top: 4px; }
 
-        /* Submit */
         .submit-btn {
-            width: 100%; padding: 16px;
-            background: #06c755; color: white;
-            border: none; border-radius: 12px;
-            font-size: 16px; font-weight: 700;
-            cursor: pointer;
+            width: 100%; padding: 16px; background: #06c755; color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer;
         }
         .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
 
-        /* Success */
-        #success-screen {
-            display: none; text-align: center; padding: 40px 20px;
+        .back-btn {
+            width: 100%; padding: 10px; background: none; border: none;
+            color: #999; cursor: pointer; margin-top: 8px; font-size: 13px;
         }
-        .success-icon { font-size: 64px; margin-bottom: 16px; }
-        .success-title { font-size: 22px; font-weight: 700; color: #06c755; }
-        .success-sub   { font-size: 14px; color: #666; margin-top: 8px; }
-        .reset-btn {
-            margin-top: 24px; padding: 14px 32px;
-            background: #1a1a2e; color: white;
-            border: none; border-radius: 12px;
-            font-size: 15px; cursor: pointer;
+
+        #success-screen {
+            display: none; text-align: center; padding: 60px 20px;
+        }
+        .success-icon  { font-size: 72px; margin-bottom: 16px; }
+        .success-title { font-size: 24px; font-weight: 700; color: #06c755; }
+        .success-sub   { font-size: 14px; color: #666; margin-top: 10px; line-height: 1.6; }
+        .next-btn {
+            margin-top: 28px; padding: 14px 32px;
+            background: #1a1a2e; color: white; border: none;
+            border-radius: 12px; font-size: 15px; cursor: pointer; font-weight: 600;
         }
 
         .error-msg { color: #e74c3c; font-size: 13px; text-align: center; margin-top: 8px; }
@@ -141,30 +153,30 @@
 
     <!-- Step 1: Scan -->
     <div class="card" id="step-scan">
-        <div class="card-title">📷 สแกน QR Code ลูกค้า</div>
+        <div class="card-title">📷 ค้นหาสมาชิก</div>
         <button class="scan-btn" onclick="scanQR()">
-            <span>📷</span> กดสแกน QR Code
+            <span>📷</span> สแกน QR Code
         </button>
-        <p style="font-size:12px;color:#999;text-align:center">หรือกรอก LINE User ID ด้วยตนเอง</p>
-        <input type="text" id="manual-id" placeholder="LINE User ID..."
-            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin-top:8px;font-size:13px;">
-        <button onclick="lookupManual()"
-            style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:8px;margin-top:8px;cursor:pointer;font-size:14px;">
-            ค้นหาสมาชิก
-        </button>
+        <div class="divider">หรือกรอกรหัสสมาชิก</div>
+        <div class="input-row">
+            <input type="text" id="manual-id" class="id-input"
+                placeholder="เช่น CCA86496" maxlength="34">
+            <button class="search-btn" onclick="lookupManual()">ค้นหา</button>
+        </div>
+        <div class="id-hint">กรอกรหัส 8 หลักบนบัตรสมาชิก หรือ LINE User ID เต็ม</div>
         <p class="error-msg" id="scan-error"></p>
     </div>
 
-    <!-- Step 2: Enter Amount -->
+    <!-- Step 2: Amount -->
     <div class="card" id="step-amount" style="display:none;">
         <div class="card-title">💰 กรอกยอดซื้อ</div>
 
-        <div id="member-result">
-            <div class="member-found">
-                <div class="member-name" id="found-name">-</div>
-                <div class="member-info">แต้มสะสม: <b id="found-points">0</b> | EXP: <b id="found-exp">0</b></div>
-                <span class="tier-badge" id="found-tier-badge">Bronze</span>
+        <div class="member-found">
+            <div class="member-name" id="found-name">-</div>
+            <div class="member-info">
+                แต้ม: <b id="found-points">0</b> &nbsp;|&nbsp; EXP: <b id="found-exp">0</b>
             </div>
+            <span class="tier-badge" id="found-tier-badge">Bronze</span>
         </div>
 
         <div class="amount-label">ยอดซื้อ (บาท)</div>
@@ -182,48 +194,40 @@
             บันทึกแต้ม
         </button>
         <p class="error-msg" id="submit-error"></p>
-        <button onclick="resetAll()"
-            style="width:100%;padding:10px;background:none;border:none;color:#999;cursor:pointer;margin-top:8px;font-size:13px;">
-            ← สแกนใหม่
-        </button>
+        <button class="back-btn" onclick="resetAll()">← ค้นหาใหม่</button>
     </div>
 </div>
 
-<!-- Success Screen -->
+<!-- Success -->
 <div id="success-screen">
     <div class="success-icon">🎉</div>
     <div class="success-title">บันทึกแต้มสำเร็จ!</div>
     <div class="success-sub" id="success-detail"></div>
-    <button class="reset-btn" onclick="resetAll()">สแกนลูกค้าคนต่อไป</button>
+    <button class="next-btn" onclick="resetAll()">สแกนลูกค้าคนต่อไป</button>
 </div>
 
 <script>
     const LIFF_ID      = "2010298031-ZjU27ew1";
     const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-
     const MAX_PER_BILL = 200;
     const MAX_PER_DAY  = 400;
 
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let staffProfile  = null;
-    let foundMember   = null;
+    let foundMember = null;
 
-    // ── Init ──
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
 
-            staffProfile = await liff.getProfile();
-
-            // เช็คว่าเป็น Staff หรือ Admin
+            const profile = await liff.getProfile();
             const { data, error } = await db
                 .from("profiles")
                 .select("full_name, role")
-                .eq("line_user_id", staffProfile.userId)
+                .eq("line_user_id", profile.userId)
                 .single();
 
             if (error || !data || (data.role !== "Staff" && data.role !== "Admin")) {
@@ -244,26 +248,40 @@
         }
     }
 
-    // ── Scan QR ──
     async function scanQR() {
         try {
             const result = await liff.scanCodeV2();
-            if (result && result.value) {
-                await lookupMember(result.value);
-            }
+            if (result && result.value) await lookupMember(result.value);
         } catch (err) {
-            document.getElementById("scan-error").textContent =
-                "สแกนไม่สำเร็จ: " + err.message;
+            document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + err.message;
         }
     }
 
     async function lookupManual() {
-        const id = document.getElementById("manual-id").value.trim();
-        if (!id) { document.getElementById("scan-error").textContent = "กรุณากรอก LINE User ID"; return; }
-        await lookupMember(id);
+        const input = document.getElementById("manual-id").value.trim().toUpperCase();
+        if (!input) {
+            document.getElementById("scan-error").textContent = "กรุณากรอกรหัสสมาชิก";
+            return;
+        }
+        document.getElementById("scan-error").textContent = "";
+
+        try {
+            // ค้นหาด้วย 8 หลักท้าย หรือ ID เต็ม
+            const { data, error } = await db
+                .from("profiles")
+                .select("line_user_id, full_name, current_points, current_exp, tier")
+                .ilike("line_user_id", `%${input}`);
+
+            if (error || !data || data.length === 0) {
+                document.getElementById("scan-error").textContent = "ไม่พบสมาชิกในระบบ";
+                return;
+            }
+            await lookupMember(data[0].line_user_id);
+        } catch (err) {
+            document.getElementById("scan-error").textContent = "เกิดข้อผิดพลาด: " + err.message;
+        }
     }
 
-    // ── Lookup Member ──
     async function lookupMember(lineUserId) {
         document.getElementById("scan-error").textContent = "";
         try {
@@ -279,17 +297,15 @@
             }
 
             foundMember = data;
+            document.getElementById("found-name").textContent   = data.full_name;
+            document.getElementById("found-points").textContent = data.current_points.toLocaleString();
+            document.getElementById("found-exp").textContent    = data.current_exp.toLocaleString();
+            const badge = document.getElementById("found-tier-badge");
+            badge.textContent = data.tier;
+            badge.className   = `tier-badge tier-${data.tier}`;
 
-            document.getElementById("found-name").textContent    = data.full_name;
-            document.getElementById("found-points").textContent  = data.current_points.toLocaleString();
-            document.getElementById("found-exp").textContent     = data.current_exp.toLocaleString();
-            const tierBadge = document.getElementById("found-tier-badge");
-            tierBadge.textContent  = data.tier;
-            tierBadge.className    = `tier-badge tier-${data.tier}`;
-
-            document.getElementById("member-result").style.display = "block";
-            document.getElementById("step-scan").style.display     = "none";
-            document.getElementById("step-amount").style.display   = "block";
+            document.getElementById("step-scan").style.display   = "none";
+            document.getElementById("step-amount").style.display = "block";
             document.getElementById("amount-input").focus();
 
         } catch (err) {
@@ -297,23 +313,15 @@
         }
     }
 
-    // ── คำนวณแต้ม ──
     async function calcPoints() {
         const amount = parseInt(document.getElementById("amount-input").value) || 0;
         let pts = Math.floor(amount / 25);
-
-        // Cap per bill
         let warn = "";
-        if (pts > MAX_PER_BILL) {
-            pts = MAX_PER_BILL;
-            warn = `⚠️ จำกัดสูงสุด ${MAX_PER_BILL} แต้ม/บิล`;
-        }
 
-        // Check daily cap
+        if (pts > MAX_PER_BILL) { pts = MAX_PER_BILL; warn = `⚠️ จำกัดสูงสุด ${MAX_PER_BILL} แต้ม/บิล`; }
+
         if (foundMember && pts > 0) {
-            const todayStart = new Date();
-            todayStart.setHours(0, 0, 0, 0);
-
+            const todayStart = new Date(); todayStart.setHours(0,0,0,0);
             const { data } = await db
                 .from("point_transactions")
                 .select("points")
@@ -321,13 +329,9 @@
                 .eq("type", "earn")
                 .gte("created_at", todayStart.toISOString());
 
-            const todayTotal = (data || []).reduce((sum, r) => sum + r.points, 0);
+            const todayTotal = (data || []).reduce((s, r) => s + r.points, 0);
             const remaining  = Math.max(0, MAX_PER_DAY - todayTotal);
-
-            if (pts > remaining) {
-                pts = remaining;
-                warn = `⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก ${remaining} แต้ม`;
-            }
+            if (pts > remaining) { pts = remaining; warn = `⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก ${remaining} แต้ม`; }
         }
 
         document.getElementById("preview-points").textContent = pts;
@@ -335,11 +339,9 @@
         document.getElementById("submit-btn").disabled        = pts <= 0 || amount <= 0;
     }
 
-    // ── บันทึกแต้ม ──
     async function submitPoints() {
         const amount = parseInt(document.getElementById("amount-input").value) || 0;
         const pts    = parseInt(document.getElementById("preview-points").textContent) || 0;
-
         if (pts <= 0 || !foundMember) return;
 
         document.getElementById("submit-btn").disabled    = true;
@@ -350,38 +352,24 @@
             const expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 180);
 
-            // 1. บันทึก transaction
-            const { error: txErr } = await db
-                .from("point_transactions")
-                .insert({
-                    line_user_id: foundMember.line_user_id,
-                    points:       pts,
-                    exp:          pts,
-                    type:         "earn",
-                    description:  `ซื้อสินค้า ${amount.toLocaleString()} บาท`,
-                    amount_spent: amount,
-                    expires_at:   expiresAt.toISOString()
-                });
-
+            const { error: txErr } = await db.from("point_transactions").insert({
+                line_user_id: foundMember.line_user_id,
+                points: pts, exp: pts, type: "earn",
+                description: `ซื้อสินค้า ${amount.toLocaleString()} บาท`,
+                amount_spent: amount,
+                expires_at: expiresAt.toISOString()
+            });
             if (txErr) throw txErr;
 
-            // 2. อัปเดต profiles
             const newPoints = (foundMember.current_points || 0) + pts;
             const newExp    = (foundMember.current_exp    || 0) + pts;
             const newTier   = calcTier(newExp);
 
-            const { error: upErr } = await db
-                .from("profiles")
-                .update({
-                    current_points: newPoints,
-                    current_exp:    newExp,
-                    tier:           newTier
-                })
+            const { error: upErr } = await db.from("profiles")
+                .update({ current_points: newPoints, current_exp: newExp, tier: newTier })
                 .eq("line_user_id", foundMember.line_user_id);
-
             if (upErr) throw upErr;
 
-            // 3. แสดง Success
             document.getElementById("app").style.display            = "none";
             document.getElementById("success-screen").style.display = "block";
             document.getElementById("success-detail").innerHTML =
@@ -396,7 +384,6 @@
         }
     }
 
-    // ── คำนวณ Tier ──
     function calcTier(exp) {
         if (exp >= 5000) return "Platinum";
         if (exp >= 3000) return "Gold";
@@ -404,21 +391,20 @@
         return "Bronze";
     }
 
-    // ── Reset ──
     function resetAll() {
         foundMember = null;
-        document.getElementById("amount-input").value       = "";
+        document.getElementById("amount-input").value         = "";
         document.getElementById("preview-points").textContent = "0";
-        document.getElementById("cap-warn").textContent     = "";
-        document.getElementById("manual-id").value          = "";
-        document.getElementById("scan-error").textContent   = "";
-        document.getElementById("submit-error").textContent = "";
-        document.getElementById("submit-btn").disabled      = true;
-        document.getElementById("submit-btn").textContent   = "บันทึกแต้ม";
-        document.getElementById("step-scan").style.display   = "block";
-        document.getElementById("step-amount").style.display = "none";
+        document.getElementById("cap-warn").textContent       = "";
+        document.getElementById("manual-id").value            = "";
+        document.getElementById("scan-error").textContent     = "";
+        document.getElementById("submit-error").textContent   = "";
+        document.getElementById("submit-btn").disabled        = true;
+        document.getElementById("submit-btn").textContent     = "บันทึกแต้ม";
+        document.getElementById("step-scan").style.display    = "block";
+        document.getElementById("step-amount").style.display  = "none";
         document.getElementById("success-screen").style.display = "none";
-        document.getElementById("app").style.display        = "block";
+        document.getElementById("app").style.display          = "block";
     }
 
     init();
