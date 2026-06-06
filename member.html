@@ -11,7 +11,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
 
-        /* ── Loading ── */
         #loading {
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -26,21 +25,16 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Card ── */
         #app { display: none; padding: 16px; }
 
         .member-card {
-            border-radius: 20px;
-            padding: 24px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 16px;
-            min-height: 200px;
+            border-radius: 20px; padding: 24px; color: white;
+            position: relative; overflow: hidden;
+            margin-bottom: 16px; min-height: 200px;
         }
-        .card-bronze  { background: linear-gradient(135deg, #cd7f32, #a0522d, #cd7f32); }
-        .card-silver  { background: linear-gradient(135deg, #a8a9ad, #d6d6d6, #a8a9ad); }
-        .card-gold    { background: linear-gradient(135deg, #ffd700, #daa520, #ffd700); }
+        .card-bronze   { background: linear-gradient(135deg, #cd7f32, #a0522d, #cd7f32); }
+        .card-silver   { background: linear-gradient(135deg, #a8a9ad, #d6d6d6, #a8a9ad); }
+        .card-gold     { background: linear-gradient(135deg, #ffd700, #daa520, #ffd700); }
         .card-platinum { background: linear-gradient(135deg, #667eea, #764ba2, #66d9e8); }
 
         .card-shine {
@@ -51,31 +45,33 @@
         }
         @keyframes shine { 0%,100%{transform:translateX(-100%)} 50%{transform:translateX(100%)} }
 
-        .card-tier { font-size: 13px; opacity: 0.85; letter-spacing: 2px; text-transform: uppercase; }
-        .card-name { font-size: 22px; font-weight: 700; margin: 8px 0 4px; }
-        .card-id   { font-size: 11px; opacity: 0.7; margin-bottom: 20px; }
+        .card-tier  { font-size: 13px; opacity: 0.85; letter-spacing: 2px; text-transform: uppercase; }
+        .card-name  { font-size: 22px; font-weight: 700; margin: 8px 0 4px; }
+        .card-id    {
+            font-size: 13px; opacity: 0.85; margin-bottom: 20px;
+            cursor: pointer; display: inline-block;
+            background: rgba(255,255,255,0.2); padding: 4px 10px;
+            border-radius: 99px; letter-spacing: 1px;
+        }
+        .card-id:active { opacity: 0.6; }
 
         .card-points-row { display: flex; justify-content: space-between; align-items: flex-end; }
         .card-points-label { font-size: 12px; opacity: 0.8; }
         .card-points-val   { font-size: 28px; font-weight: 700; }
         .card-points-unit  { font-size: 12px; opacity: 0.8; }
 
-        /* Progress Bar */
-        .progress-section { margin-top: 16px; }
+        .progress-section { margin-top: 4px; }
         .progress-label {
             display: flex; justify-content: space-between;
             font-size: 12px; color: #666; margin-bottom: 6px;
         }
-        .progress-track {
-            background: #ddd; border-radius: 99px; height: 10px; overflow: hidden;
-        }
+        .progress-track { background: #ddd; border-radius: 99px; height: 10px; overflow: hidden; }
         .progress-fill {
             height: 100%; border-radius: 99px;
             background: linear-gradient(90deg, #06c755, #00a843);
             transition: width 0.8s ease;
         }
 
-        /* QR Button */
         .qr-btn {
             width: 100%; padding: 14px;
             background: #06c755; color: white;
@@ -84,7 +80,6 @@
             cursor: pointer; margin: 12px 0;
         }
 
-        /* Tier perks */
         .perks-card {
             background: white; border-radius: 16px;
             padding: 16px; margin-bottom: 16px;
@@ -96,7 +91,6 @@
         }
         .perk-dot { color: #06c755; font-size: 16px; flex-shrink: 0; }
 
-        /* QR Modal */
         .modal-overlay {
             display: none; position: fixed; inset: 0;
             background: rgba(0,0,0,0.7); z-index: 999;
@@ -107,11 +101,17 @@
             background: white; border-radius: 20px;
             padding: 28px; text-align: center; width: 280px;
         }
-        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #333; }
+        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #333; }
+        .modal-id    { font-size: 13px; color: #999; margin-bottom: 16px; }
         .modal-close {
             margin-top: 16px; width: 100%; padding: 12px;
             background: #f0f0f0; border: none; border-radius: 10px;
             font-size: 15px; cursor: pointer; color: #333;
+        }
+
+        .copy-hint {
+            font-size: 11px; color: rgba(255,255,255,0.7);
+            margin-bottom: 16px;
         }
     </style>
 </head>
@@ -123,12 +123,12 @@
 </div>
 
 <div id="app">
-    <!-- Member Card -->
     <div class="member-card" id="member-card">
         <div class="card-shine"></div>
         <div class="card-tier" id="card-tier">BRONZE MEMBER</div>
         <div class="card-name" id="card-name">-</div>
-        <div class="card-id"  id="card-id">ID: -</div>
+        <div class="card-id" id="card-id" onclick="copyId()">ID: -</div>
+        <div class="copy-hint">แตะที่ ID เพื่อคัดลอก</div>
         <div class="card-points-row">
             <div>
                 <div class="card-points-label">แต้มสะสม</div>
@@ -142,7 +142,6 @@
         </div>
     </div>
 
-    <!-- Progress Bar -->
     <div class="perks-card">
         <div class="progress-section">
             <div class="progress-label">
@@ -155,20 +154,18 @@
         </div>
     </div>
 
-    <!-- QR Button -->
     <button class="qr-btn" onclick="showQR()">แสดง QR Code สำหรับสะสมแต้ม</button>
 
-    <!-- Tier Perks -->
     <div class="perks-card">
         <div class="perks-title" id="perks-title">สิทธิพิเศษของคุณ</div>
         <div id="perks-list"></div>
     </div>
 </div>
 
-<!-- QR Modal -->
 <div class="modal-overlay" id="qr-modal">
     <div class="modal-box">
         <div class="modal-title">QR Code ของคุณ</div>
+        <div class="modal-id" id="qr-short-id"></div>
         <canvas id="qr-canvas"></canvas>
         <button class="modal-close" onclick="closeQR()">ปิด</button>
     </div>
@@ -178,29 +175,27 @@
     const LIFF_ID      = "2010298031-TOsCbkzl";
     const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const TIER_CONFIG = {
-        Bronze:   { min: 0,    max: 999,  next: "Silver",   perks: ["ส่วนลด 10% ในเดือนเกิด"] },
-        Silver:   { min: 1000, max: 2999, next: "Gold",     perks: ["เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์/เดือน", "Early Access เมนูใหม่ก่อนใคร"] },
-        Gold:     { min: 3000, max: 4999, next: "Platinum", perks: ["ส่วนลดถาวร 5% ทุกบิล", "คูปองบิงซูฟรีรายไตรมาส"] },
-        Platinum: { min: 5000, max: 9999, next: null,       perks: ["ส่วนลดถาวร 10% ทุกบิล", "สิทธิ์สำรองโต๊ะ VIP", "คูปองของขวัญพิเศษประจำปี"] }
+        Bronze:   { min: 0,    next: "Silver",   nextMin: 1000, perks: ["ส่วนลด 10% ในเดือนเกิด"] },
+        Silver:   { min: 1000, next: "Gold",     nextMin: 3000, perks: ["เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์/เดือน", "Early Access เมนูใหม่ก่อนใคร"] },
+        Gold:     { min: 3000, next: "Platinum", nextMin: 5000, perks: ["ส่วนลดถาวร 5% ทุกบิล", "คูปองบิงซูฟรีรายไตรมาส"] },
+        Platinum: { min: 5000, next: null,       nextMin: 9999, perks: ["ส่วนลดถาวร 10% ทุกบิล", "สิทธิ์สำรองโต๊ะ VIP", "คูปองของขวัญพิเศษประจำปี"] }
     };
-
     const CARD_CLASS = {
         Bronze: "card-bronze", Silver: "card-silver",
         Gold: "card-gold", Platinum: "card-platinum"
     };
 
     let currentUserId = "";
+    let shortId = "";
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
-
             const profile = await liff.getProfile();
             currentUserId = profile.userId;
 
@@ -214,11 +209,9 @@
                 alert("ไม่พบข้อมูลสมาชิก กรุณาสมัครก่อนครับ");
                 return;
             }
-
             renderCard(data);
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
-
         } catch (err) {
             document.getElementById("loading").innerHTML =
                 `<p style="color:red">เกิดข้อผิดพลาด: ${err.message}</p>`;
@@ -231,37 +224,39 @@
         const exp    = data.current_exp    || 0;
         const cfg    = TIER_CONFIG[tier];
 
-        // Card
+        shortId = data.line_user_id.slice(-8).toUpperCase();
+
         document.getElementById("member-card").className = `member-card ${CARD_CLASS[tier]}`;
-        document.getElementById("card-tier").textContent  = `${tier.toUpperCase()} MEMBER`;
-        document.getElementById("card-name").textContent  = data.full_name || "-";
-        document.getElementById("card-id").textContent    = `ID: ${data.line_user_id.slice(-8).toUpperCase()}`;
+        document.getElementById("card-tier").textContent   = `${tier.toUpperCase()} MEMBER`;
+        document.getElementById("card-name").textContent   = data.full_name || "-";
+        document.getElementById("card-id").textContent     = `ID: ${shortId}`;
         document.getElementById("card-points").textContent = points.toLocaleString();
         document.getElementById("card-exp").textContent    = exp.toLocaleString();
 
-        // Progress Bar
-        const rangeMin  = cfg.min;
-        const rangeMax  = cfg.next ? TIER_CONFIG[cfg.next].min : cfg.max;
-        const pct       = cfg.next ? Math.min(100, Math.round((exp - rangeMin) / (rangeMax - rangeMin) * 100)) : 100;
-        const remaining = cfg.next ? Math.max(0, rangeMax - exp) : 0;
+        const pct       = cfg.next ? Math.min(100, Math.round((exp - cfg.min) / (cfg.nextMin - cfg.min) * 100)) : 100;
+        const remaining = cfg.next ? Math.max(0, cfg.nextMin - exp) : 0;
 
-        document.getElementById("progress-fill").style.width = pct + "%";
-        document.getElementById("progress-current").textContent = `${exp.toLocaleString()} EXP`;
-        document.getElementById("progress-next").textContent = cfg.next
+        document.getElementById("progress-fill").style.width     = pct + "%";
+        document.getElementById("progress-current").textContent  = `${exp.toLocaleString()} EXP`;
+        document.getElementById("progress-next").textContent     = cfg.next
             ? `อีก ${remaining.toLocaleString()} EXP ถึง ${cfg.next}`
             : "ถึงระดับสูงสุดแล้ว!";
 
-        // Perks
         document.getElementById("perks-title").textContent = `สิทธิพิเศษระดับ ${tier}`;
         document.getElementById("perks-list").innerHTML = cfg.perks
             .map(p => `<div class="perk-item"><span class="perk-dot">✓</span><span>${p}</span></div>`)
             .join("");
     }
 
+    function copyId() {
+        navigator.clipboard.writeText(shortId)
+            .then(() => alert(`คัดลอก ID แล้ว: ${shortId}`))
+            .catch(() => alert(`ID ของคุณ: ${shortId}`));
+    }
+
     function showQR() {
         document.getElementById("qr-modal").classList.add("show");
-        // เพิ่มความสว่างหน้าจอ (ถ้าอยู่ใน LINE)
-        try { screen.orientation && (document.documentElement.style.filter = "brightness(1)"); } catch(e){}
+        document.getElementById("qr-short-id").textContent = `ID: ${shortId}`;
         QRCode.toCanvas(document.getElementById("qr-canvas"), currentUserId, {
             width: 200, margin: 2,
             color: { dark: "#000000", light: "#ffffff" }
