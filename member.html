@@ -6,7 +6,7 @@
     <title>บัตรสมาชิก Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
@@ -99,10 +99,19 @@
         .modal-overlay.show { display: flex; }
         .modal-box {
             background: white; border-radius: 20px;
-            padding: 28px; text-align: center; width: 280px;
+            padding: 28px; text-align: center; width: 90%; max-width: 300px;
         }
         .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #333; }
         .modal-id    { font-size: 13px; color: #999; margin-bottom: 16px; }
+        .qr-container {
+            background: white; padding: 16px; border-radius: 12px;
+            margin-bottom: 16px; display: flex; justify-content: center;
+            align-items: center;
+        }
+        .qr-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
         .modal-close {
             margin-top: 16px; width: 100%; padding: 12px;
             background: #f0f0f0; border: none; border-radius: 10px;
@@ -166,40 +175,42 @@
     <div class="modal-box">
         <div class="modal-title">QR Code ของคุณ</div>
         <div class="modal-id" id="qr-short-id"></div>
-        <canvas id="qr-canvas"></canvas>
+        <div class="qr-container">
+            <div id="qr-canvas"></div>
+        </div>
         <button class="modal-close" onclick="closeQR()">ปิด</button>
     </div>
 </div>
 
 <script>
-    const LIFF_ID      = "2010298031-TOsCbkzl";
-    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-    const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    var LIFF_ID      = "2010298031-TOsCbkzl";
+    var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    var { createClient } = supabase;
+    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const TIER_CONFIG = {
+    var TIER_CONFIG = {
         Bronze:   { min: 0,    next: "Silver",   nextMin: 1000, perks: ["ส่วนลด 10% ในเดือนเกิด"] },
         Silver:   { min: 1000, next: "Gold",     nextMin: 3000, perks: ["เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์/เดือน", "Early Access เมนูใหม่ก่อนใคร"] },
         Gold:     { min: 3000, next: "Platinum", nextMin: 5000, perks: ["ส่วนลดถาวร 5% ทุกบิล", "คูปองบิงซูฟรีรายไตรมาส"] },
         Platinum: { min: 5000, next: null,       nextMin: 9999, perks: ["ส่วนลดถาวร 10% ทุกบิล", "สิทธิ์สำรองโต๊ะ VIP", "คูปองของขวัญพิเศษประจำปี"] }
     };
-    const CARD_CLASS = {
+    var CARD_CLASS = {
         Bronze: "card-bronze", Silver: "card-silver",
         Gold: "card-gold", Platinum: "card-platinum"
     };
 
-    let currentUserId = "";
-    let shortId = "";
+    var currentUserId = "";
+    var shortId = "";
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) { liff.login(); return; }
-            const profile = await liff.getProfile();
+            var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            const { data, error } = await db
+            var { data, error } = await db
                 .from("profiles")
                 .select("full_name, line_user_id, current_points, current_exp, tier")
                 .eq("line_user_id", currentUserId)
@@ -214,53 +225,67 @@
             document.getElementById("app").style.display = "block";
         } catch (err) {
             document.getElementById("loading").innerHTML =
-                `<p style="color:red">เกิดข้อผิดพลาด: ${err.message}</p>`;
+                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
         }
     }
 
     function renderCard(data) {
-        const tier   = data.tier || "Bronze";
-        const points = data.current_points || 0;
-        const exp    = data.current_exp    || 0;
-        const cfg    = TIER_CONFIG[tier];
+        var tier   = data.tier || "Bronze";
+        var points = data.current_points || 0;
+        var exp    = data.current_exp    || 0;
+        var cfg    = TIER_CONFIG[tier];
 
         shortId = data.line_user_id.slice(-8).toUpperCase();
 
-        document.getElementById("member-card").className = `member-card ${CARD_CLASS[tier]}`;
-        document.getElementById("card-tier").textContent   = `${tier.toUpperCase()} MEMBER`;
+        document.getElementById("member-card").className = "member-card " + CARD_CLASS[tier];
+        document.getElementById("card-tier").textContent   = tier.toUpperCase() + " MEMBER";
         document.getElementById("card-name").textContent   = data.full_name || "-";
-        document.getElementById("card-id").textContent     = `ID: ${shortId}`;
+        document.getElementById("card-id").textContent     = "ID: " + shortId;
         document.getElementById("card-points").textContent = points.toLocaleString();
         document.getElementById("card-exp").textContent    = exp.toLocaleString();
 
-        const pct       = cfg.next ? Math.min(100, Math.round((exp - cfg.min) / (cfg.nextMin - cfg.min) * 100)) : 100;
-        const remaining = cfg.next ? Math.max(0, cfg.nextMin - exp) : 0;
+        var pct       = cfg.next ? Math.min(100, Math.round((exp - cfg.min) / (cfg.nextMin - cfg.min) * 100)) : 100;
+        var remaining = cfg.next ? Math.max(0, cfg.nextMin - exp) : 0;
 
         document.getElementById("progress-fill").style.width     = pct + "%";
-        document.getElementById("progress-current").textContent  = `${exp.toLocaleString()} EXP`;
+        document.getElementById("progress-current").textContent  = exp.toLocaleString() + " EXP";
         document.getElementById("progress-next").textContent     = cfg.next
-            ? `อีก ${remaining.toLocaleString()} EXP ถึง ${cfg.next}`
+            ? "อีก " + remaining.toLocaleString() + " EXP ถึง " + cfg.next
             : "ถึงระดับสูงสุดแล้ว!";
 
-        document.getElementById("perks-title").textContent = `สิทธิพิเศษระดับ ${tier}`;
+        document.getElementById("perks-title").textContent = "สิทธิพิเศษระดับ " + tier;
         document.getElementById("perks-list").innerHTML = cfg.perks
-            .map(p => `<div class="perk-item"><span class="perk-dot">✓</span><span>${p}</span></div>`)
+            .map(function(p) { return '<div class="perk-item"><span class="perk-dot">✓</span><span>' + p + '</span></div>'; })
             .join("");
     }
 
     function copyId() {
         navigator.clipboard.writeText(shortId)
-            .then(() => alert(`คัดลอก ID แล้ว: ${shortId}`))
-            .catch(() => alert(`ID ของคุณ: ${shortId}`));
+            .then(function() { alert("คัดลอก ID แล้ว: " + shortId); })
+            .catch(function() { alert("ID ของคุณ: " + shortId); });
     }
 
     function showQR() {
         document.getElementById("qr-modal").classList.add("show");
-        document.getElementById("qr-short-id").textContent = `ID: ${shortId}`;
-        QRCode.toCanvas(document.getElementById("qr-canvas"), currentUserId, {
-            width: 200, margin: 2,
-            color: { dark: "#000000", light: "#ffffff" }
-        });
+        document.getElementById("qr-short-id").textContent = "ID: " + shortId;
+        
+        var qrContainer = document.getElementById("qr-canvas");
+        qrContainer.innerHTML = "";
+        
+        setTimeout(function() {
+            try {
+                new QRCode(qrContainer, {
+                    text: currentUserId,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (err) {
+                qrContainer.innerHTML = '<p style="color:red;font-size:12px;">เกิดข้อผิดพลาด: ' + err.message + '</p>';
+            }
+        }, 100);
     }
 
     function closeQR() {
