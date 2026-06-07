@@ -221,6 +221,13 @@
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
+            
+            if (!liff.isInClient()) {
+                document.getElementById("loading").innerHTML = 
+                    '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มคูปองจาก Rich Menu</small></p>';
+                return;
+            }
+
             if (!liff.isLoggedIn()) {
                 liff.login();
                 return;
