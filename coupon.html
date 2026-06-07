@@ -208,15 +208,15 @@
 </div>
 
 <script>
-    const LIFF_ID = "2010298031-TOsCbkzl";
-    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    var LIFF_ID = "2010298031-TOsCbkzl";
+    var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    var { createClient } = supabase;
+    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let currentUserId = "";
-    let userData = null;
+    var currentUserId = "";
+    var userData = null;
 
     async function init() {
         try {
@@ -226,10 +226,10 @@
                 return;
             }
 
-            const profile = await liff.getProfile();
+            var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            const { data, error } = await db
+            var { data, error } = await db
                 .from("profiles")
                 .select("full_name, line_user_id, current_points")
                 .eq("line_user_id", currentUserId)
