@@ -131,6 +131,19 @@
             var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
+            var params = new URLSearchParams(window.location.search);
+            var file = params.get("file");
+
+            if (file === "coupon") {
+                window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/coupon.html";
+                return;
+            }
+
+            if (file === "benefits") {
+                window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/benefits.html";
+                return;
+            }
+
             var { data: existingUser, error: checkError } = await db
                 .from("profiles")
                 .select("line_user_id")
