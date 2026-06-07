@@ -48,56 +48,58 @@
         .tab-content { display: none; }
         .tab-content.show { display: block; }
 
-        /* Redeem Tab */
         .card {
             background: white; border-radius: 16px;
             padding: 20px; margin-bottom: 16px;
         }
+
         .stat-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 0; border-bottom: 1px solid #f0f0f0;
         }
         .stat-row:last-child { border-bottom: none; }
         .stat-label { font-size: 14px; color: #666; }
-        .stat-val   { font-size: 20px; font-weight: 700; color: #06c755; }
-
-        .redeem-form {
-            display: flex; gap: 8px; margin: 16px 0;
-        }
-        .amount-input {
-            flex: 1; padding: 12px; border: 1.5px solid #ddd;
-            border-radius: 10px; font-size: 18px; font-weight: 700;
-            text-align: center; outline: none;
-        }
-        .amount-input:focus { border-color: #06c755; }
+        .stat-val { font-size: 20px; font-weight: 700; color: #06c755; }
 
         .redeem-info {
             background: #f0fff4; border-left: 4px solid #06c755;
             padding: 12px; border-radius: 8px; font-size: 13px; color: #333;
-            margin-bottom: 12px;
+            margin: 12px 0;
         }
-        .redeem-btn {
-            width: 100%; padding: 14px; background: #06c755; color: white;
-            border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
-            cursor: pointer;
-        }
-        .redeem-btn:disabled { background: #aaa; cursor: not-allowed; }
 
-        /* Coupon Tab */
+        .form-label { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
+
+        .amount-input {
+            width: 100%; padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 18px; font-weight: 700;
+            text-align: center; outline: none; margin-bottom: 12px;
+        }
+        .amount-input:focus { border-color: #06c755; }
+
+        .points-preview {
+            background: #f8f8f8; padding: 12px; border-radius: 10px;
+            margin: 12px 0; text-align: center;
+        }
+        .points-preview-label { font-size: 12px; color: #999; }
+        .points-preview-val { font-size: 28px; font-weight: 700; color: #06c755; }
+
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+        }
+        .btn-redeem { background: #06c755; color: white; }
+        .btn-redeem:disabled { background: #aaa; cursor: not-allowed; }
+
         .coupon-list { display: flex; flex-direction: column; gap: 12px; }
+
         .coupon-card {
             background: linear-gradient(135deg, #ffd700, #ffed4e);
-            border-radius: 12px; padding: 16px;
-            color: #333; position: relative; overflow: hidden;
+            border-radius: 12px; padding: 16px; color: #333;
         }
-        .coupon-header {
-            font-size: 16px; font-weight: 700; margin-bottom: 6px;
-        }
-        .coupon-detail {
-            font-size: 12px; color: #555; margin: 4px 0;
-        }
+        .coupon-header { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+        .coupon-detail { font-size: 12px; color: #555; margin: 4px 0; }
         .coupon-status {
-            display: inline-block; padding: 3px 12px;
+            display: inline-block; padding: 4px 12px;
             border-radius: 99px; font-size: 11px; font-weight: 600;
             margin-top: 8px;
         }
@@ -105,38 +107,32 @@
         .status-expired { background: #e74c3c; color: white; }
         .status-used    { background: #999; color: white; }
 
-        .coupon-section-title {
+        .section-title {
             font-size: 15px; font-weight: 700; color: #333;
             margin: 20px 0 12px 0;
         }
 
-        .empty {
-            text-align: center; color: #999; padding: 30px 20px;
-            font-size: 14px;
-        }
-
-        /* History Tab */
         .timeline {
             position: relative; padding-left: 30px;
         }
         .timeline-item {
             position: relative; padding: 12px 0 12px 20px;
-            border-left: 2px solid #eee;
-            margin-bottom: 12px;
+            border-left: 2px solid #eee; margin-bottom: 12px;
         }
-        .timeline-item:last-child { border-left: none; }
         .timeline-dot {
             position: absolute; left: -8px; top: 16px;
             width: 12px; height: 12px; border-radius: 50%;
             background: white; border: 2px solid #06c755;
         }
-        .tx-type-earn   { color: #06c755; font-weight: 700; }
-        .tx-type-redeem { color: #e74c3c; font-weight: 700; }
-        .tx-date { font-size: 12px; color: #999; margin-top: 4px; }
         .tx-desc { font-size: 13px; color: #333; margin-bottom: 2px; }
+        .tx-date { font-size: 12px; color: #999; margin-top: 4px; }
+        .tx-points { font-weight: 700; margin-top: 2px; }
+        .tx-earn   { color: #06c755; }
+        .tx-redeem { color: #e74c3c; }
 
-        .error-msg { color: #e74c3c; font-size: 13px; text-align: center; margin-top: 8px; }
-        .success-msg { color: #06c755; font-size: 13px; text-align: center; margin-top: 8px; }
+        .empty { text-align: center; color: #999; padding: 30px 20px; font-size: 14px; }
+        .error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
+        .success { color: #06c755; font-size: 13px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -153,9 +149,9 @@
     </div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('redeem')">💰 แลกแต้ม</button>
-        <button class="tab-btn" onclick="switchTab('coupons')">🎟️ คูปองของฉัน</button>
-        <button class="tab-btn" onclick="switchTab('history')">📜 ประวัติแต้ม</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'redeem')">💰 แลกแต้ม</button>
+        <button class="tab-btn" onclick="switchTab(event, 'coupons')">🎟️ คูปองของฉัน</button>
+        <button class="tab-btn" onclick="switchTab(event, 'history')">📜 ประวัติแต้ม</button>
     </div>
 
     <!-- Tab 1: Redeem -->
@@ -168,55 +164,54 @@
         </div>
 
         <div class="card">
-            <div class="coupon-section-title">⚡ แลกแต้มเป็นคูปอง</div>
+            <div class="section-title">⚡ แลกแต้มเป็นคูปอง</div>
             <div class="redeem-info">
                 100 แต้ม = คูปองส่วนลด 50 บาท (ใช้ได้ 14 วัน)
             </div>
             
-            <label style="font-size:13px;color:#666;display:block;margin-bottom:8px;">
-                จำนวนแต้มที่ต้องการแลก
-            </label>
-            <div class="redeem-form">
-                <input type="number" id="redeem-amount" class="amount-input"
-                    placeholder="100" min="100" step="100" oninput="calcRedeemValue()">
+            <label class="form-label">จำนวนแต้มที่ต้องการแลก</label>
+            <input type="number" id="redeem-amount" class="amount-input"
+                placeholder="100" min="100" step="100" oninput="calcRedeemValue()">
+
+            <div class="points-preview">
+                <div class="points-preview-label">จะได้คูปอง</div>
+                <div class="points-preview-val" id="redeem-value">0</div>
+                <div class="points-preview-label">บาท</div>
             </div>
 
-            <div style="background:#f8f8f8;padding:12px;border-radius:10px;margin-bottom:12px;text-align:center;">
-                <div style="font-size:12px;color:#999;">จะได้คูปอง</div>
-                <div style="font-size:28px;font-weight:700;color:#06c755;" id="redeem-value">0</div>
-                <div style="font-size:12px;color:#999;">บาท</div>
-            </div>
-
-            <button class="redeem-btn" id="redeem-btn" onclick="redeemPoints()" disabled>
+            <button class="btn btn-redeem" id="redeem-btn" onclick="redeemPoints()" disabled>
                 แลกแต้มตอนนี้
             </button>
-            <p class="error-msg" id="redeem-error"></p>
-            <p class="success-msg" id="redeem-success"></p>
+            <div class="error" id="redeem-error"></div>
+            <div class="success" id="redeem-success"></div>
         </div>
     </div>
 
     <!-- Tab 2: Coupons -->
     <div id="coupons" class="tab-content">
-        <div class="coupon-section-title" id="active-title">🎉 พร้อมใช้งาน</div>
-        <div class="coupon-list" id="active-coupons"></div>
+        <div class="card">
+            <div class="section-title">🎉 พร้อมใช้งาน</div>
+            <div class="coupon-list" id="active-coupons"></div>
 
-        <div class="coupon-section-title" id="expired-title" style="margin-top:24px;">⏰ หมดอายุ/ใช้แล้ว</div>
-        <div class="coupon-list" id="expired-coupons"></div>
+            <div class="section-title" style="margin-top:24px;">⏰ หมดอายุ/ใช้แล้ว</div>
+            <div class="coupon-list" id="expired-coupons"></div>
+        </div>
     </div>
 
     <!-- Tab 3: History -->
     <div id="history" class="tab-content">
         <div class="card">
-            <div class="coupon-section-title">📅 ประวัติแต้มทั้งหมด</div>
+            <div class="section-title">📅 ประวัติแต้มทั้งหมด</div>
             <div class="timeline" id="tx-list"></div>
         </div>
     </div>
 </div>
 
 <script>
-    const LIFF_ID      = "2010298031-TOsCbkzl";
+    const LIFF_ID = "2010298031-TOsCbkzl";
     const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+
     const { createClient } = supabase;
     const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -226,7 +221,10 @@
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
 
             const profile = await liff.getProfile();
             currentUserId = profile.userId;
@@ -252,18 +250,18 @@
 
         } catch (err) {
             document.getElementById("loading").innerHTML =
-                `<p style="color:red">เกิดข้อผิดพลาด: ${err.message}</p>`;
+                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
         }
     }
 
-    function switchTab(tab) {
+    function switchTab(e, tabName) {
         document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("show"));
         document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
-        document.getElementById(tab).classList.add("show");
-        event.target.classList.add("active");
+        document.getElementById(tabName).classList.add("show");
+        e.target.classList.add("active");
     }
 
-    async function loadRedeemData() {
+    function loadRedeemData() {
         document.getElementById("current-points").textContent = 
             (userData.current_points || 0).toLocaleString();
     }
@@ -277,8 +275,14 @@
 
     async function redeemPoints() {
         const amount = parseInt(document.getElementById("redeem-amount").value) || 0;
-        if (amount < 100 || amount % 100 !== 0 || amount > userData.current_points) {
-            document.getElementById("redeem-error").textContent = "กรุณากรอกแต้มที่ถูกต้อง";
+        
+        if (amount < 100 || amount % 100 !== 0) {
+            document.getElementById("redeem-error").textContent = "กรุณากรอกแต้มเป็นจำนวน 100 ขึ้นไป";
+            return;
+        }
+
+        if (amount > userData.current_points) {
+            document.getElementById("redeem-error").textContent = "แต้มไม่เพียงพอ";
             return;
         }
 
@@ -295,8 +299,10 @@
             // 1. บันทึก transaction
             const { error: txErr } = await db.from("point_transactions").insert({
                 line_user_id: currentUserId,
-                points: -amount, exp: 0, type: "redeem",
-                description: `แลก ${amount} แต้ม เป็นคูปอง ${couponValue} บาท`,
+                points: -amount,
+                exp: 0,
+                type: "redeem",
+                description: "แลก " + amount + " แต้ม เป็นคูปอง " + couponValue + " บาท",
                 amount_spent: null
             });
             if (txErr) throw txErr;
@@ -322,7 +328,7 @@
             document.getElementById("redeem-amount").value = "";
             document.getElementById("redeem-value").textContent = "0";
             document.getElementById("redeem-success").textContent = 
-                `✅ แลกแต้มสำเร็จ! ได้คูปอง ${couponValue} บาท`;
+                "✅ แลกแต้มสำเร็จ! ได้คูปอง " + couponValue + " บาท";
 
             await loadCoupons();
             await loadHistory();
@@ -350,8 +356,9 @@
                 .order("created_at", { ascending: false });
 
             if (error || !data) {
-                document.getElementById("active-coupons").innerHTML = `<div class="empty">ยังไม่มีคูปอง</div>`;
-                document.getElementById("expired-coupons").innerHTML = ``;
+                document.getElementById("active-coupons").innerHTML = 
+                    '<div class="empty">ยังไม่มีคูปอง</div>';
+                document.getElementById("expired-coupons").innerHTML = '';
                 return;
             }
 
@@ -359,18 +366,24 @@
             const active = data.filter(c => c.status === "active" && new Date(c.expires_at) > now);
             const expired = data.filter(c => c.status === "used" || new Date(c.expires_at) <= now);
 
-            document.getElementById("active-title").style.display = active.length > 0 ? "block" : "none";
-            document.getElementById("active-coupons").innerHTML = active.length > 0
-                ? active.map(c => renderCoupon(c, true)).join("")
-                : `<div class="empty">ยังไม่มีคูปองพร้อมใช้งาน</div>`;
+            if (active.length > 0) {
+                document.getElementById("active-coupons").innerHTML = 
+                    active.map(c => renderCoupon(c, true)).join("");
+            } else {
+                document.getElementById("active-coupons").innerHTML = 
+                    '<div class="empty">ยังไม่มีคูปองพร้อมใช้งาน</div>';
+            }
 
-            document.getElementById("expired-title").style.display = expired.length > 0 ? "block" : "none";
-            document.getElementById("expired-coupons").innerHTML = expired.length > 0
-                ? expired.map(c => renderCoupon(c, false)).join("")
-                : ``;
+            if (expired.length > 0) {
+                document.getElementById("expired-coupons").innerHTML = 
+                    expired.map(c => renderCoupon(c, false)).join("");
+            } else {
+                document.getElementById("expired-coupons").innerHTML = '';
+            }
 
         } catch (err) {
-            document.getElementById("active-coupons").innerHTML = `<div class="empty">เกิดข้อผิดพลาด</div>`;
+            document.getElementById("active-coupons").innerHTML = 
+                '<div class="empty">เกิดข้อผิดพลาด</div>';
         }
     }
 
@@ -383,11 +396,11 @@
         const statusText = isActive ? "พร้อมใช้งาน" : 
                           coupon.status === "used" ? "ใช้แล้ว" : "หมดอายุ";
 
-        return `<div class="coupon-card">
-            <div class="coupon-header">ส่วนลด ${coupon.discount_value.toLocaleString()} บาท</div>
-            <div class="coupon-detail">📅 หมดอายุ: ${expiryDate}</div>
-            <span class="coupon-status ${statusClass}">${statusText}</span>
-        </div>`;
+        return '<div class="coupon-card">' +
+            '<div class="coupon-header">ส่วนลด ' + coupon.discount_value.toLocaleString() + ' บาท</div>' +
+            '<div class="coupon-detail">📅 หมดอายุ: ' + expiryDate + '</div>' +
+            '<span class="coupon-status ' + statusClass + '">' + statusText + '</span>' +
+            '</div>';
     }
 
     async function loadHistory() {
@@ -400,7 +413,8 @@
                 .limit(50);
 
             if (error || !data || data.length === 0) {
-                document.getElementById("tx-list").innerHTML = `<div class="empty">ยังไม่มีประวัติ</div>`;
+                document.getElementById("tx-list").innerHTML = 
+                    '<div class="empty">ยังไม่มีประวัติ</div>';
                 return;
             }
 
@@ -410,18 +424,22 @@
                     hour: "2-digit", minute: "2-digit"
                 });
                 const isEarn = tx.type === "earn";
-                return `<div class="timeline-item">
-                    <div class="timeline-dot"></div>
-                    <div class="tx-desc">${tx.description || "-"}</div>
-                    <div class="tx-date">${date}</div>
-                    <div class="${isEarn ? 'tx-type-earn' : 'tx-type-redeem'}">
-                        ${isEarn ? "+" : "-"}${Math.abs(tx.points).toLocaleString()} แต้ม
-                    </div>
-                </div>`;
+                const pointsClass = isEarn ? "tx-earn" : "tx-redeem";
+                const pointsSymbol = isEarn ? "+" : "-";
+
+                return '<div class="timeline-item">' +
+                    '<div class="timeline-dot"></div>' +
+                    '<div class="tx-desc">' + (tx.description || "-") + '</div>' +
+                    '<div class="tx-date">' + date + '</div>' +
+                    '<div class="tx-points ' + pointsClass + '">' + 
+                        pointsSymbol + Math.abs(tx.points).toLocaleString() + ' แต้ม' +
+                    '</div>' +
+                    '</div>';
             }).join("");
 
         } catch (err) {
-            document.getElementById("tx-list").innerHTML = `<div class="empty">เกิดข้อผิดพลาด</div>`;
+            document.getElementById("tx-list").innerHTML = 
+                '<div class="empty">เกิดข้อผิดพลาด</div>';
         }
     }
 
