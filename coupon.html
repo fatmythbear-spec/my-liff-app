@@ -236,7 +236,7 @@
                 .single();
 
             if (error || !data) {
-                alert("ไม่พบข้อมูลสมาชิก");
+                window.location.href = "https://liff.line.me/2010298031-TOsCbkzl";
                 return;
             }
 
@@ -255,8 +255,12 @@
     }
 
     function switchTab(e, tabName) {
-        document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("show"));
-        document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(function(el) {
+            el.classList.remove("show");
+        });
+        document.querySelectorAll(".tab-btn").forEach(function(el) {
+            el.classList.remove("active");
+        });
         document.getElementById(tabName).classList.add("show");
         e.target.classList.add("active");
     }
@@ -267,14 +271,14 @@
     }
 
     function calcRedeemValue() {
-        const amount = parseInt(document.getElementById("redeem-amount").value) || 0;
-        const value = (amount / 100) * 50;
+        var amount = parseInt(document.getElementById("redeem-amount").value) || 0;
+        var value = (amount / 100) * 50;
         document.getElementById("redeem-value").textContent = value.toLocaleString();
         document.getElementById("redeem-btn").disabled = amount < 100 || amount % 100 !== 0;
     }
 
     async function redeemPoints() {
-        const amount = parseInt(document.getElementById("redeem-amount").value) || 0;
+        var amount = parseInt(document.getElementById("redeem-amount").value) || 0;
         
         if (amount < 100 || amount % 100 !== 0) {
             document.getElementById("redeem-error").textContent = "กรุณากรอกแต้มเป็นจำนวน 100 ขึ้นไป";
@@ -292,12 +296,11 @@
         document.getElementById("redeem-success").textContent = "";
 
         try {
-            const couponValue = (amount / 100) * 50;
-            const expiresAt = new Date();
+            var couponValue = (amount / 100) * 50;
+            var expiresAt = new Date();
             expiresAt.setDate(expiresAt.getDate() + 14);
 
-            // 1. บันทึก transaction
-            const { error: txErr } = await db.from("point_transactions").insert({
+            var { error: txErr } = await db.from("point_transactions").insert({
                 line_user_id: currentUserId,
                 points: -amount,
                 exp: 0,
@@ -307,8 +310,7 @@
             });
             if (txErr) throw txErr;
 
-            // 2. สร้าง coupon
-            const { error: cpErr } = await db.from("user_coupons").insert({
+            var { error: cpErr } = await db.from("user_coupons").insert({
                 line_user_id: currentUserId,
                 discount_value: couponValue,
                 status: "active",
@@ -316,9 +318,8 @@
             });
             if (cpErr) throw cpErr;
 
-            // 3. อัปเดต points
-            const newPoints = userData.current_points - amount;
-            const { error: upErr } = await db.from("profiles")
+            var newPoints = userData.current_points - amount;
+            var { error: upErr } = await db.from("profiles")
                 .update({ current_points: newPoints })
                 .eq("line_user_id", currentUserId);
             if (upErr) throw upErr;
@@ -333,7 +334,7 @@
             await loadCoupons();
             await loadHistory();
 
-            setTimeout(() => {
+            setTimeout(function() {
                 document.getElementById("redeem-amount").value = "";
                 document.getElementById("redeem-success").textContent = "";
                 calcRedeemValue();
@@ -349,7 +350,7 @@
 
     async function loadCoupons() {
         try {
-            const { data, error } = await db
+            var { data, error } = await db
                 .from("user_coupons")
                 .select("*")
                 .eq("line_user_id", currentUserId)
@@ -362,13 +363,17 @@
                 return;
             }
 
-            const now = new Date();
-            const active = data.filter(c => c.status === "active" && new Date(c.expires_at) > now);
-            const expired = data.filter(c => c.status === "used" || new Date(c.expires_at) <= now);
+            var now = new Date();
+            var active = data.filter(function(c) {
+                return c.status === "active" && new Date(c.expires_at) > now;
+            });
+            var expired = data.filter(function(c) {
+                return c.status === "used" || new Date(c.expires_at) <= now;
+            });
 
             if (active.length > 0) {
                 document.getElementById("active-coupons").innerHTML = 
-                    active.map(c => renderCoupon(c, true)).join("");
+                    active.map(function(c) { return renderCoupon(c, true); }).join("");
             } else {
                 document.getElementById("active-coupons").innerHTML = 
                     '<div class="empty">ยังไม่มีคูปองพร้อมใช้งาน</div>';
@@ -376,7 +381,7 @@
 
             if (expired.length > 0) {
                 document.getElementById("expired-coupons").innerHTML = 
-                    expired.map(c => renderCoupon(c, false)).join("");
+                    expired.map(function(c) { return renderCoupon(c, false); }).join("");
             } else {
                 document.getElementById("expired-coupons").innerHTML = '';
             }
@@ -388,12 +393,12 @@
     }
 
     function renderCoupon(coupon, isActive) {
-        const expiryDate = new Date(coupon.expires_at).toLocaleDateString("th-TH", {
+        var expiryDate = new Date(coupon.expires_at).toLocaleDateString("th-TH", {
             day: "numeric", month: "short", year: "numeric"
         });
-        const statusClass = isActive ? "status-active" : 
+        var statusClass = isActive ? "status-active" : 
                           coupon.status === "used" ? "status-used" : "status-expired";
-        const statusText = isActive ? "พร้อมใช้งาน" : 
+        var statusText = isActive ? "พร้อมใช้งาน" : 
                           coupon.status === "used" ? "ใช้แล้ว" : "หมดอายุ";
 
         return '<div class="coupon-card">' +
@@ -405,7 +410,7 @@
 
     async function loadHistory() {
         try {
-            const { data, error } = await db
+            var { data, error } = await db
                 .from("point_transactions")
                 .select("*")
                 .eq("line_user_id", currentUserId)
@@ -418,14 +423,14 @@
                 return;
             }
 
-            document.getElementById("tx-list").innerHTML = data.map(tx => {
-                const date = new Date(tx.created_at).toLocaleDateString("th-TH", {
+            document.getElementById("tx-list").innerHTML = data.map(function(tx) {
+                var date = new Date(tx.created_at).toLocaleDateString("th-TH", {
                     day: "numeric", month: "short", year: "numeric",
                     hour: "2-digit", minute: "2-digit"
                 });
-                const isEarn = tx.type === "earn";
-                const pointsClass = isEarn ? "tx-earn" : "tx-redeem";
-                const pointsSymbol = isEarn ? "+" : "-";
+                var isEarn = tx.type === "earn";
+                var pointsClass = isEarn ? "tx-earn" : "tx-redeem";
+                var pointsSymbol = isEarn ? "+" : "-";
 
                 return '<div class="timeline-item">' +
                     '<div class="timeline-dot"></div>' +
