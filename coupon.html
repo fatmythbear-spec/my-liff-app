@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คูปอง - Fat Myth Bear</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+
+        #loading {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; gap: 12px; color: #666;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #ddd;
+            border-top-color: #06c755; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #app { display: none; padding: 16px; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #2d3561);
+            color: white; border-radius: 16px; padding: 20px;
+            margin-bottom: 16px;
+        }
+        .header-title { font-size: 22px; font-weight: 700; }
+        .header-sub   { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 16px;
+            background: white; border-radius: 12px; padding: 6px;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; color: #999; transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #06c755; color: white;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.show { display: block; }
+
+        /* Redeem Tab */
+        .card {
+            background: white; border-radius: 16px;
+            padding: 20px; margin-bottom: 16px;
+        }
+        .stat-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { font-size: 14px; color: #666; }
+        .stat-val   { font-size: 20px; font-weight: 700; color: #06c755; }
+
+        .redeem-form {
+            display: flex; gap: 8px; margin: 16px 0;
+        }
+        .amount-input {
+            flex: 1; padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 18px; font-weight: 700;
+            text-align: center; outline: none;
+        }
+        .amount-input:focus { border-color: #06c755; }
+
+        .redeem-info {
+            background: #f0fff4; border-left: 4px solid #06c755;
+            padding: 12px; border-radius: 8px; font-size: 13px; color: #333;
+            margin-bottom: 12px;
+        }
+        .redeem-btn {
+            width: 100%; padding: 14px; background: #06c755; color: white;
+            border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
+            cursor: pointer;
+        }
+        .redeem-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        /* Coupon Tab */
+        .coupon-list { display: flex; flex-direction: column; gap: 12px; }
+        .coupon-card {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border-radius: 12px; padding: 16px;
+            color: #333; position: relative; overflow: hidden;
+        }
+        .coupon-header {
+            font-size: 16px; font-weight: 700; margin-bottom: 6px;
+        }
+        .coupon-detail {
+            font-size: 12px; color: #555; margin: 4px 0;
+        }
+        .coupon-status {
+            display: inline-block; padding: 3px 12px;
+            border-radius: 99px; font-size: 11px; font-weight: 600;
+            margin-top: 8px;
+        }
+        .status-active  { background: #06c755; color: white; }
+        .status-expired { background: #e74c3c; color: white; }
+        .status-used    { background: #999; color: white; }
+
+        .coupon-section-title {
+            font-size: 15px; font-weight: 700; color: #333;
+            margin: 20px 0 12px 0;
+        }
+
+        .empty {
+            text-align: center; color: #999; padding: 30px 20px;
+            font-size: 14px;
+        }
+
+        /* History Tab */
+        .timeline {
+            position: relative; padding-left: 30px;
+        }
+        .timeline-item {
+            position: relative; padding: 12px 0 12px 20px;
+            border-left: 2px solid #eee;
+            margin-bottom: 12px;
+        }
+        .timeline-item:last-child { border-left: none; }
+        .timeline-dot {
+            position: absolute; left: -8px; top: 16px;
+            width: 12px; height: 12px; border-radius: 50%;
+            background: white; border: 2px solid #06c755;
+        }
+        .tx-type-earn   { color: #06c755; font-weight: 700; }
+        .tx-type-redeem { color: #e74c3c; font-weight: 700; }
+        .tx-date { font-size: 12px; color: #999; margin-top: 4px; }
+        .tx-desc { font-size: 13px; color: #333; margin-bottom: 2px; }
+
+        .error-msg { color: #e74c3c; font-size: 13px; text-align: center; margin-top: 8px; }
+        .success-msg { color: #06c755; font-size: 13px; text-align: center; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+<div id="loading">
+    <div class="spinner"></div>
+    <p>กำลังโหลดคูปอง...</p>
+</div>
+
+<div id="app">
+    <div class="header">
+        <div class="header-title">🎁 คูปองและแต้ม</div>
+        <div class="header-sub">Fat Myth Bear Bingsu Cafe</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('redeem')">💰 แลกแต้ม</button>
+        <button class="tab-btn" onclick="switchTab('coupons')">🎟️ คูปองของฉัน</button>
+        <button class="tab-btn" onclick="switchTab('history')">📜 ประวัติแต้ม</button>
+    </div>
+
+    <!-- Tab 1: Redeem -->
+    <div id="redeem" class="tab-content show">
+        <div class="card">
+            <div class="stat-row">
+                <div class="stat-label">แต้มสะสมปัจจุบัน</div>
+                <div class="stat-val" id="current-points">0</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="coupon-section-title">⚡ แลกแต้มเป็นคูปอง</div>
+            <div class="redeem-info">
+                100 แต้ม = คูปองส่วนลด 50 บาท (ใช้ได้ 14 วัน)
+            </div>
+            
+            <label style="font-size:13px;color:#666;display:block;margin-bottom:8px;">
+                จำนวนแต้มที่ต้องการแลก
+            </label>
+            <div class="redeem-form">
+                <input type="number" id="redeem-amount" class="amount-input"
+                    placeholder="100" min="100" step="100" oninput="calcRedeemValue()">
+            </div>
+
+            <div style="background:#f8f8f8;padding:12px;border-radius:10px;margin-bottom:12px;text-align:center;">
+                <div style="font-size:12px;color:#999;">จะได้คูปอง</div>
+                <div style="font-size:28px;font-weight:700;color:#06c755;" id="redeem-value">0</div>
+                <div style="font-size:12px;color:#999;">บาท</div>
+            </div>
+
+            <button class="redeem-btn" id="redeem-btn" onclick="redeemPoints()" disabled>
+                แลกแต้มตอนนี้
+            </button>
+            <p class="error-msg" id="redeem-error"></p>
+            <p class="success-msg" id="redeem-success"></p>
+        </div>
+    </div>
+
+    <!-- Tab 2: Coupons -->
+    <div id="coupons" class="tab-content">
+        <div class="coupon-section-title" id="active-title">🎉 พร้อมใช้งาน</div>
+        <div class="coupon-list" id="active-coupons"></div>
+
+        <div class="coupon-section-title" id="expired-title" style="margin-top:24px;">⏰ หมดอายุ/ใช้แล้ว</div>
+        <div class="coupon-list" id="expired-coupons"></div>
+    </div>
+
+    <!-- Tab 3: History -->
+    <div id="history" class="tab-content">
+        <div class="card">
+            <div class="coupon-section-title">📅 ประวัติแต้มทั้งหมด</div>
+            <div class="timeline" id="tx-list"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const LIFF_ID      = "2010298031-TOsCbkzl";
+    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUserId = "";
+    let userData = null;
+
+    async function init() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) { liff.login(); return; }
+
+            const profile = await liff.getProfile();
+            currentUserId = profile.userId;
+
+            const { data, error } = await db
+                .from("profiles")
+                .select("full_name, line_user_id, current_points")
+                .eq("line_user_id", currentUserId)
+                .single();
+
+            if (error || !data) {
+                alert("ไม่พบข้อมูลสมาชิก");
+                return;
+            }
+
+            userData = data;
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("app").style.display = "block";
+
+            loadRedeemData();
+            loadCoupons();
+            loadHistory();
+
+        } catch (err) {
+            document.getElementById("loading").innerHTML =
+                `<p style="color:red">เกิดข้อผิดพลาด: ${err.message}</p>`;
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("show"));
+        document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+        document.getElementById(tab).classList.add("show");
+        event.target.classList.add("active");
+    }
+
+    async function loadRedeemData() {
+        document.getElementById("current-points").textContent = 
+            (userData.current_points || 0).toLocaleString();
+    }
+
+    function calcRedeemValue() {
+        const amount = parseInt(document.getElementById("redeem-amount").value) || 0;
+        const value = (amount / 100) * 50;
+        document.getElementById("redeem-value").textContent = value.toLocaleString();
+        document.getElementById("redeem-btn").disabled = amount < 100 || amount % 100 !== 0;
+    }
+
+    async function redeemPoints() {
+        const amount = parseInt(document.getElementById("redeem-amount").value) || 0;
+        if (amount < 100 || amount % 100 !== 0 || amount > userData.current_points) {
+            document.getElementById("redeem-error").textContent = "กรุณากรอกแต้มที่ถูกต้อง";
+            return;
+        }
+
+        document.getElementById("redeem-btn").disabled = true;
+        document.getElementById("redeem-btn").textContent = "กำลังแลก...";
+        document.getElementById("redeem-error").textContent = "";
+        document.getElementById("redeem-success").textContent = "";
+
+        try {
+            const couponValue = (amount / 100) * 50;
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 14);
+
+            // 1. บันทึก transaction
+            const { error: txErr } = await db.from("point_transactions").insert({
+                line_user_id: currentUserId,
+                points: -amount, exp: 0, type: "redeem",
+                description: `แลก ${amount} แต้ม เป็นคูปอง ${couponValue} บาท`,
+                amount_spent: null
+            });
+            if (txErr) throw txErr;
+
+            // 2. สร้าง coupon
+            const { error: cpErr } = await db.from("user_coupons").insert({
+                line_user_id: currentUserId,
+                discount_value: couponValue,
+                status: "active",
+                expires_at: expiresAt.toISOString()
+            });
+            if (cpErr) throw cpErr;
+
+            // 3. อัปเดต points
+            const newPoints = userData.current_points - amount;
+            const { error: upErr } = await db.from("profiles")
+                .update({ current_points: newPoints })
+                .eq("line_user_id", currentUserId);
+            if (upErr) throw upErr;
+
+            userData.current_points = newPoints;
+            document.getElementById("current-points").textContent = newPoints.toLocaleString();
+            document.getElementById("redeem-amount").value = "";
+            document.getElementById("redeem-value").textContent = "0";
+            document.getElementById("redeem-success").textContent = 
+                `✅ แลกแต้มสำเร็จ! ได้คูปอง ${couponValue} บาท`;
+
+            await loadCoupons();
+            await loadHistory();
+
+            setTimeout(() => {
+                document.getElementById("redeem-amount").value = "";
+                document.getElementById("redeem-success").textContent = "";
+                calcRedeemValue();
+            }, 2000);
+
+        } catch (err) {
+            document.getElementById("redeem-error").textContent = "แลกไม่สำเร็จ: " + err.message;
+        } finally {
+            document.getElementById("redeem-btn").disabled = false;
+            document.getElementById("redeem-btn").textContent = "แลกแต้มตอนนี้";
+        }
+    }
+
+    async function loadCoupons() {
+        try {
+            const { data, error } = await db
+                .from("user_coupons")
+                .select("*")
+                .eq("line_user_id", currentUserId)
+                .order("created_at", { ascending: false });
+
+            if (error || !data) {
+                document.getElementById("active-coupons").innerHTML = `<div class="empty">ยังไม่มีคูปอง</div>`;
+                document.getElementById("expired-coupons").innerHTML = ``;
+                return;
+            }
+
+            const now = new Date();
+            const active = data.filter(c => c.status === "active" && new Date(c.expires_at) > now);
+            const expired = data.filter(c => c.status === "used" || new Date(c.expires_at) <= now);
+
+            document.getElementById("active-title").style.display = active.length > 0 ? "block" : "none";
+            document.getElementById("active-coupons").innerHTML = active.length > 0
+                ? active.map(c => renderCoupon(c, true)).join("")
+                : `<div class="empty">ยังไม่มีคูปองพร้อมใช้งาน</div>`;
+
+            document.getElementById("expired-title").style.display = expired.length > 0 ? "block" : "none";
+            document.getElementById("expired-coupons").innerHTML = expired.length > 0
+                ? expired.map(c => renderCoupon(c, false)).join("")
+                : ``;
+
+        } catch (err) {
+            document.getElementById("active-coupons").innerHTML = `<div class="empty">เกิดข้อผิดพลาด</div>`;
+        }
+    }
+
+    function renderCoupon(coupon, isActive) {
+        const expiryDate = new Date(coupon.expires_at).toLocaleDateString("th-TH", {
+            day: "numeric", month: "short", year: "numeric"
+        });
+        const statusClass = isActive ? "status-active" : 
+                          coupon.status === "used" ? "status-used" : "status-expired";
+        const statusText = isActive ? "พร้อมใช้งาน" : 
+                          coupon.status === "used" ? "ใช้แล้ว" : "หมดอายุ";
+
+        return `<div class="coupon-card">
+            <div class="coupon-header">ส่วนลด ${coupon.discount_value.toLocaleString()} บาท</div>
+            <div class="coupon-detail">📅 หมดอายุ: ${expiryDate}</div>
+            <span class="coupon-status ${statusClass}">${statusText}</span>
+        </div>`;
+    }
+
+    async function loadHistory() {
+        try {
+            const { data, error } = await db
+                .from("point_transactions")
+                .select("*")
+                .eq("line_user_id", currentUserId)
+                .order("created_at", { ascending: false })
+                .limit(50);
+
+            if (error || !data || data.length === 0) {
+                document.getElementById("tx-list").innerHTML = `<div class="empty">ยังไม่มีประวัติ</div>`;
+                return;
+            }
+
+            document.getElementById("tx-list").innerHTML = data.map(tx => {
+                const date = new Date(tx.created_at).toLocaleDateString("th-TH", {
+                    day: "numeric", month: "short", year: "numeric",
+                    hour: "2-digit", minute: "2-digit"
+                });
+                const isEarn = tx.type === "earn";
+                return `<div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="tx-desc">${tx.description || "-"}</div>
+                    <div class="tx-date">${date}</div>
+                    <div class="${isEarn ? 'tx-type-earn' : 'tx-type-redeem'}">
+                        ${isEarn ? "+" : "-"}${Math.abs(tx.points).toLocaleString()} แต้ม
+                    </div>
+                </div>`;
+            }).join("");
+
+        } catch (err) {
+            document.getElementById("tx-list").innerHTML = `<div class="empty">เกิดข้อผิดพลาด</div>`;
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
