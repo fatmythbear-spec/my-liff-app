@@ -3,124 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สมัครสมาชิก Fat Myth Bear</title>
+    <title>สมัครสมาชิก - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Kanit', sans-serif; background-color: #f4f4f9; padding: 20px; text-align: center; }
-        .container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        h2 { color: #333; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background-color: #06c755; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
-        button:disabled { background-color: #aaa; cursor: not-allowed; }
-        .msg { margin-top: 12px; font-size: 14px; color: #666; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+
+        #loading {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; gap: 12px; color: #666;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #ddd;
+            border-top-color: #06c755; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #app { display: none; padding: 16px; }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e, #2d3561);
+            color: white; border-radius: 16px; padding: 20px;
+            margin-bottom: 16px; text-align: center;
+        }
+        .header-title { font-size: 24px; font-weight: 700; }
+        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+        .card {
+            background: white; border-radius: 16px;
+            padding: 20px; margin-bottom: 16px;
+        }
+
+        .card-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 12px; }
+
+        .form-group {
+            display: flex; flex-direction: column;
+            margin-bottom: 16px;
+        }
+        .form-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px; }
+        .form-input {
+            padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 16px; outline: none;
+        }
+        .form-input:focus { border-color: #06c755; }
+
+        .register-btn {
+            width: 100%; padding: 14px; background: #06c755; color: white;
+            border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
+            cursor: pointer; margin-top: 8px;
+        }
+        .register-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 12px; text-align: center; }
+        .success-msg { color: #06c755; font-size: 13px; margin-top: 12px; text-align: center; }
+
+        .info-box {
+            background: #f0fff4; border-left: 4px solid #06c755;
+            padding: 12px; border-radius: 8px; font-size: 13px; color: #333;
+            margin-bottom: 16px;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>สมัครสมาชิก</h2>
-    <p>กรอกข้อมูลเพื่อรับสิทธิพิเศษจาก Fat Myth Bear</p>
-    <input type="text" id="name" placeholder="ชื่อ-นามสกุล">
-    <input type="tel" id="tel" placeholder="เบอร์โทรศัพท์">
-    <button id="submit-btn" onclick="submitForm()" disabled>กำลังเตรียมระบบ...</button>
-    <p class="msg" id="msg"></p>
+
+<div id="loading">
+    <div class="spinner"></div>
+    <p>กำลังโหลด...</p>
+</div>
+
+<div id="app">
+    <div class="header">
+        <div class="header-title">🎉 ยินดีต้อนรับ</div>
+        <div class="header-sub">Fat Myth Bear Bingsu Cafe</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📝 สมัครสมาชิกแบบดิจิทัล</div>
+        
+        <div class="info-box">
+            ✓ สะสมแต้มทุกครั้งที่ซื้อ<br>
+            ✓ แลกคูปองส่วนลด<br>
+            ✓ ชมสิทธิ์พิเศษตามระดับยศ
+        </div>
+
+        <form onsubmit="return false;">
+            <div class="form-group">
+                <label class="form-label">ชื่อ-นามสกุล</label>
+                <input type="text" id="full-name" class="form-input" placeholder="เช่น สมชาย ใจดี">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">เบอร์โทรศัพท์</label>
+                <input type="tel" id="tel" class="form-input" placeholder="เช่น 0812345678">
+            </div>
+
+            <button type="button" class="register-btn" id="register-btn" onclick="registerMember()">
+                ยืนยันสมัครสมาชิก
+            </button>
+
+            <div class="error-msg" id="error-msg"></div>
+            <div class="success-msg" id="success-msg"></div>
+        </form>
+    </div>
 </div>
 
 <script>
-    const LIFF_ID = "2010298031-TOsCbkzl";
-    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    var LIFF_ID = "2010298031-TOsCbkzl";
+    var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    const btn = document.getElementById('submit-btn');
-    const msg = document.getElementById('msg');
+    var { createClient } = supabase;
+    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ── 1. Init LIFF และ Login อัตโนมัติ ──
-    liff.init({ liffId: LIFF_ID })
-        .then(() => {
+    var currentUserId = "";
+
+    async function init() {
+        try {
+            await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
-                liff.login(); // redirect ไป LINE login แล้วกลับมา
+                liff.login();
                 return;
             }
-            // พร้อมใช้งาน
-            btn.disabled = false;
-            btn.textContent = "ยืนยันการสมัคร";
-        })
-        .catch((err) => {
-            msg.textContent = "เกิดข้อผิดพลาด: " + err.message;
-        });
 
-    // ── 2. Submit ──
-    async function submitForm() {
-        const name = document.getElementById('name').value.trim();
-        const tel = document.getElementById('tel').value.trim();
+            var profile = await liff.getProfile();
+            currentUserId = profile.userId;
 
-        if (!name || !tel) {
-            msg.textContent = "⚠️ กรุณากรอกชื่อและเบอร์โทรศัพท์ให้ครบ";
+            var { data: existingUser, error: checkError } = await db
+                .from("profiles")
+                .select("line_user_id")
+                .eq("line_user_id", currentUserId)
+                .single();
+
+            if (existingUser && !checkError) {
+                window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/member.html";
+                return;
+            }
+
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("app").style.display = "block";
+
+        } catch (err) {
+            document.getElementById("loading").innerHTML =
+                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
+        }
+    }
+
+    async function registerMember() {
+        var fullName = document.getElementById("full-name").value.trim();
+        var tel = document.getElementById("tel").value.trim();
+
+        if (!fullName || !tel) {
+            document.getElementById("error-msg").textContent = "กรุณากรอกข้อมูลให้ครบ";
             return;
         }
 
-        btn.disabled = true;
-        btn.textContent = "กำลังบันทึก...";
-        msg.textContent = "";
+        document.getElementById("register-btn").disabled = true;
+        document.getElementById("register-btn").textContent = "กำลังสมัคร...";
+        document.getElementById("error-msg").textContent = "";
 
         try {
-            const profile = await liff.getProfile();
+            var { error } = await db.from("profiles").insert({
+                line_user_id: currentUserId,
+                full_name: fullName,
+                tel: tel,
+                role: "Customer",
+                current_points: 0,
+                current_exp: 0,
+                tier: "Bronze"
+            });
 
-            // ── เช็คก่อนว่าสมัครแล้วหรือยัง ──
-            const checkRes = await fetch(
-                `${SUPABASE_URL}/rest/v1/profiles?line_user_id=eq.${profile.userId}&select=line_user_id`,
-                {
-                    headers: {
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": "Bearer " + SUPABASE_ANON_KEY
-                    }
+            if (error) {
+                if (error.message.includes("duplicate")) {
+                    document.getElementById("error-msg").textContent = "คุณเป็นสมาชิกแล้ว";
+                } else {
+                    document.getElementById("error-msg").textContent = "สมัครไม่สำเร็จ: " + error.message;
                 }
-            );
-            const existing = await checkRes.json();
-
-            if (existing.length > 0) {
-                msg.textContent = "✅ คุณเป็นสมาชิกอยู่แล้ว!";
-                btn.disabled = false;
-                btn.textContent = "ยืนยันการสมัคร";
+                document.getElementById("register-btn").disabled = false;
+                document.getElementById("register-btn").textContent = "ยืนยันสมัครสมาชิก";
                 return;
             }
 
-            // ── บันทึกลง Supabase ──
-            const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/profiles`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": "Bearer " + SUPABASE_ANON_KEY,
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({
-                        line_user_id: profile.userId,
-                        full_name: name,
-                        tel: tel,
-                        role: "Customer"
-                    })
-                }
-            );
+            document.getElementById("success-msg").textContent = "✅ สมัครสำเร็จ! กำลังไปหน้าบัตรสมาชิก...";
 
-            if (response.ok) {
-                msg.textContent = "🎉 สมัครสมาชิกสำเร็จ!";
-                btn.textContent = "สำเร็จแล้ว";
-                setTimeout(() => liff.closeWindow(), 1500);
-            } else {
-                const err = await response.json();
-                msg.textContent = "❌ เกิดข้อผิดพลาด: " + (err.message || JSON.stringify(err));
-                btn.disabled = false;
-                btn.textContent = "ยืนยันการสมัคร";
-            }
+            setTimeout(function() {
+                window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/member.html";
+            }, 1500);
 
         } catch (err) {
-            msg.textContent = "❌ ไม่สามารถเชื่อมต่อระบบได้: " + err.message;
-            btn.disabled = false;
-            btn.textContent = "ยืนยันการสมัคร";
+            document.getElementById("error-msg").textContent = "เกิดข้อผิดพลาด: " + err.message;
+            document.getElementById("register-btn").disabled = false;
+            document.getElementById("register-btn").textContent = "ยืนยันสมัครสมาชิก";
         }
     }
+
+    init();
 </script>
 </body>
 </html>
