@@ -6,6 +6,7 @@
     <title>คูปอง - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
@@ -30,7 +31,7 @@
             margin-bottom: 16px;
         }
         .header-title { font-size: 22px; font-weight: 700; }
-        .header-sub   { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
 
         .tabs {
             display: flex; gap: 8px; margin-bottom: 16px;
@@ -89,13 +90,28 @@
         }
         .btn-redeem { background: #06c755; color: white; }
         .btn-redeem:disabled { background: #aaa; cursor: not-allowed; }
+        .btn-use { background: #1a1a2e; color: white; }
 
         .coupon-list { display: flex; flex-direction: column; gap: 12px; }
 
         .coupon-card {
-            background: linear-gradient(135deg, #ffd700, #ffed4e);
             border-radius: 12px; padding: 16px; color: #333;
+            border: 1.5px solid #ddd;
         }
+        .coupon-active {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            border-color: #ffd700;
+        }
+        .coupon-used {
+            background: #f0f0f0;
+            border-color: #ddd;
+            opacity: 0.6;
+        }
+        .coupon-expired {
+            background: #ffe0e0;
+            border-color: #e74c3c;
+        }
+
         .coupon-header { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
         .coupon-detail { font-size: 12px; color: #555; margin: 4px 0; }
         .coupon-status {
@@ -106,6 +122,23 @@
         .status-active  { background: #06c755; color: white; }
         .status-expired { background: #e74c3c; color: white; }
         .status-used    { background: #999; color: white; }
+
+        .coupon-buttons {
+            display: flex; gap: 8px; margin-top: 10px;
+        }
+        .coupon-btn {
+            flex: 1; padding: 10px; border: none; border-radius: 8px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+        }
+        .coupon-btn-show {
+            background: #1a1a2e; color: white;
+        }
+        .coupon-btn-use {
+            background: #06c755; color: white;
+        }
+        .coupon-btn:disabled {
+            background: #ccc; cursor: not-allowed;
+        }
 
         .section-title {
             font-size: 15px; font-weight: 700; color: #333;
@@ -133,6 +166,33 @@
         .empty { text-align: center; color: #999; padding: 30px 20px; font-size: 14px; }
         .error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
         .success { color: #06c755; font-size: 13px; margin-top: 8px; }
+
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); z-index: 999;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 20px;
+            padding: 28px; text-align: center; width: 90%; max-width: 300px;
+        }
+        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #333; }
+        .modal-id    { font-size: 13px; color: #999; margin-bottom: 16px; }
+        .qr-container {
+            background: white; padding: 16px; border-radius: 12px;
+            margin-bottom: 16px; display: flex; justify-content: center;
+            align-items: center;
+        }
+        .qr-container canvas {
+            max-width: 100%;
+            height: auto;
+        }
+        .modal-close {
+            margin-top: 16px; width: 100%; padding: 12px;
+            background: #f0f0f0; border: none; border-radius: 10px;
+            font-size: 15px; cursor: pointer; color: #333;
+        }
     </style>
 </head>
 <body>
@@ -166,7 +226,7 @@
         <div class="card">
             <div class="section-title">⚡ แลกแต้มเป็นคูปอง</div>
             <div class="redeem-info">
-                100 แต้ม = คูปองส่วนลด 50 บาท (ใช้ได้ 14 วัน)
+                100 แต้ม = คูปองส่วนลด 50 บาท (ใช้ได้ 7 วัน)
             </div>
             
             <label class="form-label">จำนวนแต้มที่ต้องการแลก</label>
@@ -207,6 +267,19 @@
     </div>
 </div>
 
+<!-- QR Modal for Coupon -->
+<div class="modal-overlay" id="qr-modal">
+    <div class="modal-box">
+        <div class="modal-title">QR Code คูปอง</div>
+        <div class="modal-id" id="qr-coupon-id"></div>
+        <div class="qr-container">
+            <div id="qr-canvas"></div>
+        </div>
+        <p style="font-size:12px;color:#666;margin:8px 0;">แสดง QR นี้ให้พนักงานร้านสแกนเพื่อยืนยันการใช้งาน</p>
+        <button class="modal-close" onclick="closeQR()">ปิด</button>
+    </div>
+</div>
+
 <script>
     var LIFF_ID = "2010298031-TOsCbkzl";
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
@@ -217,6 +290,7 @@
 
     var currentUserId = "";
     var userData = null;
+    var selectedCouponId = "";
 
     async function init() {
         try {
@@ -305,7 +379,7 @@
         try {
             var couponValue = (amount / 100) * 50;
             var expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 14);
+            expiresAt.setDate(expiresAt.getDate() + 7);
 
             var { error: txErr } = await db.from("point_transactions").insert({
                 line_user_id: currentUserId,
@@ -336,7 +410,7 @@
             document.getElementById("redeem-amount").value = "";
             document.getElementById("redeem-value").textContent = "0";
             document.getElementById("redeem-success").textContent = 
-                "✅ แลกแต้มสำเร็จ! ได้คูปอง " + couponValue + " บาท";
+                "✅ แลกแต้มสำเร็จ! ได้คูปอง " + couponValue + " บาท (หมดอายุ " + formatDate(expiresAt) + ")";
 
             await loadCoupons();
             await loadHistory();
@@ -403,16 +477,55 @@
         var expiryDate = new Date(coupon.expires_at).toLocaleDateString("th-TH", {
             day: "numeric", month: "short", year: "numeric"
         });
-        var statusClass = isActive ? "status-active" : 
-                          coupon.status === "used" ? "status-used" : "status-expired";
+        var statusClass = isActive ? "coupon-active" : 
+                          coupon.status === "used" ? "coupon-used" : "coupon-expired";
         var statusText = isActive ? "พร้อมใช้งาน" : 
                           coupon.status === "used" ? "ใช้แล้ว" : "หมดอายุ";
 
-        return '<div class="coupon-card">' +
+        var html = '<div class="coupon-card ' + statusClass + '">' +
             '<div class="coupon-header">ส่วนลด ' + coupon.discount_value.toLocaleString() + ' บาท</div>' +
             '<div class="coupon-detail">📅 หมดอายุ: ' + expiryDate + '</div>' +
-            '<span class="coupon-status ' + statusClass + '">' + statusText + '</span>' +
-            '</div>';
+            '<span class="coupon-status ' + 
+                (isActive ? "status-active" : coupon.status === "used" ? "status-used" : "status-expired") + 
+                '">' + statusText + '</span>';
+
+        if (isActive) {
+            html += '<div class="coupon-buttons">' +
+                '<button class="coupon-btn coupon-btn-show" onclick="showCouponQR(\'' + coupon.id + '\', ' + coupon.discount_value + ')">แสดง QR</button>' +
+                '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function showCouponQR(couponId, value) {
+        selectedCouponId = couponId;
+        document.getElementById("qr-modal").classList.add("show");
+        document.getElementById("qr-coupon-id").textContent = "ID: " + couponId.slice(0, 8).toUpperCase();
+        
+        var qrContainer = document.getElementById("qr-canvas");
+        qrContainer.innerHTML = "";
+        
+        setTimeout(function() {
+            try {
+                new QRCode(qrContainer, {
+                    text: couponId,
+                    width: 200,
+                    height: 200,
+                    colorDark: "#000000",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (err) {
+                qrContainer.innerHTML = '<p style="color:red;font-size:12px;">เกิดข้อผิดพลาด</p>';
+            }
+        }, 100);
+    }
+
+    function closeQR() {
+        document.getElementById("qr-modal").classList.remove("show");
+        selectedCouponId = "";
     }
 
     async function loadHistory() {
@@ -453,6 +566,12 @@
             document.getElementById("tx-list").innerHTML = 
                 '<div class="empty">เกิดข้อผิดพลาด</div>';
         }
+    }
+
+    function formatDate(date) {
+        return date.toLocaleDateString("th-TH", {
+            day: "numeric", month: "short", year: "numeric"
+        });
     }
 
     init();
