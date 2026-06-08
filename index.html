@@ -144,13 +144,36 @@
                 return;
             }
 
-            var { data: existingUser, error: checkError } = await db
+            var { data: userData, error: checkError } = await db
+                .from("profiles")
+                .select("line_user_id, role")
+                .eq("line_user_id", currentUserId)
+                .single();
+
+            if (checkError || !userData) {
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("app").style.display = "block";
+                return;
+            }
+
+            var userRole = userData.role || "Customer";
+
+            if (userRole === "Staff" || userRole === "Admin") {
+                if (userRole === "Staff") {
+                    window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/staff.html";
+                } else if (userRole === "Admin") {
+                    window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/admin.html";
+                }
+                return;
+            }
+
+            var { data: existingUser, error: existError } = await db
                 .from("profiles")
                 .select("line_user_id")
                 .eq("line_user_id", currentUserId)
                 .single();
 
-            if (existingUser && !checkError) {
+            if (existingUser && !existError) {
                 window.location.href = "https://fatmythbear-spec.github.io/my-liff-app/member.html";
                 return;
             }
