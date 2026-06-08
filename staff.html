@@ -6,6 +6,7 @@
     <title>Staff Scanner - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
@@ -42,12 +43,6 @@
         }
         .card-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 16px; }
 
-        .warn-box {
-            background: #fff8e1; border: 1px solid #ffc107;
-            border-radius: 10px; padding: 10px 14px;
-            font-size: 12px; color: #856404; margin-bottom: 12px; display: none;
-        }
-
         .scan-btn {
             width: 100%; padding: 16px; background: #1a1a2e; color: white;
             border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
@@ -55,6 +50,62 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .scan-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        /* ============ QR SCANNER MODAL ============ */
+        #qr-modal {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #qr-modal.active { display: flex; }
+
+        .qr-modal-title {
+            color: white; font-size: 16px; font-weight: 600;
+            margin-bottom: 16px; text-align: center;
+        }
+
+        #qr-reader {
+            width: 100%;
+            max-width: 320px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* ซ่อน UI ที่ html5-qrcode สร้างให้ดูสะอาด */
+        #qr-reader__dashboard_section_csr button {
+            background: #06c755 !important;
+            color: white !important;
+            border: none !important;
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            font-size: 14px !important;
+            cursor: pointer !important;
+        }
+        #qr-reader__status_span { display: none !important; }
+        #qr-reader__header_message { display: none !important; }
+        #qr-reader__filescan_input { display: none !important; }
+
+        .qr-close-btn {
+            margin-top: 20px;
+            padding: 12px 40px;
+            background: #e74c3c; color: white;
+            border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 600;
+            cursor: pointer;
+        }
+
+        .qr-hint {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px; margin-top: 12px;
+            text-align: center;
+        }
+        /* ========================================= */
 
         .divider {
             text-align: center; color: #999; font-size: 13px;
@@ -144,6 +195,14 @@
     <p>กำลังโหลดระบบพนักงาน...</p>
 </div>
 
+<!-- QR Scanner Modal -->
+<div id="qr-modal">
+    <div class="qr-modal-title">📷 ส่อง QR Code ที่บัตรสมาชิก</div>
+    <div id="qr-reader"></div>
+    <div class="qr-hint">จัด QR Code ให้อยู่กลางกรอบ</div>
+    <button class="qr-close-btn" onclick="closeScanner()">✕ ยกเลิก</button>
+</div>
+
 <div id="app">
     <div class="header">
         <div>
@@ -156,11 +215,7 @@
     <div class="card" id="step-scan">
         <div class="card-title">📷 ค้นหาสมาชิก</div>
 
-        <div class="warn-box" id="scan-not-supported">
-            ⚠️ อุปกรณ์นี้ไม่รองรับการสแกน QR<br>กรุณากรอกรหัสสมาชิกด้านล่างแทน
-        </div>
-
-        <button class="scan-btn" id="scan-qr-btn" onclick="scanQR()">
+        <button class="scan-btn" id="scan-qr-btn" onclick="openScanner()">
             <span>📷</span>&nbsp;สแกน QR Code
         </button>
 
@@ -221,32 +276,20 @@
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
     var foundMember = null;
+    var html5QrCode = null;
+    var isScanning  = false;
 
-    function resetScanBtn() {
-        var btn = document.getElementById("scan-qr-btn");
-        btn.disabled = false;
-        btn.innerHTML = "<span>📷</span>&nbsp;สแกน QR Code";
-    }
-
+    // ========== INIT ==========
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
 
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
+            if (!liff.isLoggedIn()) { liff.login(); return; }
 
             if (!liff.isInClient()) {
                 document.getElementById("loading").innerHTML =
                     '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มจาก Rich Menu</small></p>';
                 return;
-            }
-
-            // ตรวจสอบว่า scanCodeV2 รองรับหรือไม่
-            if (!liff.isApiAvailable("scanCodeV2")) {
-                document.getElementById("scan-not-supported").style.display = "block";
-                document.getElementById("scan-qr-btn").style.display = "none";
             }
 
             var profile = await liff.getProfile();
@@ -263,8 +306,8 @@
             }
 
             document.getElementById("staff-name").textContent = data.full_name;
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
+            document.getElementById("loading").style.display  = "none";
+            document.getElementById("app").style.display      = "block";
 
         } catch (err) {
             document.getElementById("loading").innerHTML =
@@ -272,50 +315,65 @@
         }
     }
 
-    async function scanQR() {
-        // ตรวจสอบก่อนเรียกใช้
-        if (!liff.isApiAvailable("scanCodeV2")) {
-            document.getElementById("scan-error").textContent =
-                "⚠️ อุปกรณ์นี้ไม่รองรับการสแกน กรุณากรอกรหัสแทน";
-            return;
-        }
+    // ========== QR SCANNER (html5-qrcode) ==========
+    function openScanner() {
+        if (isScanning) return;
 
-        var btn = document.getElementById("scan-qr-btn");
-        btn.disabled = true;
-        btn.innerHTML = "<span>📷</span>&nbsp;กำลังเปิดกล้อง...";
         document.getElementById("scan-error").textContent = "";
+        document.getElementById("qr-modal").classList.add("active");
 
-        try {
-            var result = await liff.scanCodeV2();
+        html5QrCode = new Html5Qrcode("qr-reader");
+        isScanning  = true;
 
-            if (result && result.value && result.value.trim() !== "") {
-                await lookupMember(result.value.trim());
-            } else {
-                document.getElementById("scan-error").textContent = "ไม่พบข้อมูลใน QR Code";
+        Html5Qrcode.getCameras().then(function(cameras) {
+            if (!cameras || cameras.length === 0) {
+                showScanError("ไม่พบกล้องในอุปกรณ์นี้");
+                closeScanner();
+                return;
             }
 
-        } catch (err) {
-            var msg = (err.message || err.toString() || "").toLowerCase();
+            // ใช้กล้องหลัง (environment) ก่อน ถ้าไม่มีใช้กล้องแรก
+            var camId = cameras[cameras.length - 1].id;
 
-            if (msg.includes("cancel") || msg.includes("user_cancel") || msg.includes("scan_failed_user_cancelled")) {
-                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
-            } else if (msg.includes("not_available") || msg.includes("not available") || msg.includes("unavailable")) {
-                document.getElementById("scan-error").textContent = "⚠️ ไม่รองรับบนอุปกรณ์นี้ กรุณากรอกรหัสแทน";
-                document.getElementById("scan-not-supported").style.display = "block";
-                btn.style.display = "none";
-            } else if (msg.includes("permission") || msg.includes("camera")) {
-                document.getElementById("scan-error").textContent = "⚠️ กรุณาอนุญาตให้ LINE เข้าถึงกล้อง แล้วลองใหม่";
-            } else if (msg.includes("timeout")) {
-                document.getElementById("scan-error").textContent = "หมดเวลาสแกน กรุณาลองใหม่";
-            } else {
-                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + (err.message || "กรุณาลองใหม่");
-            }
-        } finally {
-            // reset ปุ่มเสมอ ไม่ว่าจะเกิดอะไรขึ้น
-            resetScanBtn();
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                function onSuccess(decodedText) {
+                    // สแกนได้แล้ว! ปิด scanner แล้ว lookup
+                    closeScanner();
+                    lookupMember(decodedText.trim());
+                },
+                function onError(err) {
+                    // สแกนยังไม่ได้ (ปกติ ยังวนหา QR อยู่)
+                }
+            ).catch(function(err) {
+                showScanError("เปิดกล้องไม่ได้: " + err);
+                closeScanner();
+            });
+
+        }).catch(function(err) {
+            showScanError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์กล้องใน LINE");
+            closeScanner();
+        });
+    }
+
+    function closeScanner() {
+        document.getElementById("qr-modal").classList.remove("active");
+        isScanning = false;
+
+        if (html5QrCode) {
+            html5QrCode.stop().catch(function() {}).finally(function() {
+                html5QrCode.clear();
+                html5QrCode = null;
+            });
         }
     }
 
+    function showScanError(msg) {
+        document.getElementById("scan-error").textContent = msg;
+    }
+
+    // ========== LOOKUP ==========
     async function lookupManual() {
         var input = document.getElementById("manual-id").value.trim().toUpperCase();
         if (!input) {
@@ -372,6 +430,7 @@
         }
     }
 
+    // ========== POINTS ==========
     async function calcPoints() {
         var amount = parseInt(document.getElementById("amount-input").value) || 0;
         var pts    = Math.floor(amount / 25);
@@ -462,6 +521,7 @@
 
     function resetAll() {
         foundMember = null;
+        closeScanner();
         document.getElementById("amount-input").value           = "";
         document.getElementById("preview-points").textContent   = "0";
         document.getElementById("cap-warn").textContent         = "";
@@ -474,7 +534,6 @@
         document.getElementById("step-amount").style.display    = "none";
         document.getElementById("success-screen").style.display = "none";
         document.getElementById("app").style.display            = "block";
-        resetScanBtn();
     }
 
     init();
