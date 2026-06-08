@@ -40,9 +40,12 @@
             background: white; border-radius: 16px;
             padding: 20px; margin-bottom: 16px;
         }
-        .card-title {
-            font-size: 15px; font-weight: 600; color: #333;
-            margin-bottom: 16px;
+        .card-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 16px; }
+
+        .warn-box {
+            background: #fff8e1; border: 1px solid #ffc107;
+            border-radius: 10px; padding: 10px 14px;
+            font-size: 12px; color: #856404; margin-bottom: 12px; display: none;
         }
 
         .scan-btn {
@@ -121,9 +124,7 @@
             color: #999; cursor: pointer; margin-top: 8px; font-size: 13px;
         }
 
-        #success-screen {
-            display: none; text-align: center; padding: 60px 20px;
-        }
+        #success-screen { display: none; text-align: center; padding: 60px 20px; }
         .success-icon  { font-size: 72px; margin-bottom: 16px; }
         .success-title { font-size: 24px; font-weight: 700; color: #06c755; }
         .success-sub   { font-size: 14px; color: #666; margin-top: 10px; line-height: 1.6; }
@@ -152,12 +153,17 @@
         <span class="staff-badge">STAFF</span>
     </div>
 
-    <!-- Step 1: Scan -->
     <div class="card" id="step-scan">
         <div class="card-title">📷 ค้นหาสมาชิก</div>
+
+        <div class="warn-box" id="scan-not-supported">
+            ⚠️ อุปกรณ์นี้ไม่รองรับการสแกน QR<br>กรุณากรอกรหัสสมาชิกด้านล่างแทน
+        </div>
+
         <button class="scan-btn" id="scan-qr-btn" onclick="scanQR()">
-            <span>📷</span> สแกน QR Code
+            <span>📷</span>&nbsp;สแกน QR Code
         </button>
+
         <div class="divider">หรือกรอกรหัสสมาชิก</div>
         <div class="input-row">
             <input type="text" id="manual-id" class="id-input"
@@ -168,7 +174,6 @@
         <p class="error-msg" id="scan-error"></p>
     </div>
 
-    <!-- Step 2: Amount -->
     <div class="card" id="step-amount" style="display:none;">
         <div class="card-title">💰 กรอกยอดซื้อ</div>
 
@@ -199,7 +204,6 @@
     </div>
 </div>
 
-<!-- Success -->
 <div id="success-screen">
     <div class="success-icon">🎉</div>
     <div class="success-title">บันทึกแต้มสำเร็จ!</div>
@@ -216,21 +220,33 @@
 
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
-
     var foundMember = null;
+
+    function resetScanBtn() {
+        var btn = document.getElementById("scan-qr-btn");
+        btn.disabled = false;
+        btn.innerHTML = "<span>📷</span>&nbsp;สแกน QR Code";
+    }
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
+
             if (!liff.isLoggedIn()) {
                 liff.login();
                 return;
             }
 
             if (!liff.isInClient()) {
-                document.getElementById("loading").innerHTML = 
+                document.getElementById("loading").innerHTML =
                     '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มจาก Rich Menu</small></p>';
                 return;
+            }
+
+            // ตรวจสอบว่า scanCodeV2 รองรับหรือไม่
+            if (!liff.isApiAvailable("scanCodeV2")) {
+                document.getElementById("scan-not-supported").style.display = "block";
+                document.getElementById("scan-qr-btn").style.display = "none";
             }
 
             var profile = await liff.getProfile();
@@ -252,35 +268,51 @@
 
         } catch (err) {
             document.getElementById("loading").innerHTML =
-                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
+                '<p style="color:red;padding:20px;text-align:center">เกิดข้อผิดพลาด:<br>' + err.message + '</p>';
         }
     }
 
     async function scanQR() {
-        document.getElementById("scan-qr-btn").disabled = true;
-        document.getElementById("scan-qr-btn").textContent = "📷 กำลังเปิดกล้อง...";
+        // ตรวจสอบก่อนเรียกใช้
+        if (!liff.isApiAvailable("scanCodeV2")) {
+            document.getElementById("scan-error").textContent =
+                "⚠️ อุปกรณ์นี้ไม่รองรับการสแกน กรุณากรอกรหัสแทน";
+            return;
+        }
+
+        var btn = document.getElementById("scan-qr-btn");
+        btn.disabled = true;
+        btn.innerHTML = "<span>📷</span>&nbsp;กำลังเปิดกล้อง...";
         document.getElementById("scan-error").textContent = "";
 
         try {
             var result = await liff.scanCodeV2();
-            if (result && result.value) {
-                await lookupMember(result.value);
-            }
-        } catch (err) {
-            var errorMsg = err.message || err.toString();
-            
-            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
-                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
-            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
-                document.getElementById("scan-error").textContent = "ไม่พบ QR Code";
-            } else if (errorMsg.includes("PERMISSION")) {
-                document.getElementById("scan-error").textContent = "ต้องอนุญาตให้เข้าถึงกล้อง";
+
+            if (result && result.value && result.value.trim() !== "") {
+                await lookupMember(result.value.trim());
             } else {
-                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
+                document.getElementById("scan-error").textContent = "ไม่พบข้อมูลใน QR Code";
+            }
+
+        } catch (err) {
+            var msg = (err.message || err.toString() || "").toLowerCase();
+
+            if (msg.includes("cancel") || msg.includes("user_cancel") || msg.includes("scan_failed_user_cancelled")) {
+                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
+            } else if (msg.includes("not_available") || msg.includes("not available") || msg.includes("unavailable")) {
+                document.getElementById("scan-error").textContent = "⚠️ ไม่รองรับบนอุปกรณ์นี้ กรุณากรอกรหัสแทน";
+                document.getElementById("scan-not-supported").style.display = "block";
+                btn.style.display = "none";
+            } else if (msg.includes("permission") || msg.includes("camera")) {
+                document.getElementById("scan-error").textContent = "⚠️ กรุณาอนุญาตให้ LINE เข้าถึงกล้อง แล้วลองใหม่";
+            } else if (msg.includes("timeout")) {
+                document.getElementById("scan-error").textContent = "หมดเวลาสแกน กรุณาลองใหม่";
+            } else {
+                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + (err.message || "กรุณาลองใหม่");
             }
         } finally {
-            document.getElementById("scan-qr-btn").disabled = false;
-            document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
+            // reset ปุ่มเสมอ ไม่ว่าจะเกิดอะไรขึ้น
+            resetScanBtn();
         }
     }
 
@@ -290,7 +322,7 @@
             document.getElementById("scan-error").textContent = "กรุณากรอกรหัสสมาชิก";
             return;
         }
-        document.getElementById("scan-error").textContent = "";
+        document.getElementById("scan-error").textContent = "กำลังค้นหา...";
 
         try {
             var { data, error } = await db
@@ -326,6 +358,7 @@
             document.getElementById("found-name").textContent   = data.full_name;
             document.getElementById("found-points").textContent = data.current_points.toLocaleString();
             document.getElementById("found-exp").textContent    = data.current_exp.toLocaleString();
+
             var badge = document.getElementById("found-tier-badge");
             badge.textContent = data.tier;
             badge.className   = "tier-badge tier-" + data.tier;
@@ -341,16 +374,16 @@
 
     async function calcPoints() {
         var amount = parseInt(document.getElementById("amount-input").value) || 0;
-        var pts = Math.floor(amount / 25);
-        var warn = "";
+        var pts    = Math.floor(amount / 25);
+        var warn   = "";
 
-        if (pts > MAX_PER_BILL) { 
-            pts = MAX_PER_BILL; 
-            warn = "⚠️ จำกัดสูงสุด " + MAX_PER_BILL + " แต้ม/บิล"; 
+        if (pts > MAX_PER_BILL) {
+            pts  = MAX_PER_BILL;
+            warn = "⚠️ จำกัดสูงสุด " + MAX_PER_BILL + " แต้ม/บิล";
         }
 
         if (foundMember && pts > 0) {
-            var todayStart = new Date(); 
+            var todayStart = new Date();
             todayStart.setHours(0,0,0,0);
             var { data } = await db
                 .from("point_transactions")
@@ -361,9 +394,9 @@
 
             var todayTotal = (data || []).reduce(function(s, r) { return s + r.points; }, 0);
             var remaining  = Math.max(0, MAX_PER_DAY - todayTotal);
-            if (pts > remaining) { 
-                pts = remaining; 
-                warn = "⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก " + remaining + " แต้ม"; 
+            if (pts > remaining) {
+                pts  = remaining;
+                warn = "⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก " + remaining + " แต้ม";
             }
         }
 
@@ -386,13 +419,13 @@
             expiresAt.setDate(expiresAt.getDate() + 180);
 
             var { error: txErr } = await db.from("point_transactions").insert({
-                line_user_id: foundMember.line_user_id,
-                points: pts, 
-                exp: pts, 
-                type: "earn",
-                description: "ซื้อสินค้า " + amount.toLocaleString() + " บาท",
-                amount_spent: amount,
-                expires_at: expiresAt.toISOString()
+                line_user_id : foundMember.line_user_id,
+                points       : pts,
+                exp          : pts,
+                type         : "earn",
+                description  : "ซื้อสินค้า " + amount.toLocaleString() + " บาท",
+                amount_spent : amount,
+                expires_at   : expiresAt.toISOString()
             });
             if (txErr) throw txErr;
 
@@ -409,7 +442,8 @@
             document.getElementById("success-screen").style.display = "block";
             document.getElementById("success-detail").innerHTML =
                 '<b>' + foundMember.full_name + '</b><br>' +
-                'ได้รับ <b style="color:#06c755">' + pts + ' แต้ม</b> จากยอดซื้อ ' + amount.toLocaleString() + ' บาท<br>' +
+                'ได้รับ <b style="color:#06c755">' + pts + ' แต้ม</b> ' +
+                'จากยอดซื้อ ' + amount.toLocaleString() + ' บาท<br>' +
                 'แต้มรวม: ' + newPoints.toLocaleString() + ' | ระดับ: ' + newTier;
 
         } catch (err) {
@@ -428,20 +462,19 @@
 
     function resetAll() {
         foundMember = null;
-        document.getElementById("amount-input").value         = "";
-        document.getElementById("preview-points").textContent = "0";
-        document.getElementById("cap-warn").textContent       = "";
-        document.getElementById("manual-id").value            = "";
-        document.getElementById("scan-error").textContent     = "";
-        document.getElementById("submit-error").textContent   = "";
-        document.getElementById("submit-btn").disabled        = true;
-        document.getElementById("submit-btn").textContent     = "บันทึกแต้ม";
-        document.getElementById("scan-qr-btn").disabled       = false;
-        document.getElementById("scan-qr-btn").textContent    = "📷 สแกน QR Code";
-        document.getElementById("step-scan").style.display    = "block";
-        document.getElementById("step-amount").style.display  = "none";
+        document.getElementById("amount-input").value           = "";
+        document.getElementById("preview-points").textContent   = "0";
+        document.getElementById("cap-warn").textContent         = "";
+        document.getElementById("manual-id").value              = "";
+        document.getElementById("scan-error").textContent       = "";
+        document.getElementById("submit-error").textContent     = "";
+        document.getElementById("submit-btn").disabled          = true;
+        document.getElementById("submit-btn").textContent       = "บันทึกแต้ม";
+        document.getElementById("step-scan").style.display      = "block";
+        document.getElementById("step-amount").style.display    = "none";
         document.getElementById("success-screen").style.display = "none";
-        document.getElementById("app").style.display          = "block";
+        document.getElementById("app").style.display            = "block";
+        resetScanBtn();
     }
 
     init();
