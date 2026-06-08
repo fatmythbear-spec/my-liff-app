@@ -51,6 +51,7 @@
             cursor: pointer; margin-bottom: 12px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
+        .scan-btn:disabled { background: #aaa; cursor: not-allowed; }
 
         .divider {
             text-align: center; color: #999; font-size: 13px;
@@ -154,7 +155,7 @@
     <!-- Step 1: Scan -->
     <div class="card" id="step-scan">
         <div class="card-title">📷 ค้นหาสมาชิก</div>
-        <button class="scan-btn" onclick="scanQR()">
+        <button class="scan-btn" id="scan-qr-btn" onclick="scanQR()">
             <span>📷</span> สแกน QR Code
         </button>
         <div class="divider">หรือกรอกรหัสสมาชิก</div>
@@ -226,6 +227,12 @@
                 return;
             }
 
+            if (!liff.isInClient()) {
+                document.getElementById("loading").innerHTML = 
+                    '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มจาก Rich Menu</small></p>';
+                return;
+            }
+
             var profile = await liff.getProfile();
             var { data, error } = await db
                 .from("profiles")
@@ -250,11 +257,33 @@
     }
 
     async function scanQR() {
+        document.getElementById("scan-qr-btn").disabled = true;
+        document.getElementById("scan-qr-btn").textContent = "📷 กำลังเปิดกล้อง...";
+        document.getElementById("scan-error").textContent = "";
+
         try {
+            if (!liff.isAvailable('scanCodeV2')) {
+                document.getElementById("scan-error").textContent = "อุปกรณ์นี้ไม่รองรับการสแกน QR Code";
+                document.getElementById("scan-qr-btn").disabled = false;
+                document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
+                return;
+            }
+
             var result = await liff.scanCodeV2();
-            if (result && result.value) await lookupMember(result.value);
+            if (result && result.value) {
+                await lookupMember(result.value);
+            }
         } catch (err) {
-            document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + err.message;
+            if (err.message.includes("SCAN_FAILED_USER_CANCELLED")) {
+                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
+            } else if (err.message.includes("QR_CODE_NOT_FOUND")) {
+                document.getElementById("scan-error").textContent = "ไม่พบ QR Code";
+            } else {
+                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + err.message;
+            }
+        } finally {
+            document.getElementById("scan-qr-btn").disabled = false;
+            document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
         }
     }
 
@@ -410,6 +439,8 @@
         document.getElementById("submit-error").textContent   = "";
         document.getElementById("submit-btn").disabled        = true;
         document.getElementById("submit-btn").textContent     = "บันทึกแต้ม";
+        document.getElementById("scan-qr-btn").disabled       = false;
+        document.getElementById("scan-qr-btn").textContent    = "📷 สแกน QR Code";
         document.getElementById("step-scan").style.display    = "block";
         document.getElementById("step-amount").style.display  = "none";
         document.getElementById("success-screen").style.display = "none";
