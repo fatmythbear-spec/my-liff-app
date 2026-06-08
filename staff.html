@@ -6,6 +6,7 @@
     <title>Staff Scanner - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
@@ -70,6 +71,24 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .scan-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        #qr-reader {
+            width: 100%; margin: 16px 0; border-radius: 12px; overflow: hidden;
+            border: 2px solid #ddd;
+        }
+
+        #qr-reader video {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .scanner-controls {
+            display: flex; gap: 8px; margin-top: 12px;
+        }
+        .stop-btn {
+            flex: 1; padding: 12px; background: #e74c3c; color: white;
+            border: none; border-radius: 10px; cursor: pointer; font-weight: 600;
+        }
 
         .divider {
             text-align: center; color: #999; font-size: 13px;
@@ -174,17 +193,21 @@
     <div class="mode-selector">
         <div class="mode-label">เลือกโหมด</div>
         <div class="mode-buttons">
-            <button class="mode-btn active" onclick="switchMode('member')">👤 สมาชิก</button>
-            <button class="mode-btn" onclick="switchMode('coupon')">🎟️ คูปอง</button>
+            <button class="mode-btn active" onclick="switchMode(event, 'member')">👤 สมาชิก</button>
+            <button class="mode-btn" onclick="switchMode(event, 'coupon')">🎟️ คูปอง</button>
         </div>
     </div>
 
     <!-- Step 1: Scan Member -->
     <div class="card" id="step-scan-member">
         <div class="card-title">📷 ค้นหาสมาชิก</div>
-        <button class="scan-btn" id="scan-qr-btn" onclick="scanQR()">
-            <span>📷</span> สแกน QR Code
+        <button class="scan-btn" id="scan-qr-btn" onclick="startScanner('member')">
+            <span>📷</span> เปิดกล้องสแกน QR Code
         </button>
+        <div id="qr-reader-member" style="display:none;"></div>
+        <div class="scanner-controls" id="scanner-controls-member" style="display:none;">
+            <button class="stop-btn" onclick="stopScanner('member')">ปิดกล้อง</button>
+        </div>
         <div class="divider">หรือกรอกรหัสสมาชิก</div>
         <div class="input-row">
             <input type="text" id="manual-id" class="id-input"
@@ -228,9 +251,13 @@
     <!-- Step 3: Scan Coupon -->
     <div class="card" id="step-scan-coupon" style="display:none;">
         <div class="card-title">🎟️ สแกน QR คูปอง</div>
-        <button class="scan-btn" id="scan-coupon-btn" onclick="scanCouponQR()">
-            <span>📷</span> สแกน QR Code คูปอง
+        <button class="scan-btn" id="scan-coupon-btn" onclick="startScanner('coupon')">
+            <span>📷</span> เปิดกล้องสแกน QR Code คูปอง
         </button>
+        <div id="qr-reader-coupon" style="display:none;"></div>
+        <div class="scanner-controls" id="scanner-controls-coupon" style="display:none;">
+            <button class="stop-btn" onclick="stopScanner('coupon')">ปิดกล้อง</button>
+        </div>
         <p style="font-size:13px;color:#666;text-align:center;margin-top:12px;">ให้ลูกค้าแสดง QR Code ของคูปองแล้วสแกน</p>
         <p class="error-msg" id="coupon-scan-error"></p>
     </div>
@@ -271,18 +298,14 @@
     var foundMember = null;
     var currentMode = "member";
     var selectedCoupon = null;
+    var scanner = null;
+    var scannerActive = false;
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
             if (!liff.isLoggedIn()) {
                 liff.login();
-                return;
-            }
-
-            if (!liff.isInClient()) {
-                document.getElementById("loading").innerHTML = 
-                    '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มจาก Rich Menu</small></p>';
                 return;
             }
 
@@ -309,12 +332,12 @@
         }
     }
 
-    function switchMode(mode) {
+    function switchMode(e, mode) {
         currentMode = mode;
         document.querySelectorAll(".mode-btn").forEach(function(btn) {
             btn.classList.remove("active");
         });
-        event.target.classList.add("active");
+        e.target.classList.add("active");
         resetAll();
 
         if (mode === "member") {
@@ -326,57 +349,60 @@
         }
     }
 
-    async function scanQR() {
-        document.getElementById("scan-qr-btn").disabled = true;
-        document.getElementById("scan-qr-btn").textContent = "📷 กำลังเปิดกล้อง...";
-        document.getElementById("scan-error").textContent = "";
-
-        try {
-            var result = await liff.scanCodeV2();
-            if (result && result.value) {
-                await lookupMember(result.value);
-            }
-        } catch (err) {
-            var errorMsg = err.message || err.toString();
-            
-            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
-                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
-            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
-                document.getElementById("scan-error").textContent = "ไม่พบ QR Code";
-            } else if (errorMsg.includes("PERMISSION")) {
-                document.getElementById("scan-error").textContent = "ต้องอนุญาตให้เข้าถึงกล้อง";
-            } else {
-                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
-            }
-        } finally {
-            document.getElementById("scan-qr-btn").disabled = false;
-            document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
+    function startScanner(mode) {
+        if (scannerActive) {
+            document.getElementById("scan-error").textContent = "กล้องกำลังเปิดอยู่";
+            return;
         }
+
+        var readerId = "qr-reader-" + mode;
+        var containerId = "qr-reader-" + mode;
+        var controlsId = "scanner-controls-" + mode;
+        
+        document.getElementById(readerId).style.display = "block";
+        document.getElementById(controlsId).style.display = "flex";
+        document.getElementById(readerId).innerHTML = "";
+
+        scanner = new Html5Qrcode(containerId);
+
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            function(decodedText, decodedResult) {
+                scanner.pause();
+                if (mode === "member") {
+                    lookupMember(decodedText);
+                } else {
+                    lookupCoupon(decodedText);
+                }
+                stopScanner(mode);
+            },
+            function(errorMessage) {
+                // ignore errors
+            }
+        ).catch(function(err) {
+            document.getElementById(mode === "member" ? "scan-error" : "coupon-scan-error").textContent = 
+                "ไม่สามารถเข้าถึงกล้องได้: " + err;
+            stopScanner(mode);
+        });
+
+        scannerActive = true;
     }
 
-    async function scanCouponQR() {
-        document.getElementById("scan-coupon-btn").disabled = true;
-        document.getElementById("scan-coupon-btn").textContent = "📷 กำลังเปิดกล้อง...";
-        document.getElementById("coupon-scan-error").textContent = "";
-
-        try {
-            var result = await liff.scanCodeV2();
-            if (result && result.value) {
-                await lookupCoupon(result.value);
-            }
-        } catch (err) {
-            var errorMsg = err.message || err.toString();
-            
-            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
-                document.getElementById("coupon-scan-error").textContent = "ยกเลิกการสแกน";
-            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
-                document.getElementById("coupon-scan-error").textContent = "ไม่พบ QR Code";
-            } else {
-                document.getElementById("coupon-scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
-            }
-        } finally {
-            document.getElementById("scan-coupon-btn").disabled = false;
-            document.getElementById("scan-coupon-btn").textContent = "📷 สแกน QR Code คูปอง";
+    function stopScanner(mode) {
+        if (scanner) {
+            scanner.stop().then(function() {
+                var readerId = "qr-reader-" + mode;
+                var controlsId = "scanner-controls-" + mode;
+                document.getElementById(readerId).style.display = "none";
+                document.getElementById(controlsId).style.display = "none";
+                scanner = null;
+                scannerActive = false;
+            }).catch(function(err) {
+                console.error("Error stopping scanner:", err);
+                scanner = null;
+                scannerActive = false;
+            });
         }
     }
 
@@ -590,6 +616,7 @@
     }
 
     function resetAll() {
+        stopScanner(currentMode);
         foundMember = null;
         selectedCoupon = null;
         document.getElementById("amount-input").value         = "";
@@ -602,10 +629,6 @@
         document.getElementById("coupon-error").textContent   = "";
         document.getElementById("submit-btn").disabled        = true;
         document.getElementById("submit-btn").textContent     = "บันทึกแต้ม";
-        document.getElementById("scan-qr-btn").disabled       = false;
-        document.getElementById("scan-qr-btn").textContent    = "📷 สแกน QR Code";
-        document.getElementById("scan-coupon-btn").disabled   = false;
-        document.getElementById("scan-coupon-btn").textContent = "📷 สแกน QR Code คูปอง";
         document.getElementById("confirm-coupon-btn").disabled = true;
         document.getElementById("confirm-coupon-btn").textContent = "ยืนยันการใช้คูปอง";
         
