@@ -6,7 +6,6 @@
     <title>Staff Scanner - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
@@ -37,11 +36,32 @@
             padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 700;
         }
 
+        .mode-selector {
+            background: white; border-radius: 16px; padding: 16px;
+            margin-bottom: 16px;
+        }
+        .mode-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px; }
+        .mode-buttons {
+            display: flex; gap: 8px;
+        }
+        .mode-btn {
+            flex: 1; padding: 12px; border: 2px solid #ddd;
+            border-radius: 10px; background: white; font-size: 13px;
+            font-weight: 600; cursor: pointer; color: #666;
+            transition: all 0.3s;
+        }
+        .mode-btn.active {
+            background: #06c755; color: white; border-color: #06c755;
+        }
+
         .card {
             background: white; border-radius: 16px;
             padding: 20px; margin-bottom: 16px;
         }
-        .card-title { font-size: 15px; font-weight: 600; color: #333; margin-bottom: 16px; }
+        .card-title {
+            font-size: 15px; font-weight: 600; color: #333;
+            margin-bottom: 16px;
+        }
 
         .scan-btn {
             width: 100%; padding: 16px; background: #1a1a2e; color: white;
@@ -50,62 +70,6 @@
             display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .scan-btn:disabled { background: #aaa; cursor: not-allowed; }
-
-        /* ============ QR SCANNER MODAL ============ */
-        #qr-modal {
-            display: none;
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85);
-            z-index: 9999;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        #qr-modal.active { display: flex; }
-
-        .qr-modal-title {
-            color: white; font-size: 16px; font-weight: 600;
-            margin-bottom: 16px; text-align: center;
-        }
-
-        #qr-reader {
-            width: 100%;
-            max-width: 320px;
-            border-radius: 16px;
-            overflow: hidden;
-            background: #000;
-        }
-
-        /* ซ่อน UI ที่ html5-qrcode สร้างให้ดูสะอาด */
-        #qr-reader__dashboard_section_csr button {
-            background: #06c755 !important;
-            color: white !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 8px !important;
-            font-size: 14px !important;
-            cursor: pointer !important;
-        }
-        #qr-reader__status_span { display: none !important; }
-        #qr-reader__header_message { display: none !important; }
-        #qr-reader__filescan_input { display: none !important; }
-
-        .qr-close-btn {
-            margin-top: 20px;
-            padding: 12px 40px;
-            background: #e74c3c; color: white;
-            border: none; border-radius: 12px;
-            font-size: 15px; font-weight: 600;
-            cursor: pointer;
-        }
-
-        .qr-hint {
-            color: rgba(255,255,255,0.7);
-            font-size: 12px; margin-top: 12px;
-            text-align: center;
-        }
-        /* ========================================= */
 
         .divider {
             text-align: center; color: #999; font-size: 13px;
@@ -175,7 +139,9 @@
             color: #999; cursor: pointer; margin-top: 8px; font-size: 13px;
         }
 
-        #success-screen { display: none; text-align: center; padding: 60px 20px; }
+        #success-screen {
+            display: none; text-align: center; padding: 60px 20px;
+        }
         .success-icon  { font-size: 72px; margin-bottom: 16px; }
         .success-title { font-size: 24px; font-weight: 700; color: #06c755; }
         .success-sub   { font-size: 14px; color: #666; margin-top: 10px; line-height: 1.6; }
@@ -195,14 +161,6 @@
     <p>กำลังโหลดระบบพนักงาน...</p>
 </div>
 
-<!-- QR Scanner Modal -->
-<div id="qr-modal">
-    <div class="qr-modal-title">📷 ส่อง QR Code ที่บัตรสมาชิก</div>
-    <div id="qr-reader"></div>
-    <div class="qr-hint">จัด QR Code ให้อยู่กลางกรอบ</div>
-    <button class="qr-close-btn" onclick="closeScanner()">✕ ยกเลิก</button>
-</div>
-
 <div id="app">
     <div class="header">
         <div>
@@ -212,13 +170,21 @@
         <span class="staff-badge">STAFF</span>
     </div>
 
-    <div class="card" id="step-scan">
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+        <div class="mode-label">เลือกโหมด</div>
+        <div class="mode-buttons">
+            <button class="mode-btn active" onclick="switchMode('member')">👤 สมาชิก</button>
+            <button class="mode-btn" onclick="switchMode('coupon')">🎟️ คูปอง</button>
+        </div>
+    </div>
+
+    <!-- Step 1: Scan Member -->
+    <div class="card" id="step-scan-member">
         <div class="card-title">📷 ค้นหาสมาชิก</div>
-
-        <button class="scan-btn" id="scan-qr-btn" onclick="openScanner()">
-            <span>📷</span>&nbsp;สแกน QR Code
+        <button class="scan-btn" id="scan-qr-btn" onclick="scanQR()">
+            <span>📷</span> สแกน QR Code
         </button>
-
         <div class="divider">หรือกรอกรหัสสมาชิก</div>
         <div class="input-row">
             <input type="text" id="manual-id" class="id-input"
@@ -229,6 +195,7 @@
         <p class="error-msg" id="scan-error"></p>
     </div>
 
+    <!-- Step 2: Amount -->
     <div class="card" id="step-amount" style="display:none;">
         <div class="card-title">💰 กรอกยอดซื้อ</div>
 
@@ -257,13 +224,38 @@
         <p class="error-msg" id="submit-error"></p>
         <button class="back-btn" onclick="resetAll()">← ค้นหาใหม่</button>
     </div>
+
+    <!-- Step 3: Scan Coupon -->
+    <div class="card" id="step-scan-coupon" style="display:none;">
+        <div class="card-title">🎟️ สแกน QR คูปอง</div>
+        <button class="scan-btn" id="scan-coupon-btn" onclick="scanCouponQR()">
+            <span>📷</span> สแกน QR Code คูปอง
+        </button>
+        <p style="font-size:13px;color:#666;text-align:center;margin-top:12px;">ให้ลูกค้าแสดง QR Code ของคูปองแล้วสแกน</p>
+        <p class="error-msg" id="coupon-scan-error"></p>
+    </div>
+
+    <!-- Step 4: Coupon Confirmation -->
+    <div class="card" id="step-coupon-confirm" style="display:none;">
+        <div class="card-title">✅ ยืนยันการใช้คูปอง</div>
+        <div class="member-found">
+            <div class="member-name" id="coupon-value">-</div>
+            <div class="member-info" id="coupon-info">ส่วนลด</div>
+        </div>
+        <button class="submit-btn" id="confirm-coupon-btn" onclick="confirmCouponUsage()" disabled>
+            ยืนยันการใช้คูปอง
+        </button>
+        <p class="error-msg" id="coupon-error"></p>
+        <button class="back-btn" onclick="resetAll()">← สแกนใหม่</button>
+    </div>
 </div>
 
+<!-- Success -->
 <div id="success-screen">
     <div class="success-icon">🎉</div>
-    <div class="success-title">บันทึกแต้มสำเร็จ!</div>
+    <div class="success-title" id="success-title">สำเร็จ!</div>
     <div class="success-sub" id="success-detail"></div>
-    <button class="next-btn" onclick="resetAll()">สแกนลูกค้าคนต่อไป</button>
+    <button class="next-btn" onclick="resetAll()">ต่อไป</button>
 </div>
 
 <script>
@@ -275,19 +267,21 @@
 
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
-    var foundMember = null;
-    var html5QrCode = null;
-    var isScanning  = false;
 
-    // ========== INIT ==========
+    var foundMember = null;
+    var currentMode = "member";
+    var selectedCoupon = null;
+
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-
-            if (!liff.isLoggedIn()) { liff.login(); return; }
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
 
             if (!liff.isInClient()) {
-                document.getElementById("loading").innerHTML =
+                document.getElementById("loading").innerHTML = 
                     '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มจาก Rich Menu</small></p>';
                 return;
             }
@@ -306,81 +300,93 @@
             }
 
             document.getElementById("staff-name").textContent = data.full_name;
-            document.getElementById("loading").style.display  = "none";
-            document.getElementById("app").style.display      = "block";
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("app").style.display = "block";
 
         } catch (err) {
             document.getElementById("loading").innerHTML =
-                '<p style="color:red;padding:20px;text-align:center">เกิดข้อผิดพลาด:<br>' + err.message + '</p>';
+                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
         }
     }
 
-    // ========== QR SCANNER (html5-qrcode) ==========
-    function openScanner() {
-        if (isScanning) return;
-
-        document.getElementById("scan-error").textContent = "";
-        document.getElementById("qr-modal").classList.add("active");
-
-        html5QrCode = new Html5Qrcode("qr-reader");
-        isScanning  = true;
-
-        Html5Qrcode.getCameras().then(function(cameras) {
-            if (!cameras || cameras.length === 0) {
-                showScanError("ไม่พบกล้องในอุปกรณ์นี้");
-                closeScanner();
-                return;
-            }
-
-            // ใช้กล้องหลัง (environment) ก่อน ถ้าไม่มีใช้กล้องแรก
-            var camId = cameras[cameras.length - 1].id;
-
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: { width: 250, height: 250 } },
-                function onSuccess(decodedText) {
-                    // สแกนได้แล้ว! ปิด scanner แล้ว lookup
-                    closeScanner();
-                    lookupMember(decodedText.trim());
-                },
-                function onError(err) {
-                    // สแกนยังไม่ได้ (ปกติ ยังวนหา QR อยู่)
-                }
-            ).catch(function(err) {
-                showScanError("เปิดกล้องไม่ได้: " + err);
-                closeScanner();
-            });
-
-        }).catch(function(err) {
-            showScanError("ไม่สามารถเข้าถึงกล้องได้ กรุณาอนุญาตสิทธิ์กล้องใน LINE");
-            closeScanner();
+    function switchMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll(".mode-btn").forEach(function(btn) {
+            btn.classList.remove("active");
         });
-    }
+        event.target.classList.add("active");
+        resetAll();
 
-    function closeScanner() {
-        document.getElementById("qr-modal").classList.remove("active");
-        isScanning = false;
-
-        if (html5QrCode) {
-            html5QrCode.stop().catch(function() {}).finally(function() {
-                html5QrCode.clear();
-                html5QrCode = null;
-            });
+        if (mode === "member") {
+            document.getElementById("step-scan-member").style.display = "block";
+            document.getElementById("step-scan-coupon").style.display = "none";
+        } else {
+            document.getElementById("step-scan-member").style.display = "none";
+            document.getElementById("step-scan-coupon").style.display = "block";
         }
     }
 
-    function showScanError(msg) {
-        document.getElementById("scan-error").textContent = msg;
+    async function scanQR() {
+        document.getElementById("scan-qr-btn").disabled = true;
+        document.getElementById("scan-qr-btn").textContent = "📷 กำลังเปิดกล้อง...";
+        document.getElementById("scan-error").textContent = "";
+
+        try {
+            var result = await liff.scanCodeV2();
+            if (result && result.value) {
+                await lookupMember(result.value);
+            }
+        } catch (err) {
+            var errorMsg = err.message || err.toString();
+            
+            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
+                document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
+            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
+                document.getElementById("scan-error").textContent = "ไม่พบ QR Code";
+            } else if (errorMsg.includes("PERMISSION")) {
+                document.getElementById("scan-error").textContent = "ต้องอนุญาตให้เข้าถึงกล้อง";
+            } else {
+                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
+            }
+        } finally {
+            document.getElementById("scan-qr-btn").disabled = false;
+            document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
+        }
     }
 
-    // ========== LOOKUP ==========
+    async function scanCouponQR() {
+        document.getElementById("scan-coupon-btn").disabled = true;
+        document.getElementById("scan-coupon-btn").textContent = "📷 กำลังเปิดกล้อง...";
+        document.getElementById("coupon-scan-error").textContent = "";
+
+        try {
+            var result = await liff.scanCodeV2();
+            if (result && result.value) {
+                await lookupCoupon(result.value);
+            }
+        } catch (err) {
+            var errorMsg = err.message || err.toString();
+            
+            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
+                document.getElementById("coupon-scan-error").textContent = "ยกเลิกการสแกน";
+            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
+                document.getElementById("coupon-scan-error").textContent = "ไม่พบ QR Code";
+            } else {
+                document.getElementById("coupon-scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
+            }
+        } finally {
+            document.getElementById("scan-coupon-btn").disabled = false;
+            document.getElementById("scan-coupon-btn").textContent = "📷 สแกน QR Code คูปอง";
+        }
+    }
+
     async function lookupManual() {
         var input = document.getElementById("manual-id").value.trim().toUpperCase();
         if (!input) {
             document.getElementById("scan-error").textContent = "กรุณากรอกรหัสสมาชิก";
             return;
         }
-        document.getElementById("scan-error").textContent = "กำลังค้นหา...";
+        document.getElementById("scan-error").textContent = "";
 
         try {
             var { data, error } = await db
@@ -416,12 +422,11 @@
             document.getElementById("found-name").textContent   = data.full_name;
             document.getElementById("found-points").textContent = data.current_points.toLocaleString();
             document.getElementById("found-exp").textContent    = data.current_exp.toLocaleString();
-
             var badge = document.getElementById("found-tier-badge");
             badge.textContent = data.tier;
             badge.className   = "tier-badge tier-" + data.tier;
 
-            document.getElementById("step-scan").style.display   = "none";
+            document.getElementById("step-scan-member").style.display   = "none";
             document.getElementById("step-amount").style.display = "block";
             document.getElementById("amount-input").focus();
 
@@ -430,19 +435,57 @@
         }
     }
 
-    // ========== POINTS ==========
+    async function lookupCoupon(couponId) {
+        document.getElementById("coupon-scan-error").textContent = "";
+        try {
+            var { data, error } = await db
+                .from("user_coupons")
+                .select("*")
+                .eq("id", couponId)
+                .single();
+
+            if (error || !data) {
+                document.getElementById("coupon-scan-error").textContent = "ไม่พบคูปองในระบบ";
+                return;
+            }
+
+            if (data.status !== "active") {
+                document.getElementById("coupon-scan-error").textContent = "คูปองนี้ " + 
+                    (data.status === "used" ? "ใช้แล้ว" : "หมดอายุ") + " แล้ว";
+                return;
+            }
+
+            var now = new Date();
+            if (new Date(data.expires_at) <= now) {
+                document.getElementById("coupon-scan-error").textContent = "คูปองหมดอายุแล้ว";
+                return;
+            }
+
+            selectedCoupon = data;
+            document.getElementById("coupon-value").textContent = "ส่วนลด " + data.discount_value + " บาท";
+            document.getElementById("coupon-info").textContent = "ID: " + couponId.slice(0, 8).toUpperCase();
+
+            document.getElementById("step-scan-coupon").style.display = "none";
+            document.getElementById("step-coupon-confirm").style.display = "block";
+            document.getElementById("confirm-coupon-btn").disabled = false;
+
+        } catch (err) {
+            document.getElementById("coupon-scan-error").textContent = "เกิดข้อผิดพลาด: " + err.message;
+        }
+    }
+
     async function calcPoints() {
         var amount = parseInt(document.getElementById("amount-input").value) || 0;
-        var pts    = Math.floor(amount / 25);
-        var warn   = "";
+        var pts = Math.floor(amount / 25);
+        var warn = "";
 
-        if (pts > MAX_PER_BILL) {
-            pts  = MAX_PER_BILL;
-            warn = "⚠️ จำกัดสูงสุด " + MAX_PER_BILL + " แต้ม/บิล";
+        if (pts > MAX_PER_BILL) { 
+            pts = MAX_PER_BILL; 
+            warn = "⚠️ จำกัดสูงสุด " + MAX_PER_BILL + " แต้ม/บิล"; 
         }
 
         if (foundMember && pts > 0) {
-            var todayStart = new Date();
+            var todayStart = new Date(); 
             todayStart.setHours(0,0,0,0);
             var { data } = await db
                 .from("point_transactions")
@@ -453,9 +496,9 @@
 
             var todayTotal = (data || []).reduce(function(s, r) { return s + r.points; }, 0);
             var remaining  = Math.max(0, MAX_PER_DAY - todayTotal);
-            if (pts > remaining) {
-                pts  = remaining;
-                warn = "⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก " + remaining + " แต้ม";
+            if (pts > remaining) { 
+                pts = remaining; 
+                warn = "⚠️ ถึงเพดานวันนี้แล้ว เพิ่มได้อีก " + remaining + " แต้ม"; 
             }
         }
 
@@ -478,13 +521,13 @@
             expiresAt.setDate(expiresAt.getDate() + 180);
 
             var { error: txErr } = await db.from("point_transactions").insert({
-                line_user_id : foundMember.line_user_id,
-                points       : pts,
-                exp          : pts,
-                type         : "earn",
-                description  : "ซื้อสินค้า " + amount.toLocaleString() + " บาท",
-                amount_spent : amount,
-                expires_at   : expiresAt.toISOString()
+                line_user_id: foundMember.line_user_id,
+                points: pts, 
+                exp: pts, 
+                type: "earn",
+                description: "ซื้อสินค้า " + amount.toLocaleString() + " บาท",
+                amount_spent: amount,
+                expires_at: expiresAt.toISOString()
             });
             if (txErr) throw txErr;
 
@@ -499,16 +542,43 @@
 
             document.getElementById("app").style.display            = "none";
             document.getElementById("success-screen").style.display = "block";
+            document.getElementById("success-title").textContent    = "บันทึกแต้มสำเร็จ!";
             document.getElementById("success-detail").innerHTML =
                 '<b>' + foundMember.full_name + '</b><br>' +
-                'ได้รับ <b style="color:#06c755">' + pts + ' แต้ม</b> ' +
-                'จากยอดซื้อ ' + amount.toLocaleString() + ' บาท<br>' +
+                'ได้รับ <b style="color:#06c755">' + pts + ' แต้ม</b> จากยอดซื้อ ' + amount.toLocaleString() + ' บาท<br>' +
                 'แต้มรวม: ' + newPoints.toLocaleString() + ' | ระดับ: ' + newTier;
 
         } catch (err) {
             document.getElementById("submit-error").textContent = "บันทึกไม่สำเร็จ: " + err.message;
             document.getElementById("submit-btn").disabled    = false;
             document.getElementById("submit-btn").textContent = "บันทึกแต้ม";
+        }
+    }
+
+    async function confirmCouponUsage() {
+        if (!selectedCoupon) return;
+
+        document.getElementById("confirm-coupon-btn").disabled = true;
+        document.getElementById("confirm-coupon-btn").textContent = "กำลังยืนยัน...";
+        document.getElementById("coupon-error").textContent = "";
+
+        try {
+            var { error: upErr } = await db.from("user_coupons")
+                .update({ status: "used" })
+                .eq("id", selectedCoupon.id);
+            if (upErr) throw upErr;
+
+            document.getElementById("app").style.display            = "none";
+            document.getElementById("success-screen").style.display = "block";
+            document.getElementById("success-title").textContent    = "ยืนยันการใช้คูปองสำเร็จ!";
+            document.getElementById("success-detail").innerHTML =
+                'ส่วนลด <b style="color:#06c755">' + selectedCoupon.discount_value + ' บาท</b><br>' +
+                'คูปองเปลี่ยนเป็น "ใช้แล้ว"';
+
+        } catch (err) {
+            document.getElementById("coupon-error").textContent = "ยืนยันไม่สำเร็จ: " + err.message;
+            document.getElementById("confirm-coupon-btn").disabled = false;
+            document.getElementById("confirm-coupon-btn").textContent = "ยืนยันการใช้คูปอง";
         }
     }
 
@@ -521,19 +591,38 @@
 
     function resetAll() {
         foundMember = null;
-        closeScanner();
-        document.getElementById("amount-input").value           = "";
-        document.getElementById("preview-points").textContent   = "0";
-        document.getElementById("cap-warn").textContent         = "";
-        document.getElementById("manual-id").value              = "";
-        document.getElementById("scan-error").textContent       = "";
-        document.getElementById("submit-error").textContent     = "";
-        document.getElementById("submit-btn").disabled          = true;
-        document.getElementById("submit-btn").textContent       = "บันทึกแต้ม";
-        document.getElementById("step-scan").style.display      = "block";
-        document.getElementById("step-amount").style.display    = "none";
+        selectedCoupon = null;
+        document.getElementById("amount-input").value         = "";
+        document.getElementById("preview-points").textContent = "0";
+        document.getElementById("cap-warn").textContent       = "";
+        document.getElementById("manual-id").value            = "";
+        document.getElementById("scan-error").textContent     = "";
+        document.getElementById("coupon-scan-error").textContent = "";
+        document.getElementById("submit-error").textContent   = "";
+        document.getElementById("coupon-error").textContent   = "";
+        document.getElementById("submit-btn").disabled        = true;
+        document.getElementById("submit-btn").textContent     = "บันทึกแต้ม";
+        document.getElementById("scan-qr-btn").disabled       = false;
+        document.getElementById("scan-qr-btn").textContent    = "📷 สแกน QR Code";
+        document.getElementById("scan-coupon-btn").disabled   = false;
+        document.getElementById("scan-coupon-btn").textContent = "📷 สแกน QR Code คูปอง";
+        document.getElementById("confirm-coupon-btn").disabled = true;
+        document.getElementById("confirm-coupon-btn").textContent = "ยืนยันการใช้คูปอง";
+        
+        if (currentMode === "member") {
+            document.getElementById("step-scan-member").style.display = "block";
+            document.getElementById("step-amount").style.display      = "none";
+            document.getElementById("step-scan-coupon").style.display = "none";
+            document.getElementById("step-coupon-confirm").style.display = "none";
+        } else {
+            document.getElementById("step-scan-member").style.display = "none";
+            document.getElementById("step-amount").style.display      = "none";
+            document.getElementById("step-scan-coupon").style.display = "block";
+            document.getElementById("step-coupon-confirm").style.display = "none";
+        }
+
         document.getElementById("success-screen").style.display = "none";
-        document.getElementById("app").style.display            = "block";
+        document.getElementById("app").style.display = "block";
     }
 
     init();
