@@ -262,24 +262,21 @@
         document.getElementById("scan-error").textContent = "";
 
         try {
-            if (!liff.isAvailable('scanCodeV2')) {
-                document.getElementById("scan-error").textContent = "อุปกรณ์นี้ไม่รองรับการสแกน QR Code";
-                document.getElementById("scan-qr-btn").disabled = false;
-                document.getElementById("scan-qr-btn").textContent = "📷 สแกน QR Code";
-                return;
-            }
-
             var result = await liff.scanCodeV2();
             if (result && result.value) {
                 await lookupMember(result.value);
             }
         } catch (err) {
-            if (err.message.includes("SCAN_FAILED_USER_CANCELLED")) {
+            var errorMsg = err.message || err.toString();
+            
+            if (errorMsg.includes("SCAN_FAILED_USER_CANCELLED") || errorMsg.includes("cancelled")) {
                 document.getElementById("scan-error").textContent = "ยกเลิกการสแกน";
-            } else if (err.message.includes("QR_CODE_NOT_FOUND")) {
+            } else if (errorMsg.includes("QR_CODE_NOT_FOUND") || errorMsg.includes("not found")) {
                 document.getElementById("scan-error").textContent = "ไม่พบ QR Code";
+            } else if (errorMsg.includes("PERMISSION")) {
+                document.getElementById("scan-error").textContent = "ต้องอนุญาตให้เข้าถึงกล้อง";
             } else {
-                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + err.message;
+                document.getElementById("scan-error").textContent = "สแกนไม่สำเร็จ: " + errorMsg;
             }
         } finally {
             document.getElementById("scan-qr-btn").disabled = false;
