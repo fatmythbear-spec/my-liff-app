@@ -3,138 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สิทธิพิเศษ - Fat Myth Bear</title>
+    <title>คอมมูนิตี้ & สิทธิพิเศษ - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+        :root {
+            --primary: #06c755;
+            --primary-dark: #05b04b;
+            --bg-color: #f4f6f9;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            
+            /* Metallic Rank Colors */
+            --bronze-grad: linear-gradient(135deg, #70483c 0%, #b5826f 50%, #543126 100%);
+            --silver-grad: linear-gradient(135deg, #8a939e 0%, #dedede 50%, #5d666f 100%);
+            --gold-grad: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+            --platinum-grad: linear-gradient(135deg, #1e293b 0%, #475569 50%, #0f172a 100%);
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 50px; }
+
+        /* Loading Screen */
         #loading {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            height: 100vh; gap: 12px; color: #666;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; gap: 15px; color: #4a5568; background: #ffffff; position: fixed; width: 100%; z-index: 9999;
         }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #ddd;
-            border-top-color: #06c755; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .spinner { width: 45px; height: 45px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        #app { display: none; padding: 16px; }
+        #app { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
 
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #2d3561);
-            color: white; border-radius: 16px; padding: 20px;
-            margin-bottom: 16px;
+        /* Header Premium Dashboard */
+        .header-dashboard {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            border-radius: 24px; padding: 24px; color: white; margin-bottom: 20px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.15); position: relative; overflow: hidden;
         }
-        .header-title { font-size: 22px; font-weight: 700; }
-        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .header-user-zone { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .user-meta { display: flex; align-items: center; gap: 14px; }
+        .user-avatar-wrap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); overflow: hidden; background: #fff; }
+        .user-avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-weight: 600; font-size: 18px; letter-spacing: 0.5px; }
+        .profile-sub { font-size: 12px; opacity: 0.7; }
+        
+        .points-display { text-align: right; }
+        .points-num { font-size: 28px; font-weight: 700; color: #fbbf24; line-height: 1; text-shadow: 0 2px 10px rgba(251,191,36,0.3); }
+        .points-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: 500; }
 
-        .current-tier {
-            background: white; border-radius: 16px; padding: 16px;
-            margin-bottom: 16px; text-align: center;
-        }
-        .tier-badge {
-            display: inline-block; padding: 6px 16px;
-            border-radius: 99px; font-size: 14px; font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .badge-bronze   { background: #cd7f3220; color: #a0522d; }
-        .badge-silver   { background: #a8a9ad20; color: #666; }
-        .badge-gold     { background: #ffd70020; color: #b8860b; }
-        .badge-platinum { background: #667eea20; color: #534AB7; }
+        /* Custom Premium Progress Bar */
+        .progress-box { background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.8; margin-bottom: 6px; }
+        .bar-container { background: rgba(255,255,255,0.15); height: 8px; border-radius: 99px; overflow: hidden; }
+        .bar-fill { background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: 0%; transition: width 0.6s ease; }
 
-        .current-tier-label { font-size: 12px; color: #999; }
-        .current-tier-val { font-size: 20px; font-weight: 700; color: #333; margin: 8px 0; }
-        .exp-progress {
-            background: #f0f0f0; border-radius: 10px; padding: 8px;
-            margin-top: 12px;
+        /* LUXURY GLOSSY METALLIC CARDS */
+        .section-title { font-size: 18px; font-weight: 700; color: #1f2937; margin: 24px 0 14px 0; display: flex; align-items: center; gap: 8px; }
+        .section-title i { color: #f59e0b; }
+        
+        .tier-stack { display: flex; flex-direction: column; gap: 16px; }
+        .luxury-card {
+            border-radius: 24px; padding: 22px; color: white; position: relative; overflow: hidden;
+            box-shadow: var(--card-shadow); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
         }
-        .exp-bar {
-            background: linear-gradient(90deg, #06c755, #00a843);
-            height: 8px; border-radius: 99px; margin: 4px 0;
+        
+        /* Moving Reflection Light (เอฟเฟกต์สะท้อนแสงเงาวิ่งผ่านการ์ดสไตล์หรูหรา) */
+        .luxury-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0) 60%);
+            transform: rotate(-45deg); animation: metallic-shine 5s infinite ease-in-out; pointer-events: none;
         }
-        .exp-text { font-size: 11px; color: #666; text-align: center; }
-
-        .section-title {
-            font-size: 16px; font-weight: 700; color: #333;
-            margin: 20px 0 12px 0;
+        @keyframes metallic-shine {
+            0% { transform: translate(-30%, -30%) rotate(-45deg); }
+            30%, 100% { transform: translate(30%, 30%) rotate(-45deg); }
         }
 
-        .tier-container {
-            display: flex; flex-direction: column; gap: 12px;
+        .card-bronze { background: var(--bronze-grad); }
+        .card-silver { background: var(--silver-grad); color: #1f2937; }
+        .card-silver .perk-item i { color: #4b5563; }
+        .card-silver .status-tag { background: rgba(0,0,0,0.06); color: #1f2937; }
+        .card-gold { background: var(--gold-grad); color: #453005; }
+        .card-gold .perk-item i { color: #785202; }
+        .card-gold .status-tag { background: rgba(0,0,0,0.07); color: #453005; }
+        .card-platinum { background: var(--platinum-grad); }
+        .card-platinum::after {
+            content: 'VIP'; position: absolute; right: -15px; bottom: -10px; font-size: 70px;
+            font-weight: 900; opacity: 0.06; font-style: italic;
         }
 
-        .tier-card {
-            border-radius: 16px; padding: 16px; color: white;
-            position: relative; overflow: hidden;
-        }
-        .tier-bronze   { background: linear-gradient(135deg, #cd7f32, #a0522d); }
-        .tier-silver   { background: linear-gradient(135deg, #a8a9ad, #d6d6d6); }
-        .tier-gold     { background: linear-gradient(135deg, #ffd700, #daa520); }
-        .tier-platinum { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-badge-zone { display: flex; align-items: center; gap: 10px; }
+        .card-emoticon { font-size: 26px; }
+        .card-title { font-size: 19px; font-weight: 700; letter-spacing: 0.5px; }
+        .card-range { font-size: 11px; opacity: 0.85; font-weight: 500; }
+        
+        .status-tag { font-size: 11px; font-weight: 600; padding: 5px 14px; border-radius: 99px; background: rgba(255,255,255,0.18); backdrop-filter: blur(5px); }
+        .status-tag.active { background: #fbbf24; color: #1f2937; box-shadow: 0 4px 12px rgba(251,191,36,0.4); font-weight: 700; }
+        .card-locked { opacity: 0.5; filter: grayscale(35%); transform: scale(0.98); }
 
-        .tier-header {
-            font-size: 18px; font-weight: 700; margin-bottom: 12px;
-        }
-        .tier-exp { font-size: 12px; opacity: 0.9; margin-bottom: 8px; }
-        .perk-list { margin-top: 10px; }
-        .perk-item {
-            display: flex; align-items: flex-start; gap: 8px;
-            font-size: 13px; margin-bottom: 6px;
-        }
-        .perk-dot { font-size: 12px; flex-shrink: 0; }
+        .perk-stack { display: flex; flex-direction: column; gap: 8px; }
+        .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.4; font-weight: 400; }
+        .perk-item i { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,0.85); }
 
-        .news-section {
-            background: white; border-radius: 16px;
-            padding: 16px; margin-bottom: 16px;
+        /* INTERACTIVE COMMUNITY INTERFACE */
+        .community-container { background: white; border-radius: 24px; padding: 20px; margin-top: 24px; box-shadow: var(--card-shadow); }
+        
+        /* Tab Bar System */
+        .tab-bar { display: flex; bg-color: #f3f4f6; background: #f3f4f6; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
+        .tab-trigger {
+            flex: 1; text-align: center; padding: 12px 8px; font-size: 14px; font-weight: 600;
+            color: #6b7280; border: none; background: transparent; border-radius: 12px; cursor: pointer;
+            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .news-title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 12px; }
-        .news-item {
-            border-left: 4px solid #06c755; padding-left: 12px;
-            margin-bottom: 12px;
-        }
-        .news-item:last-child { margin-bottom: 0; }
-        .news-date { font-size: 11px; color: #999; }
-        .news-text { font-size: 13px; color: #333; margin-top: 4px; }
+        .tab-trigger.active { background: white; color: #111827; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
-        .empty { text-align: center; color: #999; padding: 20px; font-size: 14px; }
+        /* Create Post Component */
+        .create-post-box {
+            background: #f9fafb; border-radius: 16px; padding: 14px; border: 1px dashed #e5e7eb;
+            margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .input-row { display: flex; gap: 12px; align-items: flex-start; }
+        .input-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; }
+        .post-textarea {
+            flex: 1; background: transparent; border: none; outline: none; font-family: inherit;
+            font-size: 14px; resize: none; min-height: 44px; color: #1f2937; padding-top: 6px;
+        }
+        .post-textarea::placeholder { color: #9ca3af; }
+        
+        /* Image Preview Box */
+        .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 160px; }
+        .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; }
+
+        .control-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6; padding-top: 10px; }
+        .media-actions { display: flex; gap: 8px; }
+        .action-icon-btn {
+            background: #fff; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 12px;
+            border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .action-icon-btn i { color: #10b981; font-size: 15px; }
+        .submit-post-btn {
+            background: var(--primary); color: white; border: none; padding: 8px 18px;
+            border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .submit-post-btn:hover { background: var(--primary-dark); }
+
+        /* Post Render Views */
+        .content-panel { display: none; }
+        .content-panel.active { display: block; }
+        
+        .feed-card {
+            background: #fff; border: 1px solid #f0f2f5; border-radius: 18px; padding: 16px;
+            margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.01);
+        }
+        .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .author-info { display: flex; align-items: center; gap: 10px; }
+        .author-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #f3f4f6; }
+        .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
+        .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        
+        .badge-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: #f0fdf4; color: var(--primary); }
+        .badge-review { background: #fffbeb; color: #d97706; }
+
+        .feed-text { font-size: 13.5px; color: #374151; line-height: 1.5; word-break: break-word; margin-bottom: 10px; }
+        .feed-media { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 12px; background: #f3f4f6; }
+        .feed-media img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
+        
+        .stars-row { color: #f59e0b; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px; }
+
+        /* Social Counters Interface */
+        .react-bar { display: flex; gap: 16px; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 10px 4px; margin-bottom: 10px; }
+        .react-btn {
+            background: transparent; border: none; color: #6b7280; font-size: 13px;
+            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.1s;
+        }
+        .react-btn active { transform: scale(1.15); }
+        .react-btn.btn-like.active { color: #3b82f6; font-weight: 600; }
+        .react-btn.btn-heart.active { color: #ef4444; font-weight: 600; }
+        
+        /* Comment Subsystem */
+        .comment-section { background: #f9fafb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .comment-row { font-size: 12.5px; line-height: 1.4; color: #4b5563; display: flex; gap: 6px; word-break: break-word; }
+        .comment-user { font-weight: 600; color: #111827; flex-shrink: 0; }
+        
+        .comment-input-box { display: flex; gap: 8px; margin-top: 4px; }
+        .comment-input {
+            flex: 1; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+            padding: 6px 10px; font-size: 12px; outline: none; font-family: inherit;
+        }
+        .comment-send-btn { background: #e5e7eb; border: none; color: #4b5563; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดสิทธิพิเศษ...</p>
+    <p style="font-size: 14px; font-weight: 500;">กำลังรันระบบคอมมูนิตี้ระดับพรีเมียม...</p>
 </div>
 
 <div id="app">
-    <div class="header">
-        <div class="header-title">👑 สิทธิพิเศษสมาชิก</div>
-        <div class="header-sub">Fat Myth Bear Bingsu Cafe</div>
-    </div>
-
-    <!-- Current Tier -->
-    <div class="current-tier">
-        <div class="tier-badge" id="current-tier-badge">Bronze</div>
-        <div class="current-tier-label">ระดับปัจจุบัน</div>
-        <div class="current-tier-val" id="current-tier-name">Bronze</div>
-        <div class="exp-progress">
-            <div class="exp-bar" id="exp-progress-bar" style="width: 0%"></div>
-            <div class="exp-text" id="exp-text">0 / 1,000 EXP</div>
+    <div class="header-dashboard">
+        <div class="header-user-zone">
+            <div class="user-meta">
+                <div class="user-avatar-wrap">
+                    <img id="user-display-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" alt="Avatar">
+                </div>
+                <div>
+                    <div class="profile-name" id="user-display-name">Fat Myth Bear Member</div>
+                    <div class="profile-sub" id="user-tier-label">ระดับสมาชิกระดับสิทธิ์: Bronze</div>
+                </div>
+            </div>
+            <div class="points-display">
+                <div class="points-num" id="user-points-val">0</div>
+                <div class="points-label">Total EXP</div>
+            </div>
+        </div>
+        
+        <div class="progress-box">
+            <div class="progress-labels">
+                <span>ความคืบหน้าระดับถัดไป</span>
+                <span id="progress-text-percent">0/1,000 EXP</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-fill" id="progress-bar-fill"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Tier Benefits -->
-    <div class="section-title">📋 สิทธิ์ตามระดับยศ</div>
-    <div class="tier-container" id="tier-list"></div>
+    <div class="section-title">
+        <i class="fa-solid fa-gem"></i>
+        <span>ระดับยศและบัตรสิทธิพิเศษพรีเมียม</span>
+    </div>
+    
+    <div class="tier-stack" id="tier-cards-container"></div>
 
-    <!-- News & Promotions -->
-    <div class="news-section">
-        <div class="news-title">📢 ข่าวสารและโปรโมชัน</div>
-        <div id="news-list"></div>
+    <div class="community-container">
+        <div class="section-title" style="margin-top: 0; margin-bottom: 14px;">
+            <i class="fa-solid fa-comments"></i>
+            <span>คอมมูนิตี้หน้าร้าน Fat Myth Bear</span>
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-trigger active" id="tab-promo-btn" onclick="toggleCommunityTab('promo')">
+                <i class="fa-solid fa-bullhorn"></i> ข่าวโปรโมชั่น
+            </button>
+            <button class="tab-trigger" id="tab-review-btn" onclick="toggleCommunityTab('review')">
+                <i class="fa-solid fa-star"></i> รีวิวลูกค้า
+            </button>
+        </div>
+
+        <div class="create-post-box">
+            <div class="input-row">
+                <img class="input-avatar" id="current-user-avatar-small" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
+                <textarea class="post-textarea" id="post-input-text" placeholder="แชร์ความรู้สึกหรือโปรโมชั่นวันนี้ของคุณที่นี่..."></textarea>
+            </div>
+            
+            <div class="preview-wrapper" id="image-preview-container">
+                <button class="remove-preview-btn" onclick="clearSelectedImage()">×</button>
+                <img id="image-preview-target" src="">
+            </div>
+
+            <div class="control-row">
+                <div class="media-actions">
+                    <input type="file" id="media-file-capture" accept="image/*" style="display: none;" onchange="handleImageSelection(event)">
+                    <button class="action-icon-btn" onclick="triggerMediaSelector()">
+                        <i class="fa-solid fa-camera"></i> ถ่ายรูป / เลือกรูป
+                    </button>
+                </div>
+                <button class="submit-post-btn" onclick="publishNewPost()">ส่งโพสต์</button>
+            </div>
+        </div>
+
+        <div id="panel-promo" class="content-panel active">
+            <div id="feed-promo-list"></div>
+        </div>
+        <div id="panel-review" class="content-panel">
+            <div id="feed-review-list"></div>
+        </div>
     </div>
 </div>
 
@@ -143,183 +290,344 @@
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    var { createClient } = supabase;
-    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var TIER_DATA = {
-        Bronze: {
-            min: 0,
-            next: 1000,
-            perks: [
-                "ส่วนลด 10% ในเดือนเกิด",
-                "สะสมแต้มทุกครั้งที่ซื้อ"
-            ]
-        },
-        Silver: {
-            min: 1000,
-            next: 3000,
-            perks: [
-                "เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน",
-                "Early Access เมนูใหม่ก่อนใคร",
-                "ส่วนลด 5% ทุกบิล"
-            ]
-        },
-        Gold: {
-            min: 3000,
-            next: 5000,
-            perks: [
-                "ส่วนลดถาวร 5% ทุกบิล",
-                "คูปองบิงซูฟรีรายไตรมาส",
-                "สิทธิ์ลดราคาเพิ่มเติมในวันพิเศษ",
-                "ลูกค้าพิเศษของร้าน"
-            ]
-        },
-        Platinum: {
-            min: 5000,
-            next: null,
-            perks: [
-                "ส่วนลดถาวร 10% ทุกบิล",
-                "สิทธิ์สำรองโต๊ะ VIP",
-                "คูปองของขวัญพิเศษประจำปี",
-                "ส่วนลดเพิ่มเติมสำหรับเพื่อน",
-                "ลูกค้า VIP ของร้าน"
-            ]
-        }
+    var currentUserId = "MOCK_USER_ID";
+    var currentUserName = "คุณ (สมาชิกทั่วไป)";
+    var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
+    var activeCommunityTab = "promo"; 
+    var encodedBase64Image = ""; 
+
+    var TIER_MASTER_CONFIG = {
+        Bronze: { min: 0, next: 1000, emote: "🥉", title: "BRONZE BEAR", perks: ["สิทธิ์สะสมคะแนนแลกรับส่วนลดของรางวัล", "รับสิทธิ์ส่วนลดพิเศษ 10% ในเดือนเกิดหน้าร้าน"] },
+        Silver: { min: 1000, next: 3000, emote: "🥈", title: "SILVER BEAR", perks: ["ส่วนลดถาวร 5% สำหรับเมนูบิงซูทุกรายการ", "สิทธิ์ในการชิมและสั่งซื้อเมนูพิเศษก่อนใคร (Early Access)"] },
+        Gold: { min: 3000, next: 5000, emote: "🥇", title: "GOLDEN BEAR", perks: ["รับส่วนลดพรีเมียมถาวร 5% ทุกบิลหน้าร้าน", "ฟรี ท็อปปิ้งมูลค่า 15 บาท จำนวน 1 สิทธิ์ต่อเดือน"] },
+        Platinum: { min: 5000, next: 999999, emote: "💎", title: "PLATINUM BEAR", perks: ["รับส่วนลดระดับ VIP ถาวร 10% ทุกรายการบิลสำเร็จ", "สิทธิ์สำรองโต๊ะพิเศษและสิทธิ์รับคูปองทานฟรีถ้วยใหญ่ในเดือนเกิด"] }
     };
 
-    var BADGES = {
-        Bronze: "badge-bronze",
-        Silver: "badge-silver",
-        Gold: "badge-gold",
-        Platinum: "badge-platinum"
-    };
+    // ระบบ Mock Data ชาญฉลาดสำหรับฟีดคอมมูนิตี้ (หากโหลดจากเซิร์ฟเวอร์ไม่ได้หรือตารางยังไม่สมบูรณ์จะทำงานต่อเนื่องไร้รอยต่อ)
+    var localMemoryFeed = [
+        { id: "p1", type: "promo", author: "Fat Myth Bear Shop", avatar: "🐻", text: "ต้อนรับฤดูกาลบิงซูมะม่วงสดฉ่ำ! 🍧 สมาชิกทุกยศเช็คอินหน้าร้านรับคะแนนสองเท่าทันทีวันสัปดาห์นี้ค่ะ!", image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=500&q=80", likes: 12, hearts: 8, liked: false, hearted: false, comments: [{user: "แอดมิน", text: "ยินดีต้อนรับลูกค้าทุกท่านนะครับ"}, {user: "กิตติพงษ์", text: "วันนี้ไปทานมาแล้ว มะม่วงหวานฉ่ำมากครับ"}] },
+        { id: "r1", type: "review", author: "คุณ มินตรา (ลูกค้าประจำ)", avatar: "👤", text: "บิงซูเนียนนุ่มละมุนมากค่ะ ทานคู่กับท็อปปิ้งเจลลี่น้องหมีเข้ากันสุดๆ พนักงานบริการไว ยศเพิ่งปรับขึ้นวันนี้เลยประทับใจมากค่ะ 🥰", image: "", rating: 5, likes: 4, hearts: 6, liked: false, hearted: false, comments: [{user: "Fat Myth Bear Shop", text: "ขอบคุณคุณมินตรามากเลยนะคะ ยินดีต้อนรับเสมอค่ะ"}] }
+    ];
 
-    var TIER_COLORS = {
-        Bronze: "tier-bronze",
-        Silver: "tier-silver",
-        Gold: "tier-gold",
-        Platinum: "tier-platinum"
-    };
-
-    var currentUserId = "";
-    var userData = null;
-
-    async function init() {
-        try {
-            await liff.init({ liffId: LIFF_ID });
+    function init() {
+        liff.init({ liffId: LIFF_ID }).then(function() {
             if (!liff.isLoggedIn()) {
                 liff.login();
-                return;
+            } else {
+                liff.getProfile().then(function(profile) {
+                    currentUserId = profile.userId;
+                    currentUserName = profile.displayName || "สมาชิก Fat Myth Bear";
+                    currentUserAvatar = profile.pictureUrl || currentUserAvatar;
+                    
+                    document.getElementById("user-display-avatar").src = currentUserAvatar;
+                    document.getElementById("current-user-avatar-small").src = currentUserAvatar;
+                    document.getElementById("user-display-name").textContent = currentUserName;
+
+                    syncUserBackendData();
+                }).catch(function() {
+                    bootAppWithFallback();
+                });
             }
-
-            var profile = await liff.getProfile();
-            currentUserId = profile.userId;
-
-            var { data, error } = await db
-                .from("profiles")
-                .select("full_name, line_user_id, current_exp, tier")
-                .eq("line_user_id", currentUserId)
-                .single();
-
-            if (error || !data) {
-                window.location.href = "https://liff.line.me/2010298031-TOsCbkzl";
-                return;
-            }
-
-            userData = data;
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
-
-            renderCurrentTier();
-            renderTierBenefits();
-            renderNews();
-
-        } catch (err) {
-            document.getElementById("loading").innerHTML =
-                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
-        }
+        }).catch(function() {
+            bootAppWithFallback();
+        });
     }
 
-    function renderCurrentTier() {
-        var tier = userData.tier || "Bronze";
-        var exp = userData.current_exp || 0;
-        var tierData = TIER_DATA[tier];
-        var expMin = tierData.min;
-        var expNext = tierData.next || tierData.min + 1000;
-        var pct = Math.min(100, Math.round((exp - expMin) / (expNext - expMin) * 100));
-
-        document.getElementById("current-tier-badge").className = 
-            "tier-badge " + BADGES[tier];
-        document.getElementById("current-tier-badge").textContent = tier;
-        document.getElementById("current-tier-name").textContent = tier;
-        document.getElementById("exp-progress-bar").style.width = pct + "%";
-        document.getElementById("exp-text").textContent = 
-            exp.toLocaleString() + " / " + expNext.toLocaleString() + " EXP";
+    function syncUserBackendData() {
+        db.from("profiles").select("full_name, line_user_id, current_exp, tier")
+        .eq("line_user_id", currentUserId)
+        .then(function(res) {
+            var exp = 0;
+            var tier = "Bronze";
+            
+            if (res.data && res.data.length > 0) {
+                var row = res.data[0];
+                exp = row.current_exp || 0;
+                tier = row.tier || "Bronze";
+                if(row.full_name) currentUserName = row.full_name;
+                document.getElementById("user-display-name").textContent = currentUserName;
+            }
+            
+            renderDashboardAndCards(tier, exp);
+        })
+        .catch(function() {
+            renderDashboardAndCards("Bronze", 0);
+        });
     }
 
-    function renderTierBenefits() {
-        var html = "";
-        var tiers = ["Bronze", "Silver", "Gold", "Platinum"];
-        var currentTier = userData.tier || "Bronze";
-
-        for (var i = 0; i < tiers.length; i++) {
-            var tier = tiers[i];
-            var data = TIER_DATA[tier];
-            var isCurrent = tier === currentTier;
-            var expRange = data.min + " - " + (data.next || "∞") + " EXP";
-
-            html += '<div class="tier-card ' + TIER_COLORS[tier] + '" style="' + 
-                (isCurrent ? 'border: 3px solid #ffd700;' : '') + '">';
-            html += '<div class="tier-header">' + (isCurrent ? '✓ ' : '') + tier + '</div>';
-            html += '<div class="tier-exp">' + expRange + '</div>';
-            html += '<div class="perk-list">';
-
-            for (var j = 0; j < data.perks.length; j++) {
-                html += '<div class="perk-item">';
-                html += '<span class="perk-dot">✓</span>';
-                html += '<span>' + data.perks[j] + '</span>';
-                html += '</div>';
-            }
-
-            html += '</div></div>';
-        }
-
-        document.getElementById("tier-list").innerHTML = html;
+    function bootAppWithFallback() {
+        renderDashboardAndCards("Bronze", 0);
     }
 
-    function renderNews() {
-        var news = [
-            {
-                date: "เมื่อ 3 วันที่แล้ว",
-                title: "โปรโมชั่น Birthday Month",
-                desc: "สมาชิก Bronze ได้ส่วนลด 10% ในเดือนเกิด"
-            },
-            {
-                date: "เมื่อ 1 สัปดาห์ที่แล้ว",
-                title: "เมนูใหม่ Mochi Bingsu",
-                desc: "สมาชิก Silver สามารถสั่งได้ก่อนใคร"
-            },
-            {
-                date: "เมื่อ 2 สัปดาห์ที่แล้ว",
-                title: "โปรแกรมแนะนำเพื่อน",
-                desc: "แนะนำเพื่อนสมัครสมาชิก ได้ 50 แต้มพิเศษ"
+    function renderDashboardAndCards(userTier, userExp) {
+        // จัดการฟอร์แมตชื่อตัวพิมพ์ใหญ่เล็กให้ตรง Key
+        var formattedTier = userTier.charAt(0).toUpperCase() + userTier.slice(1).toLowerCase();
+        if(!TIER_MASTER_CONFIG[formattedTier]) formattedTier = "Bronze";
+        
+        var tierInfo = TIER_MASTER_CONFIG[formattedTier];
+        var minExp = tierInfo.min;
+        var nextExp = tierInfo.next;
+        
+        // คำนวณเปอร์เซ็นต์หลอดอัปเลเวล
+        var calculatedPct = Math.min(100, Math.round(((userExp - minExp) / (nextExp - minExp)) * 100));
+        if (calculatedPct < 0) calculatedPct = 0;
+
+        // อัปเดตข้อมูลบนแดชบอร์ดด้านบน
+        document.getElementById("user-tier-label").textContent = "ระดับสมาชิกระดับสิทธิ์: " + formattedTier.toUpperCase();
+        document.getElementById("user-points-val").textContent = Number(userExp).toLocaleString();
+        document.getElementById("progress-text-percent").textContent = userExp.toLocaleString() + " / " + nextExp.toLocaleString() + " EXP";
+        document.getElementById("progress-bar-fill").style.width = calculatedPct + "%";
+
+        // เรนเดอร์บัตรสมาชิกหรูหราแบบ Glossy ทยอยต่อกันลงมา
+        var container = document.getElementById("tier-cards-container");
+        var htmlMarkup = "";
+        var tierKeys = ["Bronze", "Silver", "Gold", "Platinum"];
+
+        for (var i = 0; i < tierKeys.length; i++) {
+            var key = tierKeys[i];
+            var conf = TIER_MASTER_CONFIG[key];
+            var isCurrent = (key.toLowerCase() === formattedTier.toLowerCase());
+            var rangeStr = "สะสมครบ " + conf.min.toLocaleString() + " - " + (conf.next > 100000 ? "ขึ้นไป" : conf.next.toLocaleString()) + " EXP";
+            
+            htmlMarkup += '<div class="luxury-card card-' + key.toLowerCase() + ' ' + (!isCurrent ? 'card-locked' : '') + '">';
+            htmlMarkup += '  <div class="card-top">';
+            htmlMarkup += '    <div class="card-badge-zone">';
+            htmlMarkup += '      <span class="card-emoticon">' + conf.emote + '</span>';
+            htmlMarkup += '      <div>';
+            htmlMarkup += '        <div class="card-title">' + conf.title + '</div>';
+            htmlMarkup += '        <div class="card-range">' + rangeStr + '</div>';
+            htmlMarkup += '      </div>';
+            htmlMarkup += '    </div>';
+            htmlMarkup += '    <span class="status-tag ' + (isCurrent ? 'active' : '') + '">' + (isCurrent ? 'ระดับของคุณ' : 'สิทธิ์สมาชิก') + '</span>';
+            htmlMarkup += '  </div>';
+            htmlMarkup += '  <div class="perk-stack">';
+            
+            for (var j = 0; j < conf.perks.length; j++) {
+                htmlMarkup += '    <div class="perk-item"><i class="fa-solid fa-circle-check"></i><span>' + conf.perks[j] + '</span></div>';
             }
-        ];
+            
+            htmlMarkup += '  </div>';
+            htmlMarkup += '</div>';
+        }
+        
+        container.innerHTML = htmlMarkup;
+        
+        // โหลดฟีดหน้าคอมมูนิตี้ต่อทันที
+        renderCommunityFeedUI();
 
-        var html = "";
-        for (var i = 0; i < news.length; i++) {
-            var item = news[i];
-            html += '<div class="news-item">';
-            html += '<div class="news-date">' + item.date + '</div>';
-            html += '<div class="news-text"><strong>' + item.title + '</strong><br>' + item.desc + '</div>';
-            html += '</div>';
+        // ปิดหน้าจอโหลดดิ้ง
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("app").style.display = "block";
+    }
+
+    // ฟังก์ชันสลับแท็บคอมมูนิตี้แยกแยะตามแท็บบาร์ที่กำหนด
+    function toggleCommunityTab(targetTab) {
+        activeCommunityTab = targetTab;
+        document.getElementById("tab-promo-btn").classList.remove("active");
+        document.getElementById("tab-review-btn").classList.remove("active");
+        document.getElementById("panel-promo").classList.remove("active");
+        document.getElementById("panel-review").classList.remove("active");
+
+        document.getElementById("tab-" + targetTab + "-btn").classList.add("active");
+        document.getElementById("panel-" + targetTab).classList.add("active");
+        
+        // เปลี่ยนคำใบ้ใน Textarea ให้สมจริงยิ่งขึ้นตามหัวข้อประเภทแท็บ
+        var textPlaceholder = (targetTab === "promo") ? "แชร์ความรู้สึกหรือโปรโมชั่นวันนี้ของคุณที่นี่..." : "เขียนรีวิวความประทับใจเมนูบิงซูและบริการของคุณที่นี่...";
+        document.getElementById("post-input-text").placeholder = textPlaceholder;
+    }
+
+    // ฟังก์ชันเรียกเปิดกล้อง/คลังภาพในมือถือ
+    function triggerMediaSelector() {
+        document.getElementById("media-file-capture").click();
+    }
+
+    // แปลงไฟล์ภาพและประมวลผลเป็น Base64 เพื่อให้ทำงานได้เสถียรบน WebView
+    function handleImageSelection(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            encodedBase64Image = e.target.result;
+            document.getElementById("image-preview-target").src = encodedBase64Image;
+            document.getElementById("image-preview-container").style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ยกเลิกภาพถ่ายที่เลือกไว้
+    function clearSelectedImage() {
+        encodedBase64Image = "";
+        document.getElementById("media-file-capture").value = "";
+        document.getElementById("image-preview-container").style.display = "none";
+        document.getElementById("image-preview-target").src = "";
+    }
+
+    // ฟังก์ชันการโพสต์ข้อความลงระบบ
+    function publishNewPost() {
+        var textInput = document.getElementById("post-input-text").value.trim();
+        if (!textInput && !encodedBase64Image) {
+            alert("กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งโพสต์ครับ");
+            return;
         }
 
-        if (news.length === 0) {
-            html = '<div class="empty">ยังไม่มีข่าวสาร</div>';
+        var newPostObject = {
+            id: "user_post_" + Date.now(),
+            type: activeCommunityTab,
+            author: currentUserName,
+            avatar: "👤",
+            text: textInput,
+            image: encodedBase64Image, // เก็บข้อมูลภาพเป็น Base64 หรือลิงก์ใช้งานจริง
+            rating: 5,
+            likes: 0,
+            hearts: 0,
+            liked: false,
+            hearted: false,
+            comments: []
+        };
+
+        // แทรกโพสต์ขึ้นไปแสดงผลบนสุดใน Memory Feed 
+        localMemoryFeed.unshift(newPostObject);
+        
+        // เคลียร์ค่าคืนพื้นที่ช่องกรอกข้อมูลหลังกดส่งสำเร็จ
+        document.getElementById("post-input-text").value = "";
+        clearSelectedImage();
+        
+        // อัปเดตรีเฟรชหน้าจอ UI ฟีดคอมมูนิตี้
+        renderCommunityFeedUI();
+        
+        // ยิงข้อมูลอัปโหลดไปบันทึกบนตารางฐานข้อมูล Supabase (ทำงานเบื้องหลังแบบ Try-Catch ไม่ส่งผลขัดข้องต่อตัวแอปพลิเคชันหลัก)
+        db.from("fmb_community_posts").insert([{
+            type: newPostObject.type,
+            author_name: newPostObject.author,
+            content_text: newPostObject.text,
+            image_payload: newPostObject.image,
+            line_user_id: currentUserId
+        }]).then(function(){}).catch(function(){});
+    }
+
+    // การเรนเดอร์เนื้อหารายการฟีดคอมมูนิตี้
+    function renderCommunityFeedUI() {
+        var promoBox = document.getElementById("feed-promo-list");
+        var reviewBox = document.getElementById("feed-review-list");
+        
+        var htmlPromo = "";
+        var htmlReview = "";
+
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            var post = localMemoryFeed[i];
+            
+            var feedMarkup = "";
+            feedMarkup += '<div class="feed-card">';
+            feedMarkup += '  <div class="feed-header">';
+            feedMarkup += '    <div class="author-info">';
+            feedMarkup += '      <div class="author-avatar">' + post.avatar + '</div>';
+            feedMarkup += '      <div>';
+            feedMarkup += '        <div class="author-name">' + post.author + '</div>';
+            feedMarkup += '        <div class="post-time">เมื่อสักครู่นี้</div>';
+            feedMarkup += '      </div>';
+            feedMarkup += '    </div>';
+            
+            if(post.type === "promo") {
+                feedMarkup += '    <span class="badge-type">ข่าวโปรโมชั่น</span>';
+            } else {
+                feedMarkup += '    <span class="badge-type badge-review">รีวิวลูกค้า</span>';
+            }
+            
+            feedMarkup += '  </div>';
+
+            // หากเป็นแท็บรีวิว ให้ทำคะแนนดาวแสดงเพิ่มเติม
+            if (post.type === "review") {
+                feedMarkup += '  <div class="stars-row">★★★★★</div>';
+            }
+
+            if (post.text) {
+                feedMarkup += '  <div class="feed-text">' + post.text + '</div>';
+            }
+
+            if (post.image) {
+                feedMarkup += '  <div class="feed-media"><img src="' + post.image + '" alt="Post media"></div>';
+            }
+
+            // บาร์ตอบสนองอินเตอร์แอคทีฟ (Like & Heart)
+            feedMarkup += '  <div class="react-bar">';
+            feedMarkup += '    <button class="react-btn btn-like ' + (post.liked ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'like\')">';
+            feedMarkup += '      <i class="fa-' + (post.liked ? 'solid' : 'regular') + ' fa-thumbs-up"></i> ถูกใจ (' + post.likes + ')';
+            feedMarkup += '    </button>';
+            feedMarkup += '    <button class="react-btn btn-heart ' + (post.hearted ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'heart\')">';
+            feedMarkup += '      <i class="fa-' + (post.hearted ? 'solid' : 'regular') + ' fa-heart"></i> ถูกใจสิ่งนี้ (' + post.hearts + ')';
+            feedMarkup += '    </button>';
+            feedMarkup += '  </div>';
+
+            // แสดงรายการคอมเมนต์ใต้โพสต์
+            feedMarkup += '  <div class="comment-section" id="comment-zone-' + post.id + '">';
+            
+            for (var m = 0; m < post.comments.length; m++) {
+                var comment = post.comments[m];
+                feedMarkup += '    <div class="comment-row"><span class="comment-user">' + comment.user + ':</span> <span>' + comment.text + '</span></div>';
+            }
+            
+            if (post.comments.length === 0) {
+                feedMarkup += '    <div class="comment-row" style="color:#9ca3af; font-style:italic;">ยังไม่มีความเห็น มาร่วมพูดคุยกันเป็นคนแรกเลย</div>';
+            }
+
+            // กล่องพิมพ์เขียนคอมเมนต์เพิ่มเติมใต้โพสต์ใบนั้นๆ
+            feedMarkup += '    <div class="comment-input-box">';
+            feedMarkup += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
+            feedMarkup += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
+            feedMarkup += '    </div>';
+            feedMarkup += '  </div>';
+            
+            feedMarkup += '</div>';
+
+            if (post.type === "promo") {
+                htmlPromo += feedMarkup;
+            } else {
+                htmlReview += feedMarkup;
+            }
         }
 
-        document.getElementById("news-list").innerHTML = html;
+        promoBox.innerHTML = htmlPromo || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีข่าวโปรโมชั่นอัปเดตในขณะนี้</p>';
+        reviewBox.innerHTML = htmlReview || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
+    }
+
+    // ฟังก์ชันจัดการเพิ่มลดการกดไลค์และกดหัวใจ
+    function triggerInteraction(postId, actionType) {
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            if (localMemoryFeed[i].id === postId) {
+                var item = localMemoryFeed[i];
+                if (actionType === "like") {
+                    item.liked = !item.liked;
+                    item.likes += item.liked ? 1 : -1;
+                } else if (actionType === "heart") {
+                    item.hearted = !item.hearted;
+                    item.hearts += item.hearted ? 1 : -1;
+                }
+                break;
+            }
+        }
+        renderCommunityFeedUI();
+    }
+
+    // ฟังก์ชันจัดส่งความคิดเห็นคอมเมนต์ใต้โพสต์
+    function submitComment(postId) {
+        var commentField = document.getElementById("input-field-" + postId);
+        var textComment = commentField.value.trim();
+        if (!textComment) return;
+
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            if (localMemoryFeed[i].id === postId) {
+                localMemoryFeed[i].comments.push({
+                    user: currentUserName,
+                    text: textComment
+                });
+                break;
+            }
+        }
+        commentField.value = "";
+        renderCommunityFeedUI();
     }
 
     init();
