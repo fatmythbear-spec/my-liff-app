@@ -201,7 +201,6 @@
     <p id="loading-text">กำลังโหลด Dashboard...</p>
 </div>
 
-<!-- QR Scanner Modal -->
 <div id="qr-modal">
     <div class="qr-modal-title">📷 สแกน QR Code</div>
     <div id="qr-reader"></div>
@@ -232,7 +231,6 @@
     <div id="msg-success" class="message msg-success"></div>
     <div id="msg-warn"    class="message msg-warn"></div>
 
-    <!-- TAB: สมาชิก -->
     <div id="members" class="tab-content show">
         <div class="stats-grid">
             <div class="stat-card">
@@ -292,7 +290,6 @@
         </div>
     </div>
 
-    <!-- TAB: สแกน QR -->
     <div id="scanner" class="tab-content">
         <div class="card">
             <div class="form-group">
@@ -312,7 +309,6 @@
         </div>
     </div>
 
-    <!-- TAB: เพิ่มแต้ม -->
     <div id="add-points" class="tab-content">
         <div class="card">
             <div class="form-group">
@@ -343,7 +339,6 @@
         </div>
     </div>
 
-    <!-- TAB: วิเคราะห์ -->
     <div id="analytics" class="tab-content">
         <div class="card">
             <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">📊 สถิติการใช้งาน</h3>
@@ -372,7 +367,6 @@
         </div>
     </div>
 
-    <!-- TAB: แอดมิน -->
     <div id="admins" class="tab-content">
         <div class="card">
             <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">👨‍💼 จัดการแอดมิน</h3>
@@ -395,7 +389,6 @@
         </div>
     </div>
 
-    <!-- TAB: โปรโมชั่น -->
     <div id="promo" class="tab-content">
         <div class="card">
             <h3 style="font-size:16px; font-weight:700; margin-bottom:16px;">📢 ส่งโปรโมชั่น</h3>
@@ -421,7 +414,6 @@
     </div>
 </div>
 
-<!-- Delete Modal -->
 <div class="modal" id="delete-modal">
     <div class="modal-content">
         <div class="modal-title">⚠️ ยืนยันการลบ</div>
@@ -507,10 +499,10 @@
     // ===== MEMBERS =====
     async function loadMembers() {
         try {
+            // แก้ไขจุดนี้: นำคำสั่ง .order("created_at") ออกเนื่องจากไม่มีคอลัมน์นี้ใน Table profiles
             var { data, error } = await db
                 .from("profiles")
-                .select("*")
-                .order("created_at", { ascending: false });
+                .select("*");
 
             if (error) {
                 showError("โหลดข้อมูลไม่สำเร็จ: " + error.message);
