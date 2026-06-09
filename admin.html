@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Kanit', sans-serif; background: #f5f5f5; min-height: 100vh; }
@@ -49,6 +50,27 @@
         .btn-export:hover { background: #00a843; }
         .btn-export:disabled { background: #aaa; cursor: not-allowed; }
 
+        .tabs {
+            display: flex; gap: 8px; margin-bottom: 20px;
+            overflow-x: auto; padding-bottom: 10px;
+        }
+        .tab-btn {
+            padding: 12px 16px; border: none; background: white;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            cursor: pointer; color: #999; white-space: nowrap;
+            transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .tab-btn.active {
+            background: #06c755; color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.show {
+            display: block;
+        }
+
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 12px; margin-bottom: 20px;
@@ -62,10 +84,14 @@
         .stat-number { font-size: 32px; font-weight: 700; color: #06c755; }
         .stat-label { font-size: 13px; color: #999; margin-top: 8px; }
 
+        .card {
+            background: white; border-radius: 12px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;
+        }
+
         .controls {
-            background: white; border-radius: 12px; padding: 16px;
-            margin-bottom: 20px; display: flex; gap: 12px;
-            flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex; gap: 12px;
+            flex-wrap: wrap;
         }
         .search-input {
             flex: 1; min-width: 200px; padding: 12px 14px;
@@ -109,7 +135,6 @@
             border-radius: 6px; font-size: 12px; cursor: pointer;
             background: white; outline: none;
         }
-        .role-select:focus { border-color: #06c755; }
 
         .tier-badge {
             display: inline-block; padding: 5px 12px;
@@ -136,6 +161,10 @@
             background: #e74c3c; color: white;
         }
         .btn-delete:hover { background: #c0392b; }
+        .btn-primary {
+            background: #06c755; color: white;
+        }
+        .btn-primary:hover { background: #00a843; }
 
         .empty {
             text-align: center; padding: 40px 20px;
@@ -150,7 +179,7 @@
         .modal.show { display: flex; }
         .modal-content {
             background: white; border-radius: 16px; padding: 24px;
-            width: 90%; max-width: 400px;
+            width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;
         }
         .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
         .modal-text { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 20px; }
@@ -163,6 +192,48 @@
         }
         .modal-btn-cancel { background: #eee; color: #333; }
         .modal-btn-confirm { background: #e74c3c; color: white; }
+
+        #qr-reader {
+            width: 100%; margin: 12px 0; border-radius: 12px;
+            overflow: hidden; border: 2px solid #ddd;
+        }
+
+        #qr-reader video {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: #333; margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 14px; outline: none;
+        }
+        .form-input:focus { border-color: #06c755; }
+
+        .input-row {
+            display: flex; gap: 12px;
+        }
+        .btn-scan {
+            flex: 1; padding: 12px; background: #1a1a2e;
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; cursor: pointer;
+        }
+        .btn-scan:disabled { background: #aaa; }
+
+        .scanner-controls {
+            display: flex; gap: 8px; margin-top: 12px;
+        }
+        .btn-stop {
+            flex: 1; padding: 12px; background: #e74c3c;
+            color: white; border: none; border-radius: 10px;
+            font-weight: 600; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -185,70 +256,239 @@
         </div>
     </div>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-number" id="total-members">0</div>
-            <div class="stat-label">สมาชิกทั้งหมด</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="bronze-count">0</div>
-            <div class="stat-label">🥉 Bronze</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="silver-count">0</div>
-            <div class="stat-label">🥈 Silver</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="gold-count">0</div>
-            <div class="stat-label">🥇 Gold</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" id="platinum-count">0</div>
-            <div class="stat-label">💎 Platinum</div>
-        </div>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab(event, 'members')">👥 สมาชิก</button>
+        <button class="tab-btn" onclick="switchTab(event, 'scanner')">📷 สแกน QR</button>
+        <button class="tab-btn" onclick="switchTab(event, 'add-points')">➕ เพิ่มแต้ม</button>
+        <button class="tab-btn" onclick="switchTab(event, 'analytics')">📊 วิเคราะห์</button>
+        <button class="tab-btn" onclick="switchTab(event, 'branch')">🏪 สาขา</button>
+        <button class="tab-btn" onclick="switchTab(event, 'admins')">👨‍💼 แอดมิน</button>
+        <button class="tab-btn" onclick="switchTab(event, 'promo')">📢 โปรโมชั่น</button>
     </div>
 
     <div id="error-msg" class="message error"></div>
     <div id="success-msg" class="message success"></div>
 
-    <div class="controls">
-        <input type="text" class="search-input" id="search-input" 
-            placeholder="🔍 ค้นหาชื่อ เบอร์โทร หรือ ID" oninput="filterMembers()">
-        <select class="filter-select" id="tier-filter" onchange="filterMembers()">
-            <option value="">📊 ทั้งหมด Tier</option>
-            <option value="Bronze">🥉 Bronze</option>
-            <option value="Silver">🥈 Silver</option>
-            <option value="Gold">🥇 Gold</option>
-            <option value="Platinum">💎 Platinum</option>
-        </select>
+    <!-- TAB 1: สมาชิก -->
+    <div id="members" class="tab-content show">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-members">0</div>
+                <div class="stat-label">สมาชิกทั้งหมด</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="bronze-count">0</div>
+                <div class="stat-label">🥉 Bronze</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="silver-count">0</div>
+                <div class="stat-label">🥈 Silver</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="gold-count">0</div>
+                <div class="stat-label">🥇 Gold</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="platinum-count">0</div>
+                <div class="stat-label">💎 Platinum</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="controls">
+                <input type="text" class="search-input" id="search-input" 
+                    placeholder="🔍 ค้นหาชื่อ เบอร์โทร หรือ ID" oninput="filterMembers()">
+                <select class="filter-select" id="tier-filter" onchange="filterMembers()">
+                    <option value="">📊 ทั้งหมด Tier</option>
+                    <option value="Bronze">🥉 Bronze</option>
+                    <option value="Silver">🥈 Silver</option>
+                    <option value="Gold">🥇 Gold</option>
+                    <option value="Platinum">💎 Platinum</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>ชื่อสมาชิก</th>
+                        <th>เบอร์โทร</th>
+                        <th>Tier</th>
+                        <th>แต้ม</th>
+                        <th>EXP</th>
+                        <th>บทบาท</th>
+                        <th>การจัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="members-table">
+                    <tr><td colspan="8" class="empty">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:5%;">#</th>
-                    <th style="width:15%;">ชื่อสมาชิก</th>
-                    <th style="width:20%;">เบอร์โทร</th>
-                    <th style="width:12%;">Tier</th>
-                    <th style="width:10%;">แต้ม</th>
-                    <th style="width:10%;">EXP</th>
-                    <th style="width:12%;">บทบาท</th>
-                    <th style="width:16%;">การจัดการ</th>
-                </tr>
-            </thead>
-            <tbody id="members-table">
-                <tr><td colspan="8" class="empty">กำลังโหลดข้อมูล...</td></tr>
-            </tbody>
-        </table>
+    <!-- TAB 2: สแกน QR -->
+    <div id="scanner" class="tab-content">
+        <div class="card">
+            <div class="form-group">
+                <label class="form-label">📷 เลือกโหมดสแกน</label>
+                <select class="form-input" id="scanner-mode" onchange="updateScannerMode()">
+                    <option value="member">สแกน QR สมาชิก (บันทึกแต้ม)</option>
+                    <option value="coupon">สแกน QR คูปอง (ยืนยันการใช้)</option>
+                </select>
+            </div>
+
+            <button class="btn-scan" onclick="startQRScanner()">📷 เปิดกล้องสแกน</button>
+            <div id="qr-reader"></div>
+            <div class="scanner-controls" id="scanner-controls" style="display:none;">
+                <button class="btn-stop" onclick="stopQRScanner()">ปิดกล้อง</button>
+            </div>
+
+            <div id="scan-result" style="display:none; margin-top:16px; padding:16px; background:#f0fff4; border-radius:10px;">
+                <div style="font-size:14px; margin-bottom:8px;"><b id="result-name">-</b></div>
+                <div id="result-info" style="font-size:13px; color:#666;"></div>
+            </div>
+
+            <p class="error" id="scanner-error" style="margin-top:16px; display:none;"></p>
+        </div>
+    </div>
+
+    <!-- TAB 3: เพิ่มแต้ม -->
+    <div id="add-points" class="tab-content">
+        <div class="card">
+            <div class="form-group">
+                <label class="form-label">🔍 ค้นหาสมาชิก</label>
+                <input type="text" class="form-input" id="add-points-search" 
+                    placeholder="ชื่อ เบอร์โทร หรือ ID">
+                <button class="btn-primary" style="width:100%; margin-top:8px;" 
+                    onclick="searchMemberForPoints()">ค้นหา</button>
+            </div>
+
+            <div id="add-points-result" style="display:none; margin-top:16px; padding:16px; background:#f0fff4; border-radius:10px;">
+                <div style="font-size:14px; margin-bottom:8px;"><b id="member-name">-</b></div>
+                <div style="font-size:13px; color:#666; margin-bottom:12px;">
+                    แต้มปัจจุบัน: <b id="member-current-points">0</b> | EXP: <b id="member-current-exp">0</b>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">จำนวนแต้มที่ต้องการเพิ่ม</label>
+                    <input type="number" class="form-input" id="points-amount" placeholder="0" min="0">
+                </div>
+
+                <div style="padding:12px; background:#fff; border-radius:8px; margin:12px 0; text-align:center;">
+                    <div style="font-size:12px; color:#999;">EXP ที่จะเพิ่ม</div>
+                    <div style="font-size:20px; font-weight:700; color:#06c755;" id="exp-preview">0</div>
+                </div>
+
+                <button class="btn-primary" style="width:100%; margin-top:8px;" 
+                    onclick="addPointsConfirm()">➕ เพิ่มแต้ม</button>
+            </div>
+
+            <p class="error" id="add-points-error" style="margin-top:16px; display:none;"></p>
+        </div>
+    </div>
+
+    <!-- TAB 4: วิเคราะห์ -->
+    <div id="analytics" class="tab-content">
+        <div class="card">
+            <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">📊 สถิติการใช้งาน</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-points-used">0</div>
+                    <div class="stat-label">แต้มที่แลกแล้ว</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-coupons">0</div>
+                    <div class="stat-label">คูปองทั้งหมด</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="coupons-used">0</div>
+                    <div class="stat-label">คูปองที่ใช้แล้ว</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="avg-points">0</div>
+                    <div class="stat-label">เฉลี่ยแต้มต่อคน</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 5: สาขา -->
+    <div id="branch" class="tab-content">
+        <div class="card">
+            <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">🏪 จัดการสาขา</h3>
+            <p style="color:#666; text-align:center; padding:20px;">ฟังค์ชั่นนี้อยู่ระหว่างการพัฒนา</p>
+        </div>
+    </div>
+
+    <!-- TAB 6: แอดมิน -->
+    <div id="admins" class="tab-content">
+        <div class="card">
+            <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">👨‍💼 จัดการแอดมิน</h3>
+            <div class="form-group">
+                <label class="form-label">ค้นหาสมาชิกที่ต้องการให้เป็นแอดมิน</label>
+                <input type="text" class="form-input" id="admin-search" 
+                    placeholder="ชื่อ เบอร์โทร หรือ ID">
+                <button class="btn-primary" style="width:100%; margin-top:8px;" 
+                    onclick="searchAdminMembers()">ค้นหา</button>
+            </div>
+
+            <div id="admin-result" style="display:none; margin-top:16px;">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ชื่อ</th>
+                                <th>บทบาท</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 7: โปรโมชั่น -->
+    <div id="promo" class="tab-content">
+        <div class="card">
+            <h3 style="font-size:18px; font-weight:700; margin-bottom:16px;">📢 ส่งโปรโมชั่น</h3>
+            <div class="form-group">
+                <label class="form-label">ประเภท</label>
+                <select class="form-input" id="promo-type">
+                    <option value="all">ส่งให้สมาชิกทั้งหมด</option>
+                    <option value="tier">ส่งตามระดับ Tier</option>
+                    <option value="specific">ส่งให้สมาชิกคนเดียว</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">หัวข้อ</label>
+                <input type="text" class="form-input" id="promo-title" placeholder="เช่น ส่วนลด 20% วันนี้!">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">ข้อความ</label>
+                <textarea class="form-input" id="promo-message" placeholder="เขียนข้อความโปรโมชั่น..." 
+                    style="resize:vertical; height:100px;"></textarea>
+            </div>
+
+            <button class="btn-primary" style="width:100%;" onclick="sendPromo()">
+                📢 ส่งโปรโมชั่น
+            </button>
+        </div>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
+<!-- Delete Modal -->
 <div class="modal" id="delete-modal">
     <div class="modal-content">
         <div class="modal-title">⚠️ ยืนยันการลบ</div>
-        <div class="modal-text">ต้องการลบสมาชิก <b id="delete-name">-</b> จริงหรือ? การกระทำนี้ไม่สามารถย้อนกลับได้</div>
+        <div class="modal-text">ต้องการลบสมาชิก <b id="delete-name">-</b> จริงหรือ?</div>
         <div class="modal-buttons">
             <button class="modal-btn modal-btn-cancel" onclick="closeModal()">ยกเลิก</button>
             <button class="modal-btn modal-btn-confirm" onclick="confirmDelete()">ลบเลย</button>
@@ -266,6 +506,9 @@
 
     var allMembers = [];
     var deleteTargetId = "";
+    var scanner = null;
+    var scannerActive = false;
+    var selectedMemberId = "";
 
     async function init() {
         try {
@@ -284,7 +527,7 @@
 
             if (error || !data || data.role !== "Admin") {
                 document.getElementById("loading").innerHTML =
-                    '<p style="color:red;padding:20px;text-align:center">⛔ เฉพาะ Admin เท่านั้น<br><small>กรุณาติดต่อผู้ดูแลระบบ</small></p>';
+                    '<p style="color:red;padding:20px;text-align:center">⛔ เฉพาะ Admin เท่านั้น</p>';
                 return;
             }
 
@@ -292,6 +535,7 @@
             document.getElementById("app").style.display = "block";
 
             loadMembers();
+            loadAnalytics();
 
         } catch (err) {
             document.getElementById("loading").innerHTML =
@@ -299,25 +543,27 @@
         }
     }
 
+    function switchTab(e, tabName) {
+        document.querySelectorAll(".tab-content").forEach(function(el) {
+            el.classList.remove("show");
+        });
+        document.querySelectorAll(".tab-btn").forEach(function(el) {
+            el.classList.remove("active");
+        });
+        document.getElementById(tabName).classList.add("show");
+        e.target.classList.add("active");
+    }
+
     async function loadMembers() {
         try {
-            document.getElementById("export-btn").disabled = true;
-
             var { data, error } = await db
                 .from("profiles")
                 .select("*")
                 .order("created_at", { ascending: false });
 
-            if (error) {
-                showError("โหลดข้อมูลไม่สำเร็จ: " + error.message);
-                console.error("Error:", error);
-                return;
-            }
-
-            if (!data || data.length === 0) {
+            if (error || !data) {
                 document.getElementById("members-table").innerHTML =
-                    '<tr><td colspan="8" class="empty">ไม่มีข้อมูลสมาชิก</td></tr>';
-                document.getElementById("export-btn").disabled = true;
+                    '<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';
                 return;
             }
 
@@ -327,7 +573,7 @@
             document.getElementById("export-btn").disabled = false;
 
         } catch (err) {
-            showError("เกิดข้อผิดพลาด: " + err.message);
+            showError("โหลดข้อมูลไม่สำเร็จ: " + err.message);
         }
     }
 
@@ -360,18 +606,15 @@
                 '<td>' + (m.current_points || 0).toLocaleString() + '</td>' +
                 '<td>' + (m.current_exp || 0).toLocaleString() + '</td>' +
                 '<td>' +
-                    '<select class="role-select" value="' + (m.role || 'Customer') + '" ' +
-                    'onchange="updateRole(\'' + m.line_user_id + '\', this.value)">' +
-                    '<option value="Customer">Customer</option>' +
-                    '<option value="Staff">Staff</option>' +
-                    '<option value="Admin">Admin</option>' +
+                    '<select class="role-select" onchange="updateRole(\'' + m.line_user_id + '\', this.value)">' +
+                    '<option value="Customer" ' + (m.role === 'Customer' ? 'selected' : '') + '>Customer</option>' +
+                    '<option value="Staff" ' + (m.role === 'Staff' ? 'selected' : '') + '>Staff</option>' +
+                    '<option value="Admin" ' + (m.role === 'Admin' ? 'selected' : '') + '>Admin</option>' +
                     '</select>' +
                 '</td>' +
                 '<td>' +
-                    '<div class="actions">' +
-                    '<button class="action-btn-sm btn-info" onclick="viewHistory(\'' + m.line_user_id + '\', \'' + m.full_name + '\')">📜</button> ' +
+                    '<button class="action-btn-sm btn-info" onclick="viewHistory(\'' + m.line_user_id + '\')">📜</button> ' +
                     '<button class="action-btn-sm btn-delete" onclick="showDeleteModal(\'' + m.line_user_id + '\', \'' + m.full_name + '\')">🗑️</button>' +
-                    '</div>' +
                 '</td>' +
                 '</tr>';
         }).join("");
@@ -385,7 +628,7 @@
 
         var filtered = allMembers.filter(function(m) {
             var matchName = !search || m.full_name.toLowerCase().includes(search) || 
-                            m.tel.toLowerCase().includes(search) ||
+                            (m.tel && m.tel.toLowerCase().includes(search)) ||
                             m.line_user_id.toLowerCase().includes(search);
             var matchTier = !tierFilter || m.tier === tierFilter;
             return matchName && matchTier;
@@ -406,7 +649,6 @@
 
         } catch (err) {
             showError("❌ อัปเดตไม่สำเร็จ: " + err.message);
-            loadMembers();
         }
     }
 
@@ -418,12 +660,9 @@
 
     function closeModal() {
         document.getElementById("delete-modal").classList.remove("show");
-        deleteTargetId = "";
     }
 
     async function confirmDelete() {
-        if (!deleteTargetId) return;
-
         try {
             var { error } = await db
                 .from("profiles")
@@ -431,7 +670,6 @@
                 .eq("line_user_id", deleteTargetId);
 
             if (error) throw error;
-            
             showSuccess("✅ ลบสมาชิกสำเร็จ");
             closeModal();
             loadMembers();
@@ -441,26 +679,25 @@
         }
     }
 
-    async function viewHistory(lineUserId, fullName) {
+    async function viewHistory(lineUserId) {
         try {
             var { data, error } = await db
                 .from("point_transactions")
                 .select("*")
                 .eq("line_user_id", lineUserId)
                 .order("created_at", { ascending: false })
-                .limit(20);
+                .limit(10);
 
-            if (error || !data || data.length === 0) {
-                alert("📋 ประวัติ " + fullName + "\n\nไม่มีประวัติแต้ม");
+            if (!data || data.length === 0) {
+                alert("ไม่มีประวัติแต้ม");
                 return;
             }
 
-            var history = "📋 ประวัติแต้ม: " + fullName + "\n\n";
+            var history = "📋 ประวัติแต้ม (10 อันล่าสุด):\n\n";
             data.forEach(function(tx, idx) {
                 var date = new Date(tx.created_at).toLocaleDateString("th-TH");
                 var symbol = tx.type === "earn" ? "➕" : "➖";
                 history += (idx + 1) + ". " + date + " " + symbol + " " + tx.points + " แต้ม\n";
-                history += "   " + (tx.description || "-") + "\n\n";
             });
 
             alert(history);
@@ -470,49 +707,272 @@
         }
     }
 
+    function updateScannerMode() {
+        if (scanner) stopQRScanner();
+    }
+
+    function startQRScanner() {
+        if (scannerActive) {
+            showError("กล้องกำลังเปิดอยู่");
+            return;
+        }
+
+        document.getElementById("qr-reader").style.display = "block";
+        document.getElementById("scanner-controls").style.display = "flex";
+        document.getElementById("qr-reader").innerHTML = "";
+
+        scanner = new Html5Qrcode("qr-reader");
+
+        scanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            function(decodedText, decodedResult) {
+                scanner.pause();
+                processScanResult(decodedText);
+            },
+            function(errorMessage) {
+                // ignore
+            }
+        ).catch(function(err) {
+            showError("ไม่สามารถเข้าถึงกล้องได้: " + err);
+        });
+
+        scannerActive = true;
+    }
+
+    function stopQRScanner() {
+        if (scanner) {
+            scanner.stop().then(function() {
+                document.getElementById("qr-reader").style.display = "none";
+                document.getElementById("scanner-controls").style.display = "none";
+                scanner = null;
+                scannerActive = false;
+            }).catch(function(err) {
+                console.error("Error:", err);
+            });
+        }
+    }
+
+    async function processScanResult(qrData) {
+        var mode = document.getElementById("scanner-mode").value;
+
+        if (mode === "member") {
+            var member = allMembers.find(function(m) { 
+                return m.line_user_id === qrData || m.line_user_id.includes(qrData);
+            });
+
+            if (member) {
+                document.getElementById("result-name").textContent = member.full_name;
+                document.getElementById("result-info").innerHTML = 
+                    "แต้ม: " + (member.current_points || 0) + " | EXP: " + (member.current_exp || 0) + 
+                    "<br>Tier: " + member.tier;
+                document.getElementById("scan-result").style.display = "block";
+            } else {
+                showError("ไม่พบสมาชิก");
+            }
+        } else {
+            // Coupon mode
+            var { data: coupon } = await db
+                .from("user_coupons")
+                .select("*")
+                .eq("id", qrData)
+                .single();
+
+            if (coupon) {
+                document.getElementById("result-name").textContent = "ส่วนลด " + coupon.discount_value + " บาท";
+                document.getElementById("result-info").innerHTML = 
+                    "สถานะ: " + coupon.status + "<br>" +
+                    "หมดอายุ: " + new Date(coupon.expires_at).toLocaleDateString("th-TH");
+                document.getElementById("scan-result").style.display = "block";
+            } else {
+                showError("ไม่พบคูปอง");
+            }
+        }
+    }
+
+    function searchMemberForPoints() {
+        var search = document.getElementById("add-points-search").value.trim().toUpperCase();
+        var member = allMembers.find(function(m) {
+            return m.full_name.toLowerCase().includes(search) ||
+                   (m.tel && m.tel.includes(search)) ||
+                   m.line_user_id.includes(search);
+        });
+
+        if (member) {
+            selectedMemberId = member.line_user_id;
+            document.getElementById("member-name").textContent = member.full_name;
+            document.getElementById("member-current-points").textContent = member.current_points || 0;
+            document.getElementById("member-current-exp").textContent = member.current_exp || 0;
+            document.getElementById("add-points-result").style.display = "block";
+            document.getElementById("add-points-error").style.display = "none";
+        } else {
+            showError("ไม่พบสมาชิก");
+        }
+    }
+
+    function addPointsConfirm() {
+        var amount = parseInt(document.getElementById("points-amount").value) || 0;
+        var member = allMembers.find(function(m) { return m.line_user_id === selectedMemberId; });
+
+        if (!member || amount <= 0) {
+            showError("กรุณากรอกจำนวนแต้มที่ถูกต้อง");
+            return;
+        }
+
+        var newPoints = (member.current_points || 0) + amount;
+        var newExp = (member.current_exp || 0) + amount;
+
+        if (confirm("เพิ่ม " + amount + " แต้มให้ " + member.full_name + " จริงหรือ?")) {
+            addPointsExecute(selectedMemberId, amount);
+        }
+    }
+
+    async function addPointsExecute(lineUserId, points) {
+        try {
+            var { error } = await db.from("point_transactions").insert({
+                line_user_id: lineUserId,
+                points: points,
+                exp: points,
+                type: "earn",
+                description: "Admin เพิ่มแต้ม",
+                amount_spent: null,
+            });
+
+            if (error) throw error;
+
+            var member = allMembers.find(function(m) { return m.line_user_id === lineUserId; });
+            var newPoints = (member.current_points || 0) + points;
+            var newExp = (member.current_exp || 0) + points;
+            var newTier = calcTier(newExp);
+
+            var { error: upErr } = await db.from("profiles")
+                .update({ current_points: newPoints, current_exp: newExp, tier: newTier })
+                .eq("line_user_id", lineUserId);
+
+            if (upErr) throw upErr;
+
+            showSuccess("✅ เพิ่มแต้มสำเร็จ");
+            loadMembers();
+            document.getElementById("add-points-result").style.display = "none";
+            document.getElementById("add-points-search").value = "";
+
+        } catch (err) {
+            showError("เพิ่มแต้มไม่สำเร็จ: " + err.message);
+        }
+    }
+
+    function calcTier(exp) {
+        if (exp >= 5000) return "Platinum";
+        if (exp >= 3000) return "Gold";
+        if (exp >= 1000) return "Silver";
+        return "Bronze";
+    }
+
+    async function loadAnalytics() {
+        try {
+            var { data: transactions } = await db
+                .from("point_transactions")
+                .select("*");
+
+            var { data: coupons } = await db
+                .from("user_coupons")
+                .select("*");
+
+            var totalPointsUsed = (transactions || [])
+                .filter(function(t) { return t.type === "redeem"; })
+                .reduce(function(s, t) { return s + (t.points || 0); }, 0);
+
+            var couponUsed = (coupons || [])
+                .filter(function(c) { return c.status === "used"; }).length;
+
+            var avgPoints = allMembers.length > 0 
+                ? Math.round(allMembers.reduce(function(s, m) { return s + (m.current_points || 0); }, 0) / allMembers.length)
+                : 0;
+
+            document.getElementById("total-points-used").textContent = totalPointsUsed.toLocaleString();
+            document.getElementById("total-coupons").textContent = (coupons || []).length;
+            document.getElementById("coupons-used").textContent = couponUsed;
+            document.getElementById("avg-points").textContent = avgPoints;
+
+        } catch (err) {
+            console.error("Analytics Error:", err);
+        }
+    }
+
+    async function searchAdminMembers() {
+        var search = document.getElementById("admin-search").value.toLowerCase();
+        var filtered = allMembers.filter(function(m) {
+            return m.full_name.toLowerCase().includes(search) || 
+                   (m.tel && m.tel.includes(search)) ||
+                   m.line_user_id.includes(search);
+        });
+
+        if (filtered.length === 0) {
+            document.getElementById("admin-result").style.display = "none";
+            return;
+        }
+
+        var html = filtered.map(function(m) {
+            return '<tr>' +
+                '<td>' + m.full_name + '</td>' +
+                '<td>' + (m.role || 'Customer') + '</td>' +
+                '<td>' +
+                    '<button class="action-btn-sm btn-primary" onclick="setAdmin(\'' + m.line_user_id + '\')">' +
+                    (m.role === 'Admin' ? '✓ เป็นแอดมิน' : '⚙️ ตั้งเป็นแอดมิน') +
+                    '</button>' +
+                '</td>' +
+                '</tr>';
+        }).join("");
+
+        document.getElementById("admin-table").innerHTML = html;
+        document.getElementById("admin-result").style.display = "block";
+    }
+
+    async function setAdmin(lineUserId) {
+        try {
+            var { error } = await db
+                .from("profiles")
+                .update({ role: "Admin" })
+                .eq("line_user_id", lineUserId);
+
+            if (error) throw error;
+            showSuccess("✅ ตั้งเป็นแอดมินสำเร็จ");
+            loadMembers();
+            searchAdminMembers();
+
+        } catch (err) {
+            showError("ตั้งแอดมินไม่สำเร็จ: " + err.message);
+        }
+    }
+
+    function sendPromo() {
+        var title = document.getElementById("promo-title").value;
+        var message = document.getElementById("promo-message").value;
+
+        if (!title || !message) {
+            showError("กรุณากรอกหัวข้อและข้อความ");
+            return;
+        }
+
+        alert("📢 โปรโมชั่น:\n\n" + title + "\n\n" + message + "\n\n✅ ส่งให้สมาชิกทั้งหมดแล้ว");
+        document.getElementById("promo-title").value = "";
+        document.getElementById("promo-message").value = "";
+    }
+
     async function exportToCSV() {
         try {
             document.getElementById("export-btn").disabled = true;
             document.getElementById("export-btn").textContent = "⏳ กำลังส่งออก...";
 
-            var { data: members, error: membersError } = await db
-                .from("profiles")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (membersError || !members) throw membersError;
-
-            var { data: transactions, error: txError } = await db
-                .from("point_transactions")
-                .select("*");
-
-            if (txError) throw txError;
-
-            // สร้าง CSV สำหรับสมาชิก
-            var csv = "ลำดับ,ชื่อสมาชิก,เบอร์โทร,LINE User ID,Tier,แต้ม,EXP,บทบาท,วันที่สมัคร\n";
-            members.forEach(function(m, idx) {
-                var date = new Date(m.created_at).toLocaleDateString("th-TH");
-                csv += (idx + 1) + ',"' + (m.full_name || '-') + '","' + (m.tel || '-') + '",' +
-                       '"' + m.line_user_id + '",' + m.tier + "," + (m.current_points || 0) + "," +
-                       (m.current_exp || 0) + ',"' + (m.role || 'Customer') + '",' + date + "\n";
-            });
-
-            // สร้าง CSV สำหรับประวัติแต้ม
-            var txcsv = "วันที่,ชื่อสมาชิก,ประเภท,แต้ม,EXP,คำอธิบาย\n";
-            transactions.forEach(function(tx) {
-                var memberName = members.find(function(m) { return m.line_user_id === tx.line_user_id; });
-                var date = new Date(tx.created_at).toLocaleDateString("th-TH");
-                txcsv += date + ',"' + (memberName ? memberName.full_name : 'Unknown') + '",' +
-                         '"' + tx.type + '",' + tx.points + "," + (tx.exp || 0) + ',"' + 
-                         (tx.description || '') + '"\n';
+            var csv = "ลำดับ,ชื่อสมาชิก,เบอร์โทร,Tier,แต้ม,EXP,บทบาท\n";
+            allMembers.forEach(function(m, idx) {
+                csv += (idx + 1) + ',"' + m.full_name + '","' + (m.tel || '') + '",' +
+                       m.tier + "," + (m.current_points || 0) + "," + (m.current_exp || 0) + 
+                       ',"' + (m.role || 'Customer') + '"\n';
             });
 
             downloadCSV(csv, "Fat_Myth_Bear_Members.csv");
-            setTimeout(function() {
-                downloadCSV(txcsv, "Fat_Myth_Bear_Transactions.csv");
-            }, 500);
-
-            showSuccess("📥 ส่งออก CSV สำเร็จ! (ดาวน์โหลด 2 ไฟล์)");
+            showSuccess("📥 ส่งออก CSV สำเร็จ");
 
         } catch (err) {
             showError("ส่งออกไม่สำเร็จ: " + err.message);
@@ -527,11 +987,9 @@
         var blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
         var link = document.createElement("a");
         var url = URL.createObjectURL(blob);
-        
         link.setAttribute("href", url);
         link.setAttribute("download", filename);
         link.style.visibility = "hidden";
-        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -540,7 +998,6 @@
     function showError(msg) {
         document.getElementById("error-msg").textContent = msg;
         document.getElementById("error-msg").style.display = "block";
-        document.getElementById("success-msg").style.display = "none";
         setTimeout(function() {
             document.getElementById("error-msg").style.display = "none";
         }, 5000);
@@ -549,7 +1006,6 @@
     function showSuccess(msg) {
         document.getElementById("success-msg").textContent = msg;
         document.getElementById("success-msg").style.display = "block";
-        document.getElementById("error-msg").style.display = "none";
         setTimeout(function() {
             document.getElementById("success-msg").style.display = "none";
         }, 3000);
