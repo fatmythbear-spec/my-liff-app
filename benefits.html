@@ -23,7 +23,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 40px; }
 
-        /* Loading Screen */
+        /* หน้าจอโหลดข้อมูล */
         #loading {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh; gap: 12px; color: #718096; background: #ffffff; position: fixed; width: 100%; z-index: 9999;
@@ -33,7 +33,7 @@
 
         #app { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
 
-        /* Top Bar Dashboard */
+        /* แถบแดชบอร์ดด้านบน */
         .top-dashboard {
             background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%);
             border-radius: 20px; padding: 20px; color: white; margin-bottom: 24px;
@@ -53,7 +53,7 @@
         .badge-gold { background: rgba(255, 202, 40, 0.2); color: #ffca28; }
         .badge-platinum { background: rgba(48, 207, 208, 0.3); color: #30cfd0; }
 
-        /* LUXURY GLOSSY RANK CARDS */
+        /* บัตรสิทธิพิเศษแบบเมทัลลิก */
         .section-header { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .section-header i { color: #ff7043; }
 
@@ -64,7 +64,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* เอฟเฟกต์ความเงาแวววาวเมทัลลิกวนลูป */
+        /* เอฟเฟกต์แสงสะท้อนวาว */
         .rank-card::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: linear-gradient(45deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 55%);
@@ -96,7 +96,7 @@
         .perk-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
         .perk-dot { font-size: 12px; opacity: 0.9; }
 
-        /* COMMUNITY TIMELINE SYSTEM */
+        /* ระบบคอมมูนิตี้ไทม์ไลน์ */
         .page-title { font-size: 20px; font-weight: 700; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
         
         .tabs-container { display: flex; gap: 8px; margin-bottom: 16px; background: #e2e8f0; padding: 4px; border-radius: 14px; }
@@ -107,7 +107,7 @@
         }
         .tab-btn.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px rgba(6,199,85,0.2); }
 
-        /* กล่องสร้างโพสต์อัจฉริยะ (Create Post UI) */
+        /* ส่วนกล่องสร้างโพสต์ */
         .create-post-box {
             background: white; border-radius: 18px; padding: 16px; margin-bottom: 20px;
             box-shadow: var(--card-shadow); border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 12px;
@@ -139,7 +139,7 @@
         }
         .btn-submit-post:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-        /* แผงควบคุมไทม์ไลน์ */
+        /* แผงควบคุมสไตล์ฟีด */
         .community-panel { display: none; position: relative; padding-left: 20px; }
         .community-panel.active { display: block; }
         .community-panel::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
@@ -168,7 +168,7 @@
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดข้อมูลสิทธิ์คอมมูนิตี้...</p>
+    <p>กำลังเชื่อมต่อคอมมูนิตี้...</p>
 </div>
 
 <div id="app">
@@ -177,7 +177,7 @@
             <img src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" class="db-logo" id="user-top-avatar" alt="">
             <div>
                 <div class="db-name" id="user-top-name">Fat Myth Bear Bingsu</div>
-                <div class="db-sub" id="current-tier-text">ระดับ: โหลดข้อมูล...</div>
+                <div class="db-sub" id="current-tier-text">ระดับ: กำลังยืนยันสิทธิ์...</div>
             </div>
         </div>
         <div class="db-rank-info">
@@ -199,7 +199,7 @@
     <div class="create-post-box" id="global-create-post-box">
         <div class="post-input-row">
             <img class="post-user-avatar" id="current-user-post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
-            <textarea class="post-textarea" id="community-post-text" placeholder="แชร์ข้อมูลโปรโมชั่นหน้าร้านวันนี้ที่นี่..."></textarea>
+            <textarea class="post-textarea" id="community-post-text" placeholder="พิมพ์แบ่งปันเรื่องราวดีๆ หน้าร้านวันนี้..."></textarea>
         </div>
         <div class="rating-selector-zone" id="review-rating-zone">
             <span>ให้คะแนนร้าน:</span>
@@ -218,9 +218,9 @@
         <div class="post-control-row">
             <div>
                 <input type="file" id="camera-file-input" accept="image/*" style="display: none;" onchange="processSelectedImage(event)">
-                <button class="btn-capture-trigger" onclick="openDeviceCamera()"><i class="fa-solid fa-camera"></i> ถ่ายรูป / เลือกรูป</button>
+                <button class="btn-capture-trigger" onclick="openDeviceCamera()"><i class="fa-solid fa-camera"></i> แนบรูปภาพ</button>
             </div>
-            <button class="btn-submit-post" id="btn-submit-post-trigger" onclick="executePublishPost()">ส่งโพสต์ลงตาราง</button>
+            <button class="btn-submit-post" id="btn-submit-post-trigger" onclick="executePublishPost()">ส่งข้อมูล</button>
         </div>
     </div>
 
@@ -229,6 +229,7 @@
 </div>
 
 <script>
+    // การตั้งค่าตัวแปรระบบให้เชื่อมต่ออย่างถูกต้องแม่นยำ
     var LIFF_ID = "2010298031-prC3lMly"; 
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
@@ -250,7 +251,7 @@
         { id: 'Platinum', name: 'Platinum', range: '5,000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิลวีไอพี', 'สิทธิ์สำรองโต๊ะ VIP ล่วงหน้า'] }
     ];
 
-    // ปรับปรุง: ใช้รูปแบบประมวลผลเซ็ตลำดับของไฟล์แรกเพื่อให้มั่นใจว่าเปิดบนมือถือผ่าน LINE ได้ฉลุย
+    // ปรับปรุง: ใช้รูปแบบการรันมาตรฐานแบบดั้งเดิมของไฟล์ที่ใช้การได้ เพื่อป้องกันปัญหากลุ่มประมวลผลค้างบนมือถือ
     function init() {
         liff.init({ liffId: LIFF_ID }).then(function() {
             if (!liff.isLoggedIn()) {
@@ -277,13 +278,13 @@
     }
 
     function bootAppWithFallback() {
-        renderRankCards("Gold");
+        renderRankCards("Bronze");
         loadCommunityData();
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
-    // ปรับปรุง: ตัดฟังก์ชัน .single() เพื่อป้องกันการ Crash 400 ยามไม่พบแถวข้อมูลบนมือถือ
+    // ปรับปรุง: ถอดคำสั่ง .single() ออกแล้วใช้การตรวจสอบความยาวอาร์เรย์แบบไฟล์แรก เพื่อไม่ให้ระบบหลังบ้านแครชเวลาผู้ใช้รายใหม่เข้าแอปพลิเคชัน
     function loadRealtimeProfile() {
         db.from("profiles").select("*").eq("line_user_id", currentUserId)
         .then(function(res) {
@@ -316,9 +317,9 @@
             document.getElementById("app").style.display = "block";
         })
         .catch(function(e) {
-            console.error("Profile fetch Error:", e);
+            console.error("Profile Error:", e);
             currentUserRole = "Customer";
-            renderRankCards("Gold");
+            renderRankCards("Bronze");
             switchTab(currentActiveTab);
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
@@ -353,7 +354,6 @@
         container.innerHTML = html;
     }
 
-    // ปรับปรุง: ใช้รูปแบบการดึงข้อมูลและต่อ String ปลอดภัยทีละฟังก์ชันเลี่ยงข้อจำกัดโมบายเบราว์เซอร์
     function loadCommunityData() {
         db.from("news_promo").select("*").order("created_at", { ascending: false })
         .then(function(resPromo) {
@@ -458,7 +458,7 @@
         }
     }
 
-    // ปรับปรุง: เปลี่ยนระบบการเขียนโพสต์เข้า Supabase เป็นสไตล์ Promise Chain (.then) เพื่อปิดโอกาสการหลุด Error 400 ทั่วไทย
+    // ปรับปรุง: ย้ายจากกลไกสไตล์ async มาเป็น Promise chain เพื่อรองรับมือถือรุ่นเก่าและ WebView ได้อย่างมั่นใจ
     function executePublishPost() {
         var textContent = document.getElementById("community-post-text").value.trim();
         if (!textContent && !encodedBase64ImageStr) {
@@ -515,10 +515,8 @@
         });
     }
 
-    // ปรับปรุง: เปลี่ยนระบบการลบเป็นแบบ .then().catch() ปลอดภัยแน่นอน
     function executeDeletePost(id, type) {
         if (!confirm("คุณต้องการลบโพสต์นี้แบบถาวรใช่หรือไม่?")) return;
-        
         var targetTable = (type === "promo") ? "news_promo" : "user_reviews";
         
         db.from(targetTable).delete().eq("id", id)
