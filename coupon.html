@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คูปอง - Fat Myth Bear</title>
+    <title>คูปองและประวัติ - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+        body { font-family: 'Kanit', sans-serif; background: #f4f6f9; color: #2d3748; min-height: 100vh; padding-bottom: 40px; }
 
+        /* Loading Screen */
         #loading {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            height: 100vh; gap: 12px; color: #666;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; gap: 12px; color: #718096; background: #ffffff;
         }
         .spinner {
-            width: 40px; height: 40px; border: 4px solid #ddd;
+            width: 40px; height: 40px; border: 4px solid #e2e8f0;
             border-top-color: #06c755; border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
@@ -25,410 +27,204 @@
 
         #app { display: none; padding: 16px; }
 
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #2d3561);
-            color: white; border-radius: 16px; padding: 20px;
-            margin-bottom: 16px;
-        }
-        .header-title { font-size: 22px; font-weight: 700; }
-        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        /* Header Title */
+        .page-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .page-header i { font-size: 24px; color: #ff7043; }
+        .page-header h2 { font-size: 20px; font-weight: 600; color: #1a202c; }
 
-        .tabs {
-            display: flex; gap: 8px; margin-bottom: 16px;
-            background: white; border-radius: 12px; padding: 6px;
+        /* ========================================================
+           DYNAMIC TABS SYSTEM (ระบบแท็บสลับสถานะ)
+        ======================================================== */
+        .tabs-container {
+            display: flex; background: #e2e8f0; padding: 4px; border-radius: 14px; margin-bottom: 16px;
         }
         .tab-btn {
-            flex: 1; padding: 12px; border: none;
-            border-radius: 10px; font-size: 14px; font-weight: 600;
-            cursor: pointer; color: #999; transition: all 0.3s;
+            flex: 1; text-align: center; padding: 10px 5px; font-size: 13px; font-weight: 500;
+            color: #4a5568; border: none; background: transparent; border-radius: 10px;
+            cursor: pointer; transition: all 0.2s ease;
         }
         .tab-btn.active {
-            background: #06c755; color: white;
+            background: #ffffff; color: #1a202c; font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        .tab-content { display: none; }
-        .tab-content.show { display: block; }
+        /* Container จัดการซ่อนสลับคูปอง */
+        .coupon-panel { display: none; }
+        .coupon-panel.active { display: block; }
 
-        .card {
-            background: white; border-radius: 16px;
-            padding: 20px; margin-bottom: 16px;
-        }
-
-        .stat-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid #f0f0f0;
-        }
-        .stat-row:last-child { border-bottom: none; }
-        .stat-label { font-size: 14px; color: #666; }
-        .stat-val { font-size: 20px; font-weight: 700; color: #06c755; }
-
-        .redeem-info {
-            background: #f0fff4; border-left: 4px solid #06c755;
-            padding: 12px; border-radius: 8px; font-size: 13px; color: #333;
-            margin: 12px 0;
-        }
-
-        .form-label { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
-
-        .amount-input {
-            width: 100%; padding: 12px; border: 1.5px solid #ddd;
-            border-radius: 10px; font-size: 18px; font-weight: 700;
-            text-align: center; outline: none; margin-bottom: 12px;
-        }
-        .amount-input:focus { border-color: #06c755; }
-
-        .points-preview {
-            background: #f8f8f8; padding: 12px; border-radius: 10px;
-            margin: 12px 0; text-align: center;
-        }
-        .points-preview-label { font-size: 12px; color: #999; }
-        .points-preview-val { font-size: 28px; font-weight: 700; color: #06c755; }
-
-        .btn {
-            width: 100%; padding: 14px; border: none; border-radius: 12px;
-            font-size: 15px; font-weight: 700; cursor: pointer;
-        }
-        .btn-redeem { background: #06c755; color: white; }
-        .btn-redeem:disabled { background: #aaa; cursor: not-allowed; }
-        .btn-use { background: #1a1a2e; color: white; }
-
-        .coupon-list { display: flex; flex-direction: column; gap: 12px; }
-
+        /* ========================================================
+           PREMIUM PREMIUM TICKET COUPON DESIGN (ดีไซน์ตั๋วมีรอยปรุ)
+        ======================================================== */
         .coupon-card {
-            border-radius: 12px; padding: 16px; color: #333;
-            border: 1.5px solid #ddd;
-        }
-        .coupon-active {
-            background: linear-gradient(135deg, #ffd700, #ffed4e);
-            border-color: #ffd700;
-        }
-        .coupon-used {
-            background: #f0f0f0;
-            border-color: #ddd;
-            opacity: 0.6;
-        }
-        .coupon-expired {
-            background: #ffe0e0;
-            border-color: #e74c3c;
+            background: #ffffff; border-radius: 16px; display: flex; margin-bottom: 14px;
+            position: relative; overflow: hidden; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.03));
+            border: 1px solid #edf2f7; min-height: 105px;
         }
 
-        .coupon-header { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-        .coupon-detail { font-size: 12px; color: #555; margin: 4px 0; }
-        .coupon-status {
-            display: inline-block; padding: 4px 12px;
-            border-radius: 99px; font-size: 11px; font-weight: 600;
-            margin-top: 8px;
+        /* รอยปรุครึ่งวงกลมด้านซ้ายและขวาของตั๋ว */
+        .coupon-card::before, .coupon-card::after {
+            content: ''; position: absolute; top: 50%; width: 14px; height: 14px;
+            background: #f4f6f9; border-radius: 50%; transform: translateY(-50%); z-index: 2;
+            border: 1px solid #edf2f7;
         }
-        .status-active  { background: #06c755; color: white; }
-        .status-expired { background: #e74c3c; color: white; }
-        .status-used    { background: #999; color: white; }
+        .coupon-card::before { left: -7px; box-shadow: inset -3px 0 4px rgba(0,0,0,0.02); }
+        .coupon-card::after { right: -7px; box-shadow: inset 3px 0 4px rgba(0,0,0,0.02); }
 
-        .coupon-buttons {
-            display: flex; gap: 8px; margin-top: 10px;
+        /* ส่วนฝั่งซ้าย: ไอคอนและภาพลักษณ์ของรางวัล */
+        .cp-left {
+            width: 95px; background: linear-gradient(135deg, #fff5f5 0%, #ffe3e3 100%);
+            display: flex; align-items: center; justify-content: center; position: relative;
+            border-right: 1px dashed #e2e8f0; flex-shrink: 0;
         }
-        .coupon-btn {
-            flex: 1; padding: 10px; border: none; border-radius: 8px;
-            font-size: 12px; font-weight: 600; cursor: pointer;
-        }
-        .coupon-btn-show {
-            background: #1a1a2e; color: white;
-        }
-        .coupon-btn-use {
-            background: #06c755; color: white;
-        }
-        .coupon-btn:disabled {
-            background: #ccc; cursor: not-allowed;
-        }
+        .cp-left i { font-size: 32px; color: #ff4d4f; }
+        
+        /* สลับสีฝั่งซ้ายเมื่อคูปองใช้ไม่ได้แล้ว */
+        .status-inactive .cp-left { background: #f7fafc; }
+        .status-inactive .cp-left i { color: #a0aec0; }
 
-        .section-title {
-            font-size: 15px; font-weight: 700; color: #333;
-            margin: 20px 0 12px 0;
+        /* ส่วนฝั่งขวา: รายละเอียด ชื่อ และปุ่ม Action */
+        .cp-right {
+            flex-grow: 1; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between;
         }
+        .cp-title { font-size: 15px; font-weight: 600; color: #1a202c; line-height: 1.3; margin-bottom: 4px; }
+        .cp-expiry { font-size: 11px; color: #718096; display: flex; align-items: center; gap: 4px; }
+        
+        .cp-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .cp-points-tag { font-size: 12px; font-weight: 600; color: #06c755; background: #f0fff4; padding: 2px 8px; border-radius: 6px; }
+        
+        .cp-btn {
+            padding: 6px 14px; background: #06c755; color: white; border: none; border-radius: 8px;
+            font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .cp-btn:active { transform: scale(0.97); }
+        
+        /* สไตล์ปุ่มเมื่อถูกใช้แล้วหรือหมดอายุ */
+        .btn-used { background: #cbd5e0; color: #718096; cursor: not-allowed; }
+        .btn-expired { background: #e2e8f0; color: #a0aec0; cursor: not-allowed; }
 
-        .timeline {
-            position: relative; padding-left: 30px;
-        }
-        .timeline-item {
-            position: relative; padding: 12px 0 12px 20px;
-            border-left: 2px solid #eee; margin-bottom: 12px;
-        }
-        .timeline-dot {
-            position: absolute; left: -8px; top: 16px;
-            width: 12px; height: 12px; border-radius: 50%;
-            background: white; border: 2px solid #06c755;
-        }
-        .tx-desc { font-size: 13px; color: #333; margin-bottom: 2px; }
-        .tx-date { font-size: 12px; color: #999; margin-top: 4px; }
-        .tx-points { font-weight: 700; margin-top: 2px; }
-        .tx-earn   { color: #06c755; }
-        .tx-redeem { color: #e74c3c; }
+        /* หน้าต่างกล่องข้อความเมื่อว่างเปล่า */
+        .empty-state { text-align: center; padding: 40px 20px; color: #a0aec0; font-size: 14px; }
+        .empty-state i { font-size: 40px; margin-bottom: 10px; display: block; opacity: 0.5; }
 
-        .empty { text-align: center; color: #999; padding: 30px 20px; font-size: 14px; }
-        .error { color: #e74c3c; font-size: 13px; margin-top: 8px; }
-        .success { color: #06c755; font-size: 13px; margin-top: 8px; }
+        /* ========================================================
+           TIMELINE TRANSACTION HISTORY (ประวัติคะแนนด้านล่าง)
+        ======================================================== */
+        .history-card { background: #ffffff; border-radius: 20px; padding: 20px; margin-top: 24px; border: 1px solid #edf2f7; }
+        .history-title { font-size: 15px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .history-title i { color: #42a5f5; }
 
+        .timeline { position: relative; padding-left: 20px; }
+        .timeline::before { content: ''; position: absolute; left: 4px; top: 8px; bottom: 8px; width: 2px; background: #e2e8f0; }
+        
+        .timeline-item { position: relative; padding-bottom: 16px; padding-left: 12px; }
+        .timeline-item:last-child { padding-bottom: 0; }
+        .timeline-dot { position: absolute; left: -20px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: #cbd5e0; border: 2px solid white; box-shadow: 0 0 0 2px #cbd5e0; }
+        
+        .tx-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .tx-desc { font-size: 13px; font-weight: 500; color: #2d3748; line-height: 1.4; }
+        .tx-points { font-size: 13px; font-weight: 600; white-space: nowrap; }
+        .tx-earn { color: #06c755; }
+        .tx-redeem { color: #e53e3e; }
+        .tx-date { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+
+        /* ========================================================
+           MODAL SLIDE-UP WINDOW (หน้าต่างสแกนคิวอาร์โค้ด)
+        ======================================================== */
         .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.7); z-index: 999;
-            align-items: center; justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center;
         }
         .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: white; border-radius: 20px;
-            padding: 28px; text-align: center; width: 90%; max-width: 300px;
-        }
-        .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; color: #333; }
-        .modal-id    { font-size: 13px; color: #999; margin-bottom: 16px; }
-        .qr-container {
-            background: white; padding: 16px; border-radius: 12px;
-            margin-bottom: 16px; display: flex; justify-content: center;
-            align-items: center;
-        }
-        .qr-container canvas {
-            max-width: 100%;
-            height: auto;
-        }
-        .modal-close {
-            margin-top: 16px; width: 100%; padding: 12px;
-            background: #f0f0f0; border: none; border-radius: 10px;
-            font-size: 15px; cursor: pointer; color: #333;
-        }
+        .modal-box { background: white; border-radius: 24px; padding: 24px; text-align: center; width: 90%; max-width: 320px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .modal-title { font-size: 16px; font-weight: 600; color: #1a202c; }
+        .modal-subtitle { font-size: 12px; color: #718096; margin-top: 4px; margin-bottom: 16px; }
+        .qr-wrapper { background: #f7fafc; padding: 16px; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: center; }
+        .modal-close { width: 100%; padding: 12px; background: #edf2f7; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; color: #4a5568; }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดคูปอง...</p>
+    <p>กำลังโหลดคูปองและประวัติของคุณ...</p>
 </div>
 
 <div id="app">
-    <div class="header">
-        <div class="header-title">🎁 คูปองและแต้ม</div>
-        <div class="header-sub">Fat Myth Bear Bingsu Cafe</div>
+    <div class="page-header">
+        <i class="fa-solid fa-tags"></i>
+        <h2>คูปอง & สิทธิประโยชน์</h2>
     </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'redeem')">💰 แลกแต้ม</button>
-        <button class="tab-btn" onclick="switchTab(event, 'coupons')">🎟️ คูปองของฉัน</button>
-        <button class="tab-btn" onclick="switchTab(event, 'history')">📜 ประวัติแต้ม</button>
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('available')">คูปองที่ใช้ได้</button>
+        <button class="tab-btn" onclick="switchTab('used')">ใช้แล้ว</button>
+        <button class="tab-btn" onclick="switchTab('expired')">หมดอายุ</button>
     </div>
 
-    <!-- Tab 1: Redeem -->
-    <div id="redeem" class="tab-content show">
-        <div class="card">
-            <div class="stat-row">
-                <div class="stat-label">แต้มสะสมปัจจุบัน</div>
-                <div class="stat-val" id="current-points">0</div>
+    <div id="panel-available" class="coupon-panel active">
+        <div id="list-available"></div>
+    </div>
+
+    <div id="panel-used" class="coupon-panel">
+        <div id="list-used"></div>
+    </div>
+
+    <div id="panel-expired" class="coupon-panel">
+        <div id="list-expired"></div>
+    </div>
+
+    <div class="history-card">
+        <div class="history-title">
+            <i class="fa-solid fa-clock-rotate-left"></i> ประวัติการเคลื่อนไหวแต้ม
+        </div>
+        <div class="timeline" id="tx-list">
             </div>
-        </div>
-
-        <div class="card">
-            <div class="section-title">⚡ แลกแต้มเป็นคูปอง</div>
-            <div class="redeem-info">
-                100 แต้ม = คูปองส่วนลด 50 บาท (ใช้ได้ 7 วัน)
-            </div>
-            
-            <label class="form-label">จำนวนแต้มที่ต้องการแลก</label>
-            <input type="number" id="redeem-amount" class="amount-input"
-                placeholder="100" min="100" step="100" oninput="calcRedeemValue()">
-
-            <div class="points-preview">
-                <div class="points-preview-label">จะได้คูปอง</div>
-                <div class="points-preview-val" id="redeem-value">0</div>
-                <div class="points-preview-label">บาท</div>
-            </div>
-
-            <button class="btn btn-redeem" id="redeem-btn" onclick="redeemPoints()" disabled>
-                แลกแต้มตอนนี้
-            </button>
-            <div class="error" id="redeem-error"></div>
-            <div class="success" id="redeem-success"></div>
-        </div>
-    </div>
-
-    <!-- Tab 2: Coupons -->
-    <div id="coupons" class="tab-content">
-        <div class="card">
-            <div class="section-title">🎉 พร้อมใช้งาน</div>
-            <div class="coupon-list" id="active-coupons"></div>
-
-            <div class="section-title" style="margin-top:24px;">⏰ หมดอายุ/ใช้แล้ว</div>
-            <div class="coupon-list" id="expired-coupons"></div>
-        </div>
-    </div>
-
-    <!-- Tab 3: History -->
-    <div id="history" class="tab-content">
-        <div class="card">
-            <div class="section-title">📅 ประวัติแต้มทั้งหมด</div>
-            <div class="timeline" id="tx-list"></div>
-        </div>
     </div>
 </div>
 
-<!-- QR Modal for Coupon -->
 <div class="modal-overlay" id="qr-modal">
     <div class="modal-box">
-        <div class="modal-title">QR Code คูปอง</div>
-        <div class="modal-id" id="qr-coupon-id"></div>
-        <div class="qr-container">
+        <div class="modal-title" id="md-title">คูปองสิทธิพิเศษ</div>
+        <div class="modal-subtitle" id="md-code">CODE: ------</div>
+        <div class="qr-wrapper">
             <div id="qr-canvas"></div>
         </div>
-        <p style="font-size:12px;color:#666;margin:8px 0;">แสดง QR นี้ให้พนักงานร้านสแกนเพื่อยืนยันการใช้งาน</p>
-        <button class="modal-close" onclick="closeQR()">ปิด</button>
+        <p style="font-size: 12px; color: #718096; line-height: 1.4; margin-bottom: 16px;">ยื่นคิวอาร์โค้ดนี้ให้พนักงานสแกนบันทึกสิทธิ์ที่หน้าร้านเพื่อรับรางวัล</p>
+        <button class="modal-close" onclick="closeQR()">ปิดหน้าต่าง</button>
     </div>
 </div>
 
 <script>
-    var LIFF_ID = "2010298031-TOsCbkzl";
+    var LIFF_ID = "2010298031-TOsCbkzl"; // LIFF ID คงเดิมจากไฟล์หลักของคุณ
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     var currentUserId = "";
-    var userData = null;
-    var selectedCouponId = "";
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            
-            if (!liff.isInClient()) {
-                document.getElementById("loading").innerHTML = 
-                    '<p style="color:red;padding:20px;text-align:center">⚠️ ต้องเปิดผ่าน LINE OA เท่านั้น<br><small>กรุณากดปุ่มคูปองจาก Rich Menu</small></p>';
-                return;
-            }
-
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
-
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            var { data, error } = await db
-                .from("profiles")
-                .select("full_name, line_user_id, current_points")
-                .eq("line_user_id", currentUserId)
-                .single();
+            // โหลดข้อมูลพร้อมกันทั้งคูปองและประวัติธุรกรรมเพื่อความเร็ว
+            await Promise.all([
+                loadCoupons(),
+                loadTransactions()
+            ]);
 
-            if (error || !data) {
-                window.location.href = "https://liff.line.me/2010298031-TOsCbkzl";
-                return;
-            }
-
-            userData = data;
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
-
-            loadRedeemData();
-            loadCoupons();
-            loadHistory();
-
         } catch (err) {
-            document.getElementById("loading").innerHTML =
-                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
+            console.error("Initialization Error:", err);
+            document.getElementById("loading").innerHTML = '<p style="color:red; padding:20px;">เกิดข้อผิดพลาดในการโหลดระบบคูปอง</p>';
         }
     }
 
-    function switchTab(e, tabName) {
-        document.querySelectorAll(".tab-content").forEach(function(el) {
-            el.classList.remove("show");
-        });
-        document.querySelectorAll(".tab-btn").forEach(function(el) {
-            el.classList.remove("active");
-        });
-        document.getElementById(tabName).classList.add("show");
-        e.target.classList.add("active");
-    }
-
-    function loadRedeemData() {
-        document.getElementById("current-points").textContent = 
-            (userData.current_points || 0).toLocaleString();
-    }
-
-    function calcRedeemValue() {
-        var amount = parseInt(document.getElementById("redeem-amount").value) || 0;
-        var value = (amount / 100) * 50;
-        document.getElementById("redeem-value").textContent = value.toLocaleString();
-        document.getElementById("redeem-btn").disabled = amount < 100 || amount % 100 !== 0;
-    }
-
-    async function redeemPoints() {
-        var amount = parseInt(document.getElementById("redeem-amount").value) || 0;
-        
-        if (amount < 100 || amount % 100 !== 0) {
-            document.getElementById("redeem-error").textContent = "กรุณากรอกแต้มเป็นจำนวน 100 ขึ้นไป";
-            return;
-        }
-
-        if (amount > userData.current_points) {
-            document.getElementById("redeem-error").textContent = "แต้มไม่เพียงพอ";
-            return;
-        }
-
-        document.getElementById("redeem-btn").disabled = true;
-        document.getElementById("redeem-btn").textContent = "กำลังแลก...";
-        document.getElementById("redeem-error").textContent = "";
-        document.getElementById("redeem-success").textContent = "";
-
-        try {
-            var couponValue = (amount / 100) * 50;
-            var expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 7);
-
-            var { error: txErr } = await db.from("point_transactions").insert({
-                line_user_id: currentUserId,
-                points: -amount,
-                exp: 0,
-                type: "redeem",
-                description: "แลก " + amount + " แต้ม เป็นคูปอง " + couponValue + " บาท",
-                amount_spent: null
-            });
-            if (txErr) throw txErr;
-
-            var { error: cpErr } = await db.from("user_coupons").insert({
-                line_user_id: currentUserId,
-                discount_value: couponValue,
-                status: "active",
-                expires_at: expiresAt.toISOString()
-            });
-            if (cpErr) throw cpErr;
-
-            var newPoints = userData.current_points - amount;
-            var { error: upErr } = await db.from("profiles")
-                .update({ current_points: newPoints })
-                .eq("line_user_id", currentUserId);
-            if (upErr) throw upErr;
-
-            userData.current_points = newPoints;
-            document.getElementById("current-points").textContent = newPoints.toLocaleString();
-            document.getElementById("redeem-amount").value = "";
-            document.getElementById("redeem-value").textContent = "0";
-            document.getElementById("redeem-success").textContent = 
-                "✅ แลกแต้มสำเร็จ! ได้คูปอง " + couponValue + " บาท (หมดอายุ " + formatDate(expiresAt) + ")";
-
-            await loadCoupons();
-            await loadHistory();
-
-            setTimeout(function() {
-                document.getElementById("redeem-amount").value = "";
-                document.getElementById("redeem-success").textContent = "";
-                calcRedeemValue();
-            }, 2000);
-
-        } catch (err) {
-            document.getElementById("redeem-error").textContent = "แลกไม่สำเร็จ: " + err.message;
-        } finally {
-            document.getElementById("redeem-btn").disabled = false;
-            document.getElementById("redeem-btn").textContent = "แลกแต้มตอนนี้";
-        }
-    }
-
+    // ฟังก์ชันจัดการดึงข้อมูลและคัดกรองประเภทคูปองลงแท็บต่างๆ
     async function loadCoupons() {
         try {
             var { data, error } = await db
@@ -437,141 +233,166 @@
                 .eq("line_user_id", currentUserId)
                 .order("created_at", { ascending: false });
 
-            if (error || !data) {
-                document.getElementById("active-coupons").innerHTML = 
-                    '<div class="empty">ยังไม่มีคูปอง</div>';
-                document.getElementById("expired-coupons").innerHTML = '';
+            if (error) throw error;
+
+            var htmlAvailable = "";
+            var htmlUsed = "";
+            var htmlExpired = "";
+
+            if (!data || data.length === 0) {
+                var noDataTemplate = '<div class="empty-state"><i class="fa-solid fa-ticket-simple"></i>ไม่มีข้อมูลคูปองในหมวดหมู่นี้</div>';
+                document.getElementById("list-available").innerHTML = noDataTemplate;
+                document.getElementById("list-used").innerHTML = noDataTemplate;
+                document.getElementById("list-expired").innerHTML = noDataTemplate;
                 return;
             }
 
-            var now = new Date();
-            var active = data.filter(function(c) {
-                return c.status === "active" && new Date(c.expires_at) > now;
-            });
-            var expired = data.filter(function(c) {
-                return c.status === "used" || new Date(c.expires_at) <= now;
+            data.forEach(function(cp) {
+                var expiryDate = cp.expiry_date ? new Date(cp.expiry_date) : null;
+                var isExpired = expiryDate && expiryDate < new Date();
+                var formattedDate = expiryDate ? expiryDate.toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" }) : "ไม่มีวันหมดอายุ";
+
+                // 1. หมวดคูปองใช้ได้ปกติ
+                if (cp.status === "available" && !isExpired) {
+                    htmlAvailable += `
+                        <div class="coupon-card">
+                            <div class="cp-left"><i class="fa-solid fa-ice-cream"></i></div>
+                            <div class="cp-right">
+                                <div>
+                                    <div class="cp-title">${cp.coupon_title || 'คูปองของขวัญพิเศษ'}</div>
+                                    <div class="cp-expiry"><i class="fa-regular fa-clock"></i> ใช้ได้ถึง: ${formattedDate}</div>
+                                </div>
+                                <div class="cp-action-row">
+                                    <span class="cp-points-tag">สิทธิ์รางวัล</span>
+                                    <button class="cp-btn" onclick="openQR('${cp.id}', '${cp.coupon_title || 'คูปองรางวัล'}')">ใช้งานคูปอง</button>
+                                </div>
+                            </div>
+                        </div>`;
+                } 
+                // 2. หมวดคูปองที่ตัดยอดใช้ไปแล้ว
+                else if (cp.status === "used") {
+                    htmlUsed += `
+                        <div class="coupon-card status-inactive">
+                            <div class="cp-left"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="cp-right">
+                                <div>
+                                    <div class="cp-title" style="color:#a0aec0;">${cp.coupon_title || 'คูปองของขวัญพิเศษ'}</div>
+                                    <div class="cp-expiry"><i class="fa-regular fa-clock"></i> ใช้เมื่อ: ${formattedDate}</div>
+                                </div>
+                                <div class="cp-action-row">
+                                    <span class="cp-points-tag" style="color:#718096; background:#e2e8f0;">ใช้สิทธิ์แล้ว</span>
+                                    <button class="cp-btn btn-used" disabled>ใช้แล้ว</button>
+                                </div>
+                            </div>
+                        </div>`;
+                } 
+                // 3. หมวดคูปองที่เลยกำหนดเวลา
+                else {
+                    htmlExpired += `
+                        <div class="coupon-card status-inactive">
+                            <div class="cp-left"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="cp-right">
+                                <div>
+                                    <div class="cp-title" style="color:#a0aec0;">${cp.coupon_title || 'คูปองของขวัญพิเศษ'}</div>
+                                    <div class="cp-expiry" style="color:#e53e3e;"><i class="fa-regular fa-clock"></i> หมดอายุเมื่อ: ${formattedDate}</div>
+                                </div>
+                                <div class="cp-action-row">
+                                    <span class="cp-points-tag" style="color:#a0aec0; background:#edf2f7;">หมดเขต</span>
+                                    <button class="cp-btn btn-expired" disabled>หมดอายุ</button>
+                                </div>
+                            </div>
+                        </div>`;
+                }
             });
 
-            if (active.length > 0) {
-                document.getElementById("active-coupons").innerHTML = 
-                    active.map(function(c) { return renderCoupon(c, true); }).join("");
-            } else {
-                document.getElementById("active-coupons").innerHTML = 
-                    '<div class="empty">ยังไม่มีคูปองพร้อมใช้งาน</div>';
-            }
-
-            if (expired.length > 0) {
-                document.getElementById("expired-coupons").innerHTML = 
-                    expired.map(function(c) { return renderCoupon(c, false); }).join("");
-            } else {
-                document.getElementById("expired-coupons").innerHTML = '';
-            }
+            var fallback = '<div class="empty-state"><i class="fa-solid fa-ticket-simple"></i>ไม่มีข้อมูลคูปองในหมวดหมู่นี้</div>';
+            document.getElementById("list-available").innerHTML = htmlAvailable || fallback;
+            document.getElementById("list-used").innerHTML      = htmlUsed || fallback;
+            document.getElementById("list-expired").innerHTML   = htmlExpired || fallback;
 
         } catch (err) {
-            document.getElementById("active-coupons").innerHTML = 
-                '<div class="empty">เกิดข้อผิดพลาด</div>';
+            console.error(err);
         }
     }
 
-    function renderCoupon(coupon, isActive) {
-        var expiryDate = new Date(coupon.expires_at).toLocaleDateString("th-TH", {
-            day: "numeric", month: "short", year: "numeric"
-        });
-        var statusClass = isActive ? "coupon-active" : 
-                          coupon.status === "used" ? "coupon-used" : "coupon-expired";
-        var statusText = isActive ? "พร้อมใช้งาน" : 
-                          coupon.status === "used" ? "ใช้แล้ว" : "หมดอายุ";
-
-        var html = '<div class="coupon-card ' + statusClass + '">' +
-            '<div class="coupon-header">ส่วนลด ' + coupon.discount_value.toLocaleString() + ' บาท</div>' +
-            '<div class="coupon-detail">📅 หมดอายุ: ' + expiryDate + '</div>' +
-            '<span class="coupon-status ' + 
-                (isActive ? "status-active" : coupon.status === "used" ? "status-used" : "status-expired") + 
-                '">' + statusText + '</span>';
-
-        if (isActive) {
-            html += '<div class="coupon-buttons">' +
-                '<button class="coupon-btn coupon-btn-show" onclick="showCouponQR(\'' + coupon.id + '\', ' + coupon.discount_value + ')">แสดง QR</button>' +
-                '</div>';
-        }
-
-        html += '</div>';
-        return html;
-    }
-
-    function showCouponQR(couponId, value) {
-        selectedCouponId = couponId;
-        document.getElementById("qr-modal").classList.add("show");
-        document.getElementById("qr-coupon-id").textContent = "ID: " + couponId.slice(0, 8).toUpperCase();
-        
-        var qrContainer = document.getElementById("qr-canvas");
-        qrContainer.innerHTML = "";
-        
-        setTimeout(function() {
-            try {
-                new QRCode(qrContainer, {
-                    text: couponId,
-                    width: 200,
-                    height: 200,
-                    colorDark: "#000000",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            } catch (err) {
-                qrContainer.innerHTML = '<p style="color:red;font-size:12px;">เกิดข้อผิดพลาด</p>';
-            }
-        }, 100);
-    }
-
-    function closeQR() {
-        document.getElementById("qr-modal").classList.remove("show");
-        selectedCouponId = "";
-    }
-
-    async function loadHistory() {
+    // ฟังก์ชันดึงประวัติการเคลื่อนไหวคะแนนแต้มสะสม (Timeline ย้อนหลัง)
+    async function loadTransactions() {
         try {
             var { data, error } = await db
-                .from("point_transactions")
+                .from("transactions")
                 .select("*")
                 .eq("line_user_id", currentUserId)
-                .order("created_at", { ascending: false })
-                .limit(50);
+                .order("created_at", { ascending: false });
 
-            if (error || !data || data.length === 0) {
-                document.getElementById("tx-list").innerHTML = 
-                    '<div class="empty">ยังไม่มีประวัติ</div>';
+            if (error) throw error;
+
+            if (!data || data.length === 0) {
+                document.getElementById("tx-list").innerHTML = '<div class="empty-state">ยังไม่มีประวัติการทำรายการคะแนน</div>';
                 return;
             }
 
             document.getElementById("tx-list").innerHTML = data.map(function(tx) {
                 var date = new Date(tx.created_at).toLocaleDateString("th-TH", {
-                    day: "numeric", month: "short", year: "numeric",
-                    hour: "2-digit", minute: "2-digit"
+                    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
                 });
                 var isEarn = tx.type === "earn";
-                var pointsClass = isEarn ? "tx-earn" : "tx-redeem";
-                var pointsSymbol = isEarn ? "+" : "-";
-
-                return '<div class="timeline-item">' +
-                    '<div class="timeline-dot"></div>' +
-                    '<div class="tx-desc">' + (tx.description || "-") + '</div>' +
-                    '<div class="tx-date">' + date + '</div>' +
-                    '<div class="tx-points ' + pointsClass + '">' + 
-                        pointsSymbol + Math.abs(tx.points).toLocaleString() + ' แต้ม' +
-                    '</div>' +
-                    '</div>';
+                
+                return `
+                    <div class="timeline-item">
+                        <div class="timeline-dot" style="background: ${isEarn ? '#06c755' : '#e53e3e'}; shadow: 0 0 0 2px ${isEarn ? '#06c755' : '#e53e3e'}"></div>
+                        <div class="tx-header">
+                            <div class="tx-desc">${tx.description || "บันทึกแต้มจากรายการหน้าร้าน"}</div>
+                            <div class="tx-points ${isEarn ? 'tx-earn' : 'tx-redeem'}">
+                                ${isEarn ? '+' : '-'}${Math.abs(tx.points).toLocaleString()} แต้ม
+                            </div>
+                        </div>
+                        <div class="tx-date">${date}</div>
+                    </div>`;
             }).join("");
 
         } catch (err) {
-            document.getElementById("tx-list").innerHTML = 
-                '<div class="empty">เกิดข้อผิดพลาด</div>';
+            document.getElementById("tx-list").innerHTML = '<div class="empty-state" style="color:#e53e3e;">เกิดข้อผิดพลาดในการดึงไทม์ไลน์</div>';
         }
     }
 
-    function formatDate(date) {
-        return date.toLocaleDateString("th-TH", {
-            day: "numeric", month: "short", year: "numeric"
-        });
+    // ฟังก์ชันสลับเมนูหน้าต่างแท็บ
+    function switchTab(status) {
+        // เคลียร์ปุ่ม Active เก่าออกทั้งหมด
+        var buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        
+        // เคลียร์คอนเทนต์เก่าที่โชว์ออก
+        var panels = document.querySelectorAll('.coupon-panel');
+        panels.forEach(p => p.classList.remove('active'));
+
+        // คืนค่าความ Active ให้กับเป้าหมายที่ถูกคลิกเข้ามาใหม่
+        event.currentTarget.classList.add('active');
+        document.getElementById('panel-' + status).classList.add('active');
+    }
+
+    // ฟังก์ชันเปิดแสดงคิวอาร์โค้ดสิทธิ์คูปองแบบเจาะจงรายใบ
+    function openQR(couponId, title) {
+        document.getElementById("qr-modal").classList.add("show");
+        document.getElementById("md-title").textContent = title;
+        document.getElementById("md-code").textContent = "COUPON ID : " + couponId.toUpperCase().slice(-8);
+
+        var qrContainer = document.getElementById("qr-canvas");
+        qrContainer.innerHTML = ""; // ล้างค่า Canvas ลิสต์ตัวเก่าออกก่อนวาดตัวใหม่
+
+        setTimeout(function() {
+            new QRCode(qrContainer, {
+                text: couponId,
+                width: 170,
+                height: 170,
+                colorDark : "#1a202c",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }, 80);
+    }
+
+    function closeQR() {
+        document.getElementById("qr-modal").classList.remove("show");
     }
 
     init();
