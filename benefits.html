@@ -46,15 +46,13 @@
         .db-points { font-size: 24px; font-weight: 700; color: #ffca28; line-height: 1.2; }
         .db-rank-label { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.2); text-transform: uppercase; }
 
-        /* ขีดสีจำแนกตามยศบนกล่องข้อมูลหลัก */
+        /* สไตล์สีแบรนดิ้งของแรงค์ */
         .badge-bronze { background: var(--bronze) !important; }
         .badge-silver { background: #7f8c8d !important; }
         .badge-gold { background: #b8860b !important; color: #fff !important; }
         .badge-platinum { background: linear-gradient(45deg, #00c6ff, #0072ff) !important; }
 
-        /* ========================================================
-           LUXURY GLOSSY RANK CARDS (บัตรยศเคลือบเงาแวววาว)
-        ======================================================== */
+        /* LUXURY GLOSSY RANK CARDS */
         .section-header { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .section-header i { color: #ff7043; }
 
@@ -66,7 +64,7 @@
             transition: all 0.3s ease;
         }
 
-        /* เอฟเฟกต์สะท้อนแสงเงาวิ่งผ่านหน้าบัตร (Metallic Shimmer Animation) */
+        /* เอฟเฟกต์สะท้อนแสงเงาวิ่งผ่านหน้าบัตร */
         .rank-card::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: linear-gradient(45deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 55%);
@@ -91,16 +89,13 @@
         .status-badge { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.25); }
         .status-badge.current { background: #ffca28; color: #4a3300; box-shadow: 0 2px 8px rgba(255,202,40,0.3); }
 
-        /* จัดการจางความสว่างการ์ดยศที่ยังมาไม่ถึง */
-        .inactive-card { opacity: 0.55; filter: grayscale(30%); }
+        .inactive-card { opacity: 0.45; filter: grayscale(40%); }
 
         .perk-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
         .perk-item { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.4; }
         .perk-dot { font-size: 12px; margin-top: 2px; }
 
-        /* ========================================================
-           COMMUNITY TIMELINE SYSTEM (ระบบคอมมูนิตี้รีวิว/โปรโมชั่น)
-        ======================================================= */
+        /* COMMUNITY TIMELINE SYSTEM */
         .page-title { font-size: 18px; font-weight: 700; color: #1a202c; margin-top: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
         
         .tabs-container { display: flex; gap: 8px; margin-bottom: 20px; }
@@ -131,9 +126,6 @@
         .post-img { width: 100%; max-height: 200px; object-fit: cover; display: block; }
         
         .review-rating { color: #ffca28; font-size: 12px; margin-bottom: 6px; letter-spacing: 1px; }
-
-        .empty-state { text-align: center; padding: 40px 20px; color: #a0aec0; font-size: 13px; background: white; border-radius: 16px; border: 1px dashed #e2e8f0; }
-        .empty-state i { font-size: 32px; margin-bottom: 8px; opacity: 0.6; display: block; }
     </style>
 </head>
 <body>
@@ -149,12 +141,12 @@
             <img src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" class="db-logo" alt="Logo">
             <div>
                 <div class="db-name">Fat Myth Bear</div>
-                <div class="db-sub" id="current-tier-text">กำลังโหลดระดับ...</div>
+                <div class="db-sub" id="current-tier-text">ระดับของคุณ: BRONZE</div>
             </div>
         </div>
         <div class="db-rank-info">
             <div class="db-points" id="db-points">0</div>
-            <div id="db-rank-badge" class="db-rank-label">MEMBER</div>
+            <div id="db-rank-badge" class="db-rank-label badge-bronze">BRONZE MEMBER</div>
         </div>
     </div>
 
@@ -190,7 +182,6 @@
 </div>
 
 <script>
-    // ข้อมูลเชื่อมต่อกับ LINE LIFF และ Supabase
     var LIFF_ID = "2010298031-prC3lMly"; 
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
@@ -199,84 +190,68 @@
 
     var currentUserId = "";
 
-    // ผังโครงสร้างกำหนดสิทธิพิเศษของร้าน Fat Myth Bear Bingsu
     var TIER_CONFIG = [
         { id: 'Bronze', name: 'BRONZE BEAR', range: 'สะสมครบ 0 - 999 EXP', icon: '🥉', perks: ['สะสมคะแนนแลกของรางวัลได้ทุกเมนู', 'รับสิทธิ์ซื้อเมนูพิเศษในวันเกิดลด 10%'] },
         { id: 'Silver', name: 'SILVER BEAR', range: 'สะสมครบ 1,000 - 2,999 EXP', icon: '🥈', perks: ['รับส่วนลดถาวร 5% สำหรับเมนูบิงซูที่ร่วมรายการ', 'รับสิทธิ์ชิมและสั่งซื้อเมนูพิเศษ (Early Access) ก่อนใคร'] },
-        { id: 'Gold', name: 'GOLDEN BEAR', range: 'สะสมครบ 3,000 - 4,999 EXP', icon: '🥇', perks: ['รับส่วนลดถาวร 5% สำหรับทุกบิลหน้าร้าน', 'รับสิทธิ์ฟรี ท็อปปิ้งมูลค่า 15 บาท ฟรี 1 ครั้งต่อเดือน', 'สิทธิ์จับฉลากของขวัญประจำเทศกาล'] },
-        { id: 'Platinum', name: 'PLATINUM BEAR', range: 'สะสมครบ 5,000 EXP ขึ้นไป', icon: '💎', perks: ['รับส่วนลดพรีเมียมถาวร 10% ทุกรายการบิลสำเร็จ', 'รับคูปองทานถ้วยใหญ่ฟรี 1 ที่ในเดือนเกิดสิทธิ์สมาชิก VIP', 'สิทธิ์จองโต๊ะหรือรอบกิจกรรมพิเศษหน้าร้านล่วงหน้า'] }
+        { id: 'Gold', name: 'GOLDEN BEAR', range: 'สะสมครบ 3,000 - 4,999 EXP', icon: '🥇', perks: ['รับส่วนลดถาวร 5% สำหรับทุกบิลหน้าร้าน', 'รับสิทธิ์ฟรี ท็อปปิ้งมูลค่า 15 บาท ฟรี 1 ครั้งต่อเดือน'] },
+        { id: 'Platinum', name: 'PLATINUM BEAR', range: 'สะสมครบ 5,000 EXP ขึ้นไป', icon: '💎', perks: ['รับส่วนลดพรีเมียมถาวร 10% ทุกรายการบิลสำเร็จ', 'รับคูปองทานถ้วยใหญ่ฟรี 1 ที่ในเดือนเกิดสิทธิ์สมาชิก VIP'] }
     ];
 
     async function init() {
         try {
-            // เริ่มการทำงานของ LINE LIFF SDK 
             await liff.init({ liffId: LIFF_ID });
-            
-            if (!liff.isLoggedIn()) { 
-                liff.login(); 
-                return; 
-            }
-            
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            // ดึงข้อมูลโปรไฟล์พร้อมประวัติข่าวสารพร้อมๆ กันเพื่อความรวดเร็ว
-            await Promise.all([
-                loadRealtimeProfile(),
-                loadCommunityData()
-            ]);
+            // เรียกใช้โครงสร้างโหลดแบบจับกลุ่มความปลอดภัยสูงเหมือนไฟล์แรก
+            await loadRealtimeProfile();
+            await loadCommunityData();
 
-            // ปิดฉากหน้า Loading เพื่อแสดงตัวแอปพลิเคชันหลัก
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
         } catch (err) {
             console.error("LIFF Init Error: ", err);
-            // แสดงกรณีฉุกเฉินเปิดผิดช่องทาง
-            document.getElementById("loading").innerHTML = '<p style="color:#e53e3e; padding:20px; text-align:center;"><i class="fa-solid fa-circle-exclamation"></i> ไม่สามารถเปิดระบบได้ กรุณาเปิดผ่านห้องแชท LINE</p>';
+            // แสดงกรณีฉุกเฉินเปิดผิดช่องทาง เพื่อไม่ให้หน้าจอขึ้นเว็บเออร์เรอร์จอดำ
+            document.getElementById("loading").innerHTML = '<p style="color:#e53e3e; padding:20px; text-align:center;"><i class="fa-solid fa-circle-exclamation"></i> ไม่สามารถเปิดระบบได้ในขณะนี้</p>';
         }
     }
 
-    // ฟังก์ชันตรวจสอบแต้มและตรวจสอบยศสมาชิก
+    // แก้ไขจุดบกพร่อง: ยกเลิกคำสั่ง .single() ที่ทำให้เกิดปัญหา 400 Bad Request เปลี่ยนมาใช้การอ่านอาร์เรย์แบบไฟล์แรกที่เสถียรชัวร์
     async function loadRealtimeProfile() {
+        var userTier = "Bronze";
+        var userPoints = 0;
         try {
             var { data, error } = await db
                 .from("profiles")
                 .select("*")
-                .eq("line_user_id", currentUserId)
-                .single();
+                .eq("line_user_id", currentUserId);
                 
-            if (error) throw error;
-            
-            // นำค่าที่ดึงมาใส่ในแดชบอร์ดด้านบนสุด
-            var userTier = data.tier || 'Bronze';
-            var userPoints = data.current_points || 0;
-            
-            document.getElementById("current-tier-text").textContent = "ระดับของคุณ: " + userTier.toUpperCase();
-            document.getElementById("db-points").textContent = userPoints.toLocaleString() + " pts";
-            
-            // เปลี่ยนโทนขีดสีของยศด้านขวาบนตามระดับจริง
-            var badgeEl = document.getElementById("db-rank-badge");
-            badgeEl.className = "db-rank-label badge-" + userTier.toLowerCase();
-            badgeEl.textContent = userTier + " MEMBER";
-
-            // สั่งเรนเดอร์การ์ดเงาวิ่งผ่านตามลำดับ
-            renderLuxuryCards(userTier);
+            if (!error && data && data.length > 0) {
+                userTier = data[0].tier || 'Bronze';
+                userPoints = data[0].current_points || 0;
+            }
         } catch (e) {
             console.error("Profile query error: ", e);
-            // Fallback กรณีตารางไม่มีข้อมูล หรือฐานข้อมูลผิดพลาด ให้แสดงยศเริ่มต้น (Bronze) ไม่ให้หน้าแอปพังค้าง
-            renderLuxuryCards('Bronze');
         }
+
+        // นำค่าไปอัปเดตลงแดชบอร์ดด้านบน
+        document.getElementById("current-tier-text").textContent = "ระดับของคุณ: " + userTier.toUpperCase();
+        document.getElementById("db-points").textContent = userPoints.toLocaleString() + " pts";
+        
+        var badgeEl = document.getElementById("db-rank-badge");
+        badgeEl.className = "db-rank-label badge-" + userTier.toLowerCase();
+        badgeEl.textContent = userTier + " MEMBER";
+
+        renderLuxuryCards(userTier);
     }
 
-    // ฟังก์ชันสร้างการ์ดสิทธิประโยชน์แบบเมทัลลิกเงาวิ่งผ่านหน้าบัตร
     function renderLuxuryCards(userTier) {
         var grid = document.getElementById("rank-grid");
         grid.innerHTML = "";
 
         TIER_CONFIG.forEach(function(tier) {
-            // ตรวจหาความสมดุลว่าตัวการ์ดไหนคือระดับของลูกค้าปัจจุบัน
             var isCurrent = (tier.id.toLowerCase() === userTier.toLowerCase());
-            
             var cardHTML = `
                 <div class="rank-card rank-card-${tier.id.toLowerCase()} ${!isCurrent ? 'inactive-card' : ''}">
                     <div class="rank-header">
@@ -290,40 +265,29 @@
                         ${isCurrent ? '<span class="status-badge current">ระดับของคุณ</span>' : '<span class="status-badge">สิทธิ์สมาชิก</span>'}
                     </div>
                     <div class="perk-list">
-                        ${tier.perks.map(p => `
-                            <div class="perk-item">
-                                <i class="fa-solid fa-circle-check perk-dot"></i>
-                                <span>${p}</span>
-                            </div>
-                        `).join('')}
+                        ${tier.perks.map(p => `<div class="perk-item"><i class="fa-solid fa-circle-check perk-dot"></i><span>${p}</span></div>`).join('')}
                     </div>
                 </div>`;
             grid.innerHTML += cardHTML;
         });
     }
 
-    // ฟังก์ชันจัดการดึงข้อมูลโพสต์คอมมูนิตี้
     async function loadCommunityData() {
-        // กรองข้อมูลข่าวสารโปรโมชั่น (แท็บ 1)
+        // แท็บโปรโมชั่นร้านค้า
         try {
             var { data: promo, error: errP } = await db.from("news_promo").select("*").order("created_at", { ascending: false }).limit(10);
-            if (!errP && promo) renderPromoMarkup(promo);
-            else renderPromoMarkup([]); // กรณีไม่มีตารางให้ไปทำกล่องจำลองความปลอดภัยแทน
+            renderPromoMarkup((!errP && promo) ? promo : []);
         } catch(e) { renderPromoMarkup([]); }
 
-        // กรองข้อมูลคะแนนรีวิวลูกค้า (แท็บ 2)
+        // แท็บรีวิวจากลูกค้า
         try {
             var { data: reviews, error: errR } = await db.from("user_reviews").select("*").order("created_at", { ascending: false }).limit(10);
-            if (!errR && reviews) renderReviewMarkup(reviews);
-            else renderReviewMarkup([]);
+            renderReviewMarkup((!errR && reviews) ? reviews : []);
         } catch(e) { renderReviewMarkup([]); }
     }
 
-    // จัดวางโครงสร้างข้อมูลแท็บโปรโมชั่นร้าน
     function renderPromoMarkup(data) {
         var box = document.getElementById("list-promo");
-        
-        // หากในฐานข้อมูลว่างเปล่าหรือยังไม่ได้ลงประกาศ ให้ดึง Template ข้อมูลตัวอย่างขึ้นมาแสดงแบบนุ่มนวล
         if (!data || data.length === 0) {
             box.innerHTML = `
                 <div class="post-card">
@@ -332,7 +296,7 @@
                         <div class="post-date">วันนี้</div>
                     </div>
                     <div class="post-title">ต้อนรับฤดูกาลบิงซูมะม่วงสดฉ่ำ! 🍧</div>
-                    <div class="post-content">สิทธิพิเศษสำหรับลูกค้าทุกระดับชั้นยศ แวะมาทานบิงซูหน้าร้านวันนี้ รับสิทธิ์ถ่ายภาพเช็คอินคู่กับน้องหมี Fat Myth Bear รับคะแนนคูณสองทันทีถึงสิ้นเดือนนี้เท่านั้นนะคะ!</div>
+                    <div class="post-content">สิทธิพิเศษสำหรับลูกค้าทุกระดับ แวะมาทานบิงซูหน้าร้านวันนี้ ถ่ายภาพเช็คอินคู่กับน้องหมี Fat Myth Bear รับคะแนนสะสมพิเศษคูณสองทันทีค่ะ!</div>
                     <div class="post-img-container"><img src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=500&q=80" class="post-img"></div>
                 </div>`;
             return;
@@ -353,10 +317,8 @@
         }).join('');
     }
 
-    // จัดวางโครงสร้างข้อมูลแท็บรีวิวจากลูกค้า
     function renderReviewMarkup(data) {
         var box = document.getElementById("list-review");
-        
         if (!data || data.length === 0) {
             box.innerHTML = `
                 <div class="post-card">
@@ -365,7 +327,7 @@
                         <div class="post-date">เมื่อวานนี้</div>
                     </div>
                     <div class="review-rating">★★★★★</div>
-                    <div class="post-content">บิงซูเนียนนุ่มละมุนมากค่ะ สั่งถ้วยช็อกโกแลตนูเทลล่ามา ทานคู่กับท็อปปิ้งเจลลี่น้องหมีเข้ากันสุดๆ ที่สำคัญพนักงานหน้าร้านสแกนสะสมแต้มให้ไวมาก ยศขึ้นเป็น Silver เรียบร้อยแล้วค่ะ! 🥰</div>
+                    <div class="post-content">บิงซูเนียนนุ่มละมุนมากค่ะ ทานคู่กับท็อปปิ้งเจลลี่น้องหมีเข้ากันสุดๆ พนักงานหน้าร้านสแกนสะสมแต้มให้ไวมาก ยศขึ้นเรียบร้อยแล้วค่ะ! 🥰</div>
                 </div>`;
             return;
         }
@@ -380,23 +342,18 @@
                         <div class="post-date">${date}</div>
                     </div>
                     <div class="review-rating">${stars}</div>
-                    <div class="post-content">${item.content || 'ประทับใจรสชาติและการบริการ'}</div>
+                    <div class="post-content">${item.content || 'ประทับใจรสชาติและการบริการมากๆ ค่ะ'}</div>
                     ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
                 </div>`;
         }).join('');
     }
 
-    // ฟังก์ชันจัดการคลิกสลับแท็บบาร์ให้สมดุล
     function switchTab(tabName) {
-        // ล้างปุ่มสถานะสว่างตัวเก่าออก
         document.getElementById("btn-promo").classList.remove("active");
         document.getElementById("btn-review").classList.remove("active");
-        
-        // ซ่อนพาเนลเก่าทั้งหมด
         document.getElementById("panel-promo").classList.remove("active");
         document.getElementById("panel-review").classList.remove("active");
 
-        // เปิดและตั้งค่าความสว่างตามเป้าหมายที่ถูกคลิก
         document.getElementById("btn-" + tabName).classList.add("active");
         document.getElementById("panel-" + tabName).classList.add("active");
     }
