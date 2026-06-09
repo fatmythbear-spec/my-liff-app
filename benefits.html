@@ -251,7 +251,6 @@
         { id: 'Platinum', name: 'Platinum', range: '5,000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิลวีไอพี', 'สิทธิ์สำรองโต๊ะ VIP ล่วงหน้า'] }
     ];
 
-    // ปรับปรุง: ใช้รูปแบบการรันมาตรฐานแบบดั้งเดิมของไฟล์ที่ใช้การได้ เพื่อป้องกันปัญหากลุ่มประมวลผลค้างบนมือถือ
     function init() {
         liff.init({ liffId: LIFF_ID }).then(function() {
             if (!liff.isLoggedIn()) {
@@ -280,11 +279,11 @@
     function bootAppWithFallback() {
         renderRankCards("Bronze");
         loadCommunityData();
+        switchTab("promo"); // บังคับสลับแท็บเริ่มต้นแบบปลอดภัย
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
-    // ปรับปรุง: ถอดคำสั่ง .single() ออกแล้วใช้การตรวจสอบความยาวอาร์เรย์แบบไฟล์แรก เพื่อไม่ให้ระบบหลังบ้านแครชเวลาผู้ใช้รายใหม่เข้าแอปพลิเคชัน
     function loadRealtimeProfile() {
         db.from("profiles").select("*").eq("line_user_id", currentUserId)
         .then(function(res) {
@@ -431,6 +430,7 @@
         container.innerHTML = html;
     }
 
+    // แก้ไขจุดนี้: ถอดการพึ่งพาตัวแปรระบบ event ออก เพื่อให้ WebView ของสมาร์ตโฟนไม่ค้าง
     function switchTab(status) {
         currentActiveTab = status;
         document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -458,7 +458,6 @@
         }
     }
 
-    // ปรับปรุง: ย้ายจากกลไกสไตล์ async มาเป็น Promise chain เพื่อรองรับมือถือรุ่นเก่าและ WebView ได้อย่างมั่นใจ
     function executePublishPost() {
         var textContent = document.getElementById("community-post-text").value.trim();
         if (!textContent && !encodedBase64ImageStr) {
