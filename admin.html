@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+        body { font-family: 'Kanit', sans-serif; background: #f5f5f5; min-height: 100vh; }
 
         #loading {
             display: flex; flex-direction: column;
@@ -27,58 +27,77 @@
         .header {
             background: linear-gradient(135deg, #1a1a2e, #2d3561);
             color: white; border-radius: 16px; padding: 20px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .header-left { flex: 1; }
-        .header-title { font-size: 24px; font-weight: 700; }
-        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
-        .export-btn {
-            background: #06c755; color: white;
-            padding: 10px 18px; border: none; border-radius: 10px;
-            font-size: 14px; font-weight: 700; cursor: pointer;
+        .header-title { font-size: 28px; font-weight: 700; }
+        .header-sub { font-size: 14px; opacity: 0.8; margin-top: 4px; }
+        
+        .header-actions {
+            display: flex; gap: 12px;
         }
-        .export-btn:disabled { background: #aaa; cursor: not-allowed; }
+        .action-btn {
+            padding: 12px 18px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-export {
+            background: #06c755; color: white;
+        }
+        .btn-export:hover { background: #00a843; }
+        .btn-export:disabled { background: #aaa; cursor: not-allowed; }
 
-        .stats {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px; margin-bottom: 16px;
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px; margin-bottom: 20px;
         }
         .stat-card {
-            background: white; border-radius: 12px;
-            padding: 16px; text-align: center;
+            background: white; border-radius: 12px; padding: 20px;
+            text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: transform 0.3s;
         }
-        .stat-number { font-size: 28px; font-weight: 700; color: #06c755; }
-        .stat-label { font-size: 12px; color: #999; margin-top: 6px; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-number { font-size: 32px; font-weight: 700; color: #06c755; }
+        .stat-label { font-size: 13px; color: #999; margin-top: 8px; }
 
         .controls {
-            background: white; border-radius: 16px; padding: 16px;
-            margin-bottom: 16px; display: flex; gap: 12px;
-            flex-wrap: wrap;
+            background: white; border-radius: 12px; padding: 16px;
+            margin-bottom: 20px; display: flex; gap: 12px;
+            flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         .search-input {
-            flex: 1; min-width: 200px; padding: 12px;
+            flex: 1; min-width: 200px; padding: 12px 14px;
             border: 1.5px solid #ddd; border-radius: 10px;
             font-size: 14px; outline: none;
         }
         .search-input:focus { border-color: #06c755; }
         .filter-select {
-            padding: 12px; border: 1.5px solid #ddd;
+            padding: 12px 14px; border: 1.5px solid #ddd;
             border-radius: 10px; font-size: 14px; outline: none;
+            cursor: pointer;
         }
         .filter-select:focus { border-color: #06c755; }
 
+        .message {
+            padding: 14px; border-radius: 10px; margin-bottom: 16px;
+            display: none;
+        }
+        .error { background: #ffe0e0; color: #e74c3c; border-left: 4px solid #e74c3c; }
+        .success { background: #f0fff4; color: #06c755; border-left: 4px solid #06c755; }
+
         .table-container {
-            background: white; border-radius: 16px; padding: 16px;
+            background: white; border-radius: 12px; padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             overflow-x: auto;
         }
         table {
-            width: 100%; border-collapse: collapse;
-            font-size: 13px;
+            width: 100%; border-collapse: collapse; font-size: 13px;
         }
         th {
             background: #f8f8f8; padding: 12px; text-align: left;
-            font-weight: 700; color: #333; border-bottom: 2px solid #ddd;
+            font-weight: 700; color: #333; border-bottom: 2px solid #eee;
         }
         td {
             padding: 12px; border-bottom: 1px solid #eee;
@@ -88,27 +107,62 @@
         .role-select {
             padding: 6px 10px; border: 1px solid #ddd;
             border-radius: 6px; font-size: 12px; cursor: pointer;
+            background: white; outline: none;
         }
+        .role-select:focus { border-color: #06c755; }
+
         .tier-badge {
-            display: inline-block; padding: 4px 10px;
-            border-radius: 99px; font-size: 11px; font-weight: 600;
+            display: inline-block; padding: 5px 12px;
+            border-radius: 99px; font-size: 11px; font-weight: 700;
         }
         .tier-Bronze   { background: #cd7f3220; color: #a0522d; }
         .tier-Silver   { background: #a8a9ad20; color: #666; }
         .tier-Gold     { background: #ffd70030; color: #b8860b; }
         .tier-Platinum { background: #667eea20; color: #534AB7; }
 
-        .action-btn {
-            padding: 6px 12px; margin-right: 4px;
-            border: none; border-radius: 6px;
-            font-size: 12px; cursor: pointer; font-weight: 600;
+        .actions {
+            display: flex; gap: 6px;
         }
-        .btn-info { background: #3498db; color: white; }
-        .btn-delete { background: #e74c3c; color: white; }
+        .action-btn-sm {
+            padding: 6px 10px; border: none;
+            border-radius: 6px; font-size: 12px; cursor: pointer;
+            font-weight: 600; transition: all 0.2s;
+        }
+        .btn-info {
+            background: #3498db; color: white;
+        }
+        .btn-info:hover { background: #2980b9; }
+        .btn-delete {
+            background: #e74c3c; color: white;
+        }
+        .btn-delete:hover { background: #c0392b; }
 
-        .empty { text-align: center; padding: 40px 20px; color: #999; }
-        .error { color: #e74c3c; padding: 12px; background: #ffe0e0; border-radius: 8px; margin-bottom: 12px; }
-        .success { color: #06c755; padding: 12px; background: #f0fff4; border-radius: 8px; margin-bottom: 12px; }
+        .empty {
+            text-align: center; padding: 40px 20px;
+            color: #999; font-size: 14px;
+        }
+
+        .modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); z-index: 999;
+            align-items: center; justify-content: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white; border-radius: 16px; padding: 24px;
+            width: 90%; max-width: 400px;
+        }
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+        .modal-text { font-size: 14px; color: #666; line-height: 1.6; margin-bottom: 20px; }
+        .modal-buttons {
+            display: flex; gap: 12px;
+        }
+        .modal-btn {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            font-weight: 600; cursor: pointer;
+        }
+        .modal-btn-cancel { background: #eee; color: #333; }
+        .modal-btn-confirm { background: #e74c3c; color: white; }
     </style>
 </head>
 <body>
@@ -124,67 +178,81 @@
             <div class="header-title">📊 Admin Dashboard</div>
             <div class="header-sub">Fat Myth Bear Loyalty System</div>
         </div>
-        <button class="export-btn" id="export-btn" onclick="exportToCSV()" disabled>
-            📥 Export CSV
-        </button>
+        <div class="header-actions">
+            <button class="action-btn btn-export" id="export-btn" onclick="exportToCSV()" disabled>
+                📥 Export CSV
+            </button>
+        </div>
     </div>
 
-    <div class="stats">
+    <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-number" id="total-members">0</div>
             <div class="stat-label">สมาชิกทั้งหมด</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" id="bronze-count">0</div>
-            <div class="stat-label">Bronze</div>
+            <div class="stat-label">🥉 Bronze</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" id="silver-count">0</div>
-            <div class="stat-label">Silver</div>
+            <div class="stat-label">🥈 Silver</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" id="gold-count">0</div>
-            <div class="stat-label">Gold</div>
+            <div class="stat-label">🥇 Gold</div>
         </div>
         <div class="stat-card">
             <div class="stat-number" id="platinum-count">0</div>
-            <div class="stat-label">Platinum</div>
+            <div class="stat-label">💎 Platinum</div>
         </div>
     </div>
 
+    <div id="error-msg" class="message error"></div>
+    <div id="success-msg" class="message success"></div>
+
     <div class="controls">
         <input type="text" class="search-input" id="search-input" 
-            placeholder="ค้นหาชื่อหรือเบอร์โทร" oninput="filterMembers()">
+            placeholder="🔍 ค้นหาชื่อ เบอร์โทร หรือ ID" oninput="filterMembers()">
         <select class="filter-select" id="tier-filter" onchange="filterMembers()">
-            <option value="">ทั้งหมด Tier</option>
-            <option value="Bronze">Bronze</option>
-            <option value="Silver">Silver</option>
-            <option value="Gold">Gold</option>
-            <option value="Platinum">Platinum</option>
+            <option value="">📊 ทั้งหมด Tier</option>
+            <option value="Bronze">🥉 Bronze</option>
+            <option value="Silver">🥈 Silver</option>
+            <option value="Gold">🥇 Gold</option>
+            <option value="Platinum">💎 Platinum</option>
         </select>
     </div>
-
-    <div id="error-msg" class="error" style="display:none;"></div>
-    <div id="success-msg" class="success" style="display:none;"></div>
 
     <div class="table-container">
         <table>
             <thead>
                 <tr>
-                    <th>#</th>
-                    <th>ชื่อสมาชิก</th>
-                    <th>LINE User ID</th>
-                    <th>Tier</th>
-                    <th>แต้ม</th>
-                    <th>EXP</th>
-                    <th>บทบาท</th>
-                    <th>การจัดการ</th>
+                    <th style="width:5%;">#</th>
+                    <th style="width:15%;">ชื่อสมาชิก</th>
+                    <th style="width:20%;">เบอร์โทร</th>
+                    <th style="width:12%;">Tier</th>
+                    <th style="width:10%;">แต้ม</th>
+                    <th style="width:10%;">EXP</th>
+                    <th style="width:12%;">บทบาท</th>
+                    <th style="width:16%;">การจัดการ</th>
                 </tr>
             </thead>
             <tbody id="members-table">
                 <tr><td colspan="8" class="empty">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+    <div class="modal-content">
+        <div class="modal-title">⚠️ ยืนยันการลบ</div>
+        <div class="modal-text">ต้องการลบสมาชิก <b id="delete-name">-</b> จริงหรือ? การกระทำนี้ไม่สามารถย้อนกลับได้</div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeModal()">ยกเลิก</button>
+            <button class="modal-btn modal-btn-confirm" onclick="confirmDelete()">ลบเลย</button>
+        </div>
     </div>
 </div>
 
@@ -197,6 +265,7 @@
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     var allMembers = [];
+    var deleteTargetId = "";
 
     async function init() {
         try {
@@ -215,7 +284,7 @@
 
             if (error || !data || data.role !== "Admin") {
                 document.getElementById("loading").innerHTML =
-                    '<p style="color:red;padding:20px;text-align:center">⛔ เฉพาะ Admin เท่านั้น</p>';
+                    '<p style="color:red;padding:20px;text-align:center">⛔ เฉพาะ Admin เท่านั้น<br><small>กรุณาติดต่อผู้ดูแลระบบ</small></p>';
                 return;
             }
 
@@ -232,14 +301,23 @@
 
     async function loadMembers() {
         try {
+            document.getElementById("export-btn").disabled = true;
+
             var { data, error } = await db
                 .from("profiles")
                 .select("*")
                 .order("created_at", { ascending: false });
 
-            if (error || !data) {
+            if (error) {
+                showError("โหลดข้อมูลไม่สำเร็จ: " + error.message);
+                console.error("Error:", error);
+                return;
+            }
+
+            if (!data || data.length === 0) {
                 document.getElementById("members-table").innerHTML =
-                    '<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';
+                    '<tr><td colspan="8" class="empty">ไม่มีข้อมูลสมาชิก</td></tr>';
+                document.getElementById("export-btn").disabled = true;
                 return;
             }
 
@@ -249,7 +327,7 @@
             document.getElementById("export-btn").disabled = false;
 
         } catch (err) {
-            showError("โหลดข้อมูลไม่สำเร็จ: " + err.message);
+            showError("เกิดข้อผิดพลาด: " + err.message);
         }
     }
 
@@ -275,23 +353,25 @@
 
         var html = members.map(function(m, idx) {
             return '<tr>' +
-                '<td>' + (idx + 1) + '</td>' +
+                '<td><b>' + (idx + 1) + '</b></td>' +
                 '<td><b>' + (m.full_name || '-') + '</b></td>' +
-                '<td style="font-size:11px;font-family:monospace;">' + m.line_user_id.slice(-8) + '</td>' +
+                '<td>' + (m.tel || '-') + '</td>' +
                 '<td><span class="tier-badge tier-' + m.tier + '">' + m.tier + '</span></td>' +
                 '<td>' + (m.current_points || 0).toLocaleString() + '</td>' +
                 '<td>' + (m.current_exp || 0).toLocaleString() + '</td>' +
                 '<td>' +
                     '<select class="role-select" value="' + (m.role || 'Customer') + '" ' +
                     'onchange="updateRole(\'' + m.line_user_id + '\', this.value)">' +
-                    '<option value="Customer" ' + (m.role === 'Customer' ? 'selected' : '') + '>Customer</option>' +
-                    '<option value="Staff" ' + (m.role === 'Staff' ? 'selected' : '') + '>Staff</option>' +
-                    '<option value="Admin" ' + (m.role === 'Admin' ? 'selected' : '') + '>Admin</option>' +
+                    '<option value="Customer">Customer</option>' +
+                    '<option value="Staff">Staff</option>' +
+                    '<option value="Admin">Admin</option>' +
                     '</select>' +
                 '</td>' +
                 '<td>' +
-                    '<button class="action-btn btn-info" onclick="viewHistory(\'' + m.line_user_id + '\')">ประวัติ</button> ' +
-                    '<button class="action-btn btn-delete" onclick="deleteMember(\'' + m.line_user_id + '\')">ลบ</button>' +
+                    '<div class="actions">' +
+                    '<button class="action-btn-sm btn-info" onclick="viewHistory(\'' + m.line_user_id + '\', \'' + m.full_name + '\')">📜</button> ' +
+                    '<button class="action-btn-sm btn-delete" onclick="showDeleteModal(\'' + m.line_user_id + '\', \'' + m.full_name + '\')">🗑️</button>' +
+                    '</div>' +
                 '</td>' +
                 '</tr>';
         }).join("");
@@ -305,6 +385,7 @@
 
         var filtered = allMembers.filter(function(m) {
             var matchName = !search || m.full_name.toLowerCase().includes(search) || 
+                            m.tel.toLowerCase().includes(search) ||
                             m.line_user_id.toLowerCase().includes(search);
             var matchTier = !tierFilter || m.tier === tierFilter;
             return matchName && matchTier;
@@ -321,54 +402,71 @@
                 .eq("line_user_id", lineUserId);
 
             if (error) throw error;
-            showSuccess("อัปเดตบทบาทสำเร็จ");
-            loadMembers();
+            showSuccess("✅ อัปเดตบทบาทสำเร็จ");
 
         } catch (err) {
-            showError("อัปเดตไม่สำเร็จ: " + err.message);
+            showError("❌ อัปเดตไม่สำเร็จ: " + err.message);
+            loadMembers();
         }
     }
 
-    async function deleteMember(lineUserId) {
-        if (!confirm("ต้องการลบสมาชิกนี้จริงหรือ?")) return;
+    function showDeleteModal(lineUserId, fullName) {
+        deleteTargetId = lineUserId;
+        document.getElementById("delete-name").textContent = fullName;
+        document.getElementById("delete-modal").classList.add("show");
+    }
+
+    function closeModal() {
+        document.getElementById("delete-modal").classList.remove("show");
+        deleteTargetId = "";
+    }
+
+    async function confirmDelete() {
+        if (!deleteTargetId) return;
 
         try {
             var { error } = await db
                 .from("profiles")
                 .delete()
-                .eq("line_user_id", lineUserId);
+                .eq("line_user_id", deleteTargetId);
 
             if (error) throw error;
-            showSuccess("ลบสมาชิกสำเร็จ");
+            
+            showSuccess("✅ ลบสมาชิกสำเร็จ");
+            closeModal();
             loadMembers();
 
         } catch (err) {
-            showError("ลบไม่สำเร็จ: " + err.message);
+            showError("❌ ลบไม่สำเร็จ: " + err.message);
         }
     }
 
-    async function viewHistory(lineUserId) {
+    async function viewHistory(lineUserId, fullName) {
         try {
             var { data, error } = await db
                 .from("point_transactions")
                 .select("*")
                 .eq("line_user_id", lineUserId)
                 .order("created_at", { ascending: false })
-                .limit(10);
+                .limit(20);
 
-            if (error || !data) {
-                alert("ไม่มีประวัติ");
+            if (error || !data || data.length === 0) {
+                alert("📋 ประวัติ " + fullName + "\n\nไม่มีประวัติแต้ม");
                 return;
             }
 
-            var history = data.map(function(tx) {
-                return (tx.type === "earn" ? "+" : "-") + tx.points + " แต้ม - " + tx.description;
-            }).join("\n");
+            var history = "📋 ประวัติแต้ม: " + fullName + "\n\n";
+            data.forEach(function(tx, idx) {
+                var date = new Date(tx.created_at).toLocaleDateString("th-TH");
+                var symbol = tx.type === "earn" ? "➕" : "➖";
+                history += (idx + 1) + ". " + date + " " + symbol + " " + tx.points + " แต้ม\n";
+                history += "   " + (tx.description || "-") + "\n\n";
+            });
 
-            alert("ประวัติ 10 อันล่าสุด:\n\n" + history);
+            alert(history);
 
         } catch (err) {
-            alert("ดูประวัติไม่สำเร็จ: " + err.message);
+            showError("ดูประวัติไม่สำเร็จ: " + err.message);
         }
     }
 
@@ -388,14 +486,14 @@
                 .from("point_transactions")
                 .select("*");
 
-            if (txError || !transactions) throw txError;
+            if (txError) throw txError;
 
             // สร้าง CSV สำหรับสมาชิก
             var csv = "ลำดับ,ชื่อสมาชิก,เบอร์โทร,LINE User ID,Tier,แต้ม,EXP,บทบาท,วันที่สมัคร\n";
             members.forEach(function(m, idx) {
                 var date = new Date(m.created_at).toLocaleDateString("th-TH");
                 csv += (idx + 1) + ',"' + (m.full_name || '-') + '","' + (m.tel || '-') + '",' +
-                       m.line_user_id + "," + m.tier + "," + (m.current_points || 0) + "," +
+                       '"' + m.line_user_id + '",' + m.tier + "," + (m.current_points || 0) + "," +
                        (m.current_exp || 0) + ',"' + (m.role || 'Customer') + '",' + date + "\n";
             });
 
@@ -405,14 +503,11 @@
                 var memberName = members.find(function(m) { return m.line_user_id === tx.line_user_id; });
                 var date = new Date(tx.created_at).toLocaleDateString("th-TH");
                 txcsv += date + ',"' + (memberName ? memberName.full_name : 'Unknown') + '",' +
-                         tx.type + "," + tx.points + "," + (tx.exp || 0) + ',"' + 
+                         '"' + tx.type + '",' + tx.points + "," + (tx.exp || 0) + ',"' + 
                          (tx.description || '') + '"\n';
             });
 
-            // ดาวน์โหลด Member CSV
             downloadCSV(csv, "Fat_Myth_Bear_Members.csv");
-
-            // ดาวน์โหลด Transaction CSV
             setTimeout(function() {
                 downloadCSV(txcsv, "Fat_Myth_Bear_Transactions.csv");
             }, 500);
@@ -428,7 +523,7 @@
     }
 
     function downloadCSV(csv, filename) {
-        var bom = "\uFEFF"; // UTF-8 BOM
+        var bom = "\uFEFF";
         var blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
         var link = document.createElement("a");
         var url = URL.createObjectURL(blob);
@@ -448,7 +543,7 @@
         document.getElementById("success-msg").style.display = "none";
         setTimeout(function() {
             document.getElementById("error-msg").style.display = "none";
-        }, 4000);
+        }, 5000);
     }
 
     function showSuccess(msg) {
