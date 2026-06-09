@@ -4,377 +4,463 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Fat Myth Bear</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; padding: 20px; }
+        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+
+        #loading {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            height: 100vh; gap: 12px; color: #666;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #ddd;
+            border-top-color: #06c755; border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #app { display: none; padding: 16px; }
 
         .header {
-            background: #1a1a2e; color: white;
-            border-radius: 16px; padding: 20px 24px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #2d3561);
+            color: white; border-radius: 16px; padding: 20px;
+            margin-bottom: 16px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        .header-title { font-size: 20px; font-weight: 700; }
-        .header-sub   { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+        .header-left { flex: 1; }
+        .header-title { font-size: 24px; font-weight: 700; }
+        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .export-btn {
+            background: #06c755; color: white;
+            padding: 10px 18px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+        }
+        .export-btn:disabled { background: #aaa; cursor: not-allowed; }
 
-        /* Stats */
-        .stats-grid {
+        .stats {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px; margin-bottom: 20px;
+            gap: 12px; margin-bottom: 16px;
         }
         .stat-card {
-            background: white; border-radius: 12px; padding: 16px; text-align: center;
+            background: white; border-radius: 12px;
+            padding: 16px; text-align: center;
         }
-        .stat-val   { font-size: 28px; font-weight: 700; color: #1a1a2e; }
-        .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+        .stat-number { font-size: 28px; font-weight: 700; color: #06c755; }
+        .stat-label { font-size: 12px; color: #999; margin-top: 6px; }
 
-        /* Toolbar */
-        .toolbar {
-            background: white; border-radius: 12px; padding: 14px 16px;
-            margin-bottom: 16px;
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+        .controls {
+            background: white; border-radius: 16px; padding: 16px;
+            margin-bottom: 16px; display: flex; gap: 12px;
+            flex-wrap: wrap;
         }
-        input[type="text"] {
-            flex: 1; min-width: 200px; padding: 8px 12px;
-            border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+        .search-input {
+            flex: 1; min-width: 200px; padding: 12px;
+            border: 1.5px solid #ddd; border-radius: 10px;
+            font-size: 14px; outline: none;
         }
-        select {
-            padding: 8px 12px; border: 1px solid #ddd;
-            border-radius: 8px; font-size: 14px; background: white;
+        .search-input:focus { border-color: #06c755; }
+        .filter-select {
+            padding: 12px; border: 1.5px solid #ddd;
+            border-radius: 10px; font-size: 14px; outline: none;
         }
-        .btn {
-            padding: 8px 16px; border: none; border-radius: 8px;
-            font-size: 14px; cursor: pointer; font-weight: 600;
-        }
-        .btn-green  { background: #06c755; color: white; }
-        .btn-dark   { background: #1a1a2e; color: white; }
+        .filter-select:focus { border-color: #06c755; }
 
-        /* Table */
-        .table-wrap { background: white; border-radius: 12px; overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; }
+        .table-container {
+            background: white; border-radius: 16px; padding: 16px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%; border-collapse: collapse;
+            font-size: 13px;
+        }
         th {
-            background: #f8f8f8; padding: 12px 14px;
-            text-align: left; font-size: 13px; color: #666;
-            border-bottom: 1px solid #eee;
+            background: #f8f8f8; padding: 12px; text-align: left;
+            font-weight: 700; color: #333; border-bottom: 2px solid #ddd;
         }
-        td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background: #fafafa; }
+        td {
+            padding: 12px; border-bottom: 1px solid #eee;
+        }
+        tr:hover { background: #f9f9f9; }
 
+        .role-select {
+            padding: 6px 10px; border: 1px solid #ddd;
+            border-radius: 6px; font-size: 12px; cursor: pointer;
+        }
         .tier-badge {
-            display: inline-block; padding: 2px 10px;
-            border-radius: 99px; font-size: 11px; font-weight: 700;
+            display: inline-block; padding: 4px 10px;
+            border-radius: 99px; font-size: 11px; font-weight: 600;
         }
         .tier-Bronze   { background: #cd7f3220; color: #a0522d; }
-        .tier-Silver   { background: #a8a9ad20; color: #555; }
+        .tier-Silver   { background: #a8a9ad20; color: #666; }
         .tier-Gold     { background: #ffd70030; color: #b8860b; }
         .tier-Platinum { background: #667eea20; color: #534AB7; }
 
-        .btn-tx {
-            padding: 4px 10px; font-size: 11px; border: none;
-            border-radius: 6px; background: #f0f0f0; cursor: pointer;
+        .action-btn {
+            padding: 6px 12px; margin-right: 4px;
+            border: none; border-radius: 6px;
+            font-size: 12px; cursor: pointer; font-weight: 600;
         }
-        .btn-tx:hover { background: #e0e0e0; }
-        .btn-del {
-            padding: 4px 10px; font-size: 11px; border: none;
-            border-radius: 6px; background: #ffe0e0; color: #c0392b; cursor: pointer;
-        }
-        .btn-del:hover { background: #ffcccc; }
+        .btn-info { background: #3498db; color: white; }
+        .btn-delete { background: #e74c3c; color: white; }
 
-        /* Modal */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5); z-index: 999;
-            align-items: center; justify-content: center;
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            background: white; border-radius: 16px;
-            padding: 24px; width: 90%; max-width: 560px;
-            max-height: 80vh; overflow-y: auto;
-        }
-        .modal-title {
-            font-size: 16px; font-weight: 700; margin-bottom: 16px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .modal-close {
-            background: none; border: none; font-size: 20px;
-            cursor: pointer; color: #999;
-        }
-
-        .tx-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px;
-        }
-        .tx-item:last-child { border-bottom: none; }
-        .tx-earn   { color: #06c755; font-weight: 700; }
-        .tx-redeem { color: #e74c3c; font-weight: 700; }
-
-        .empty { text-align: center; color: #999; padding: 30px; font-size: 14px; }
+        .empty { text-align: center; padding: 40px 20px; color: #999; }
+        .error { color: #e74c3c; padding: 12px; background: #ffe0e0; border-radius: 8px; margin-bottom: 12px; }
+        .success { color: #06c755; padding: 12px; background: #f0fff4; border-radius: 8px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <div>
-        <div class="header-title">Admin Dashboard</div>
-        <div class="header-sub">Fat Myth Bear Loyalty System</div>
-    </div>
-    <button class="btn btn-green" onclick="exportCSV()">📥 Export CSV</button>
+<div id="loading">
+    <div class="spinner"></div>
+    <p>กำลังโหลด Dashboard...</p>
 </div>
 
-<!-- Stats -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-val" id="stat-total">-</div>
-        <div class="stat-label">สมาชิกทั้งหมด</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-val" style="color:#cd7f32" id="stat-bronze">-</div>
-        <div class="stat-label">Bronze</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-val" style="color:#888" id="stat-silver">-</div>
-        <div class="stat-label">Silver</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-val" style="color:#b8860b" id="stat-gold">-</div>
-        <div class="stat-label">Gold</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-val" style="color:#534AB7" id="stat-platinum">-</div>
-        <div class="stat-label">Platinum</div>
-    </div>
-</div>
-
-<!-- Toolbar -->
-<div class="toolbar">
-    <input type="text" id="search-input" placeholder="🔍 ค้นหาชื่อสมาชิก..." oninput="filterMembers()">
-    <select id="tier-filter" onchange="filterMembers()">
-        <option value="">ทุก Tier</option>
-        <option value="Bronze">Bronze</option>
-        <option value="Silver">Silver</option>
-        <option value="Gold">Gold</option>
-        <option value="Platinum">Platinum</option>
-    </select>
-    <button class="btn btn-dark" onclick="runTierUpdate()">🔄 อัปเดต Tier ทั้งหมด</button>
-</div>
-
-<!-- Table -->
-<div class="table-wrap">
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>ชื่อ-นามสกุล</th>
-                <th>เบอร์โทร</th>
-                <th>Tier</th>
-                <th>แต้ม</th>
-                <th>EXP</th>
-                <th>สิทธิ์</th>
-                <th>จัดการ</th>
-            </tr>
-        </thead>
-        <tbody id="member-list"></tbody>
-    </table>
-</div>
-
-<!-- Transaction Modal -->
-<div class="modal-overlay" id="tx-modal">
-    <div class="modal-box">
-        <div class="modal-title">
-            <span id="tx-modal-title">ประวัติแต้ม</span>
-            <button class="modal-close" onclick="closeTxModal()">✕</button>
+<div id="app">
+    <div class="header">
+        <div class="header-left">
+            <div class="header-title">📊 Admin Dashboard</div>
+            <div class="header-sub">Fat Myth Bear Loyalty System</div>
         </div>
-        <div id="tx-list"></div>
+        <button class="export-btn" id="export-btn" onclick="exportToCSV()" disabled>
+            📥 Export CSV
+        </button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-number" id="total-members">0</div>
+            <div class="stat-label">สมาชิกทั้งหมด</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="bronze-count">0</div>
+            <div class="stat-label">Bronze</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="silver-count">0</div>
+            <div class="stat-label">Silver</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="gold-count">0</div>
+            <div class="stat-label">Gold</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="platinum-count">0</div>
+            <div class="stat-label">Platinum</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <input type="text" class="search-input" id="search-input" 
+            placeholder="ค้นหาชื่อหรือเบอร์โทร" oninput="filterMembers()">
+        <select class="filter-select" id="tier-filter" onchange="filterMembers()">
+            <option value="">ทั้งหมด Tier</option>
+            <option value="Bronze">Bronze</option>
+            <option value="Silver">Silver</option>
+            <option value="Gold">Gold</option>
+            <option value="Platinum">Platinum</option>
+        </select>
+    </div>
+
+    <div id="error-msg" class="error" style="display:none;"></div>
+    <div id="success-msg" class="success" style="display:none;"></div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>ชื่อสมาชิก</th>
+                    <th>LINE User ID</th>
+                    <th>Tier</th>
+                    <th>แต้ม</th>
+                    <th>EXP</th>
+                    <th>บทบาท</th>
+                    <th>การจัดการ</th>
+                </tr>
+            </thead>
+            <tbody id="members-table">
+                <tr><td colspan="8" class="empty">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
 <script>
-    const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-    const { createClient } = supabase;
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    var LIFF_ID      = "2010298031-prC3lMly";
+    var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
+    var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    let allMembers = [];
+    var { createClient } = supabase;
+    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ── โหลดข้อมูล ──
-    async function fetchMembers() {
-        document.getElementById("member-list").innerHTML =
-            `<tr><td colspan="8" class="empty">กำลังโหลด...</td></tr>`;
+    var allMembers = [];
+
+    async function init() {
         try {
-            const { data, error } = await db
-                .from("profiles")
-                .select("line_user_id, full_name, tel, role, current_points, current_exp, tier")
-                .order("current_exp", { ascending: false });
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+                return;
+            }
 
-            if (error) throw error;
-            allMembers = data || [];
-            renderStats(allMembers);
-            renderTable(allMembers);
+            var profile = await liff.getProfile();
+            var { data, error } = await db
+                .from("profiles")
+                .select("role")
+                .eq("line_user_id", profile.userId)
+                .single();
+
+            if (error || !data || data.role !== "Admin") {
+                document.getElementById("loading").innerHTML =
+                    '<p style="color:red;padding:20px;text-align:center">⛔ เฉพาะ Admin เท่านั้น</p>';
+                return;
+            }
+
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("app").style.display = "block";
+
+            loadMembers();
+
         } catch (err) {
-            document.getElementById("member-list").innerHTML =
-                `<tr><td colspan="8" class="empty">เกิดข้อผิดพลาด: ${err.message}</td></tr>`;
+            document.getElementById("loading").innerHTML =
+                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
         }
     }
 
-    // ── Stats ──
-    function renderStats(members) {
-        document.getElementById("stat-total").textContent    = members.length;
-        document.getElementById("stat-bronze").textContent   = members.filter(m => m.tier === "Bronze").length;
-        document.getElementById("stat-silver").textContent   = members.filter(m => m.tier === "Silver").length;
-        document.getElementById("stat-gold").textContent     = members.filter(m => m.tier === "Gold").length;
-        document.getElementById("stat-platinum").textContent = members.filter(m => m.tier === "Platinum").length;
+    async function loadMembers() {
+        try {
+            var { data, error } = await db
+                .from("profiles")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (error || !data) {
+                document.getElementById("members-table").innerHTML =
+                    '<tr><td colspan="8" class="empty">ไม่มีข้อมูล</td></tr>';
+                return;
+            }
+
+            allMembers = data;
+            updateStats();
+            renderTable(data);
+            document.getElementById("export-btn").disabled = false;
+
+        } catch (err) {
+            showError("โหลดข้อมูลไม่สำเร็จ: " + err.message);
+        }
     }
 
-    // ── Table ──
+    function updateStats() {
+        var bronze = allMembers.filter(function(m) { return m.tier === "Bronze"; }).length;
+        var silver = allMembers.filter(function(m) { return m.tier === "Silver"; }).length;
+        var gold = allMembers.filter(function(m) { return m.tier === "Gold"; }).length;
+        var platinum = allMembers.filter(function(m) { return m.tier === "Platinum"; }).length;
+
+        document.getElementById("total-members").textContent = allMembers.length;
+        document.getElementById("bronze-count").textContent = bronze;
+        document.getElementById("silver-count").textContent = silver;
+        document.getElementById("gold-count").textContent = gold;
+        document.getElementById("platinum-count").textContent = platinum;
+    }
+
     function renderTable(members) {
-        const list = document.getElementById("member-list");
         if (members.length === 0) {
-            list.innerHTML = `<tr><td colspan="8" class="empty">ไม่พบข้อมูลสมาชิก</td></tr>`;
+            document.getElementById("members-table").innerHTML =
+                '<tr><td colspan="8" class="empty">ไม่พบสมาชิก</td></tr>';
             return;
         }
-        list.innerHTML = members.map((m, i) => `
-            <tr>
-                <td style="color:#999">${i + 1}</td>
-                <td style="font-weight:600">${m.full_name || '-'}</td>
-                <td>${m.tel || '-'}</td>
-                <td><span class="tier-badge tier-${m.tier}">${m.tier}</span></td>
-                <td style="font-weight:700;color:#06c755">${(m.current_points || 0).toLocaleString()}</td>
-                <td style="color:#534AB7">${(m.current_exp || 0).toLocaleString()}</td>
-                <td>
-                    <select onchange="changeRole('${m.line_user_id}', this.value)"
-                        style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:12px;">
-                        <option ${m.role === 'Customer' ? 'selected' : ''}>Customer</option>
-                        <option ${m.role === 'Staff'    ? 'selected' : ''}>Staff</option>
-                        <option ${m.role === 'Admin'    ? 'selected' : ''}>Admin</option>
-                    </select>
-                </td>
-                <td style="display:flex;gap:6px;">
-                    <button class="btn-tx" onclick="showTx('${m.line_user_id}','${m.full_name}')">📜 ประวัติ</button>
-                    <button class="btn-del" onclick="deleteMember('${m.line_user_id}','${m.full_name}')">🗑️</button>
-                </td>
-            </tr>
-        `).join("");
+
+        var html = members.map(function(m, idx) {
+            return '<tr>' +
+                '<td>' + (idx + 1) + '</td>' +
+                '<td><b>' + (m.full_name || '-') + '</b></td>' +
+                '<td style="font-size:11px;font-family:monospace;">' + m.line_user_id.slice(-8) + '</td>' +
+                '<td><span class="tier-badge tier-' + m.tier + '">' + m.tier + '</span></td>' +
+                '<td>' + (m.current_points || 0).toLocaleString() + '</td>' +
+                '<td>' + (m.current_exp || 0).toLocaleString() + '</td>' +
+                '<td>' +
+                    '<select class="role-select" value="' + (m.role || 'Customer') + '" ' +
+                    'onchange="updateRole(\'' + m.line_user_id + '\', this.value)">' +
+                    '<option value="Customer" ' + (m.role === 'Customer' ? 'selected' : '') + '>Customer</option>' +
+                    '<option value="Staff" ' + (m.role === 'Staff' ? 'selected' : '') + '>Staff</option>' +
+                    '<option value="Admin" ' + (m.role === 'Admin' ? 'selected' : '') + '>Admin</option>' +
+                    '</select>' +
+                '</td>' +
+                '<td>' +
+                    '<button class="action-btn btn-info" onclick="viewHistory(\'' + m.line_user_id + '\')">ประวัติ</button> ' +
+                    '<button class="action-btn btn-delete" onclick="deleteMember(\'' + m.line_user_id + '\')">ลบ</button>' +
+                '</td>' +
+                '</tr>';
+        }).join("");
+
+        document.getElementById("members-table").innerHTML = html;
     }
 
-    // ── Filter ──
     function filterMembers() {
-        const keyword = document.getElementById("search-input").value.toLowerCase();
-        const tier    = document.getElementById("tier-filter").value;
-        const filtered = allMembers.filter(m =>
-            (m.full_name || "").toLowerCase().includes(keyword) &&
-            (tier === "" || m.tier === tier)
-        );
+        var search = document.getElementById("search-input").value.toLowerCase();
+        var tierFilter = document.getElementById("tier-filter").value;
+
+        var filtered = allMembers.filter(function(m) {
+            var matchName = !search || m.full_name.toLowerCase().includes(search) || 
+                            m.line_user_id.toLowerCase().includes(search);
+            var matchTier = !tierFilter || m.tier === tierFilter;
+            return matchName && matchTier;
+        });
+
         renderTable(filtered);
     }
 
-    // ── Change Role ──
-    async function changeRole(lineUserId, newRole) {
-        const { error } = await db
-            .from("profiles")
-            .update({ role: newRole })
-            .eq("line_user_id", lineUserId);
-        if (error) alert("เปลี่ยนสิทธิ์ไม่สำเร็จ: " + error.message);
-        else allMembers.find(m => m.line_user_id === lineUserId).role = newRole;
-    }
+    async function updateRole(lineUserId, newRole) {
+        try {
+            var { error } = await db
+                .from("profiles")
+                .update({ role: newRole })
+                .eq("line_user_id", lineUserId);
 
-    // ── Delete ──
-    async function deleteMember(lineUserId, name) {
-        if (!confirm(`ยืนยันลบ "${name}" ออกจากระบบ?`)) return;
-        const { error } = await db
-            .from("profiles").delete().eq("line_user_id", lineUserId);
-        if (error) alert("ลบไม่สำเร็จ: " + error.message);
-        else {
-            allMembers = allMembers.filter(m => m.line_user_id !== lineUserId);
-            renderStats(allMembers);
-            renderTable(allMembers);
+            if (error) throw error;
+            showSuccess("อัปเดตบทบาทสำเร็จ");
+            loadMembers();
+
+        } catch (err) {
+            showError("อัปเดตไม่สำเร็จ: " + err.message);
         }
     }
 
-    // ── Transactions Modal ──
-    async function showTx(lineUserId, name) {
-        document.getElementById("tx-modal-title").textContent = `ประวัติแต้ม: ${name}`;
-        document.getElementById("tx-list").innerHTML = "<p class='empty'>กำลังโหลด...</p>";
-        document.getElementById("tx-modal").classList.add("show");
+    async function deleteMember(lineUserId) {
+        if (!confirm("ต้องการลบสมาชิกนี้จริงหรือ?")) return;
 
-        const { data, error } = await db
-            .from("point_transactions")
-            .select("type, points, description, created_at")
-            .eq("line_user_id", lineUserId)
-            .order("created_at", { ascending: false })
-            .limit(50);
+        try {
+            var { error } = await db
+                .from("profiles")
+                .delete()
+                .eq("line_user_id", lineUserId);
 
-        if (error || !data || data.length === 0) {
-            document.getElementById("tx-list").innerHTML = "<p class='empty'>ยังไม่มีประวัติ</p>";
-            return;
+            if (error) throw error;
+            showSuccess("ลบสมาชิกสำเร็จ");
+            loadMembers();
+
+        } catch (err) {
+            showError("ลบไม่สำเร็จ: " + err.message);
         }
-
-        document.getElementById("tx-list").innerHTML = data.map(tx => {
-            const date = new Date(tx.created_at).toLocaleDateString("th-TH", {
-                day: "numeric", month: "short", year: "numeric",
-                hour: "2-digit", minute: "2-digit"
-            });
-            const isEarn = tx.type === "earn";
-            return `<div class="tx-item">
-                <div>
-                    <div style="font-weight:600">${tx.description || "-"}</div>
-                    <div style="color:#999;font-size:11px">${date}</div>
-                </div>
-                <span class="${isEarn ? 'tx-earn' : 'tx-redeem'}">
-                    ${isEarn ? "+" : "-"}${tx.points} แต้ม
-                </span>
-            </div>`;
-        }).join("");
     }
 
-    function closeTxModal() {
-        document.getElementById("tx-modal").classList.remove("show");
-    }
+    async function viewHistory(lineUserId) {
+        try {
+            var { data, error } = await db
+                .from("point_transactions")
+                .select("*")
+                .eq("line_user_id", lineUserId)
+                .order("created_at", { ascending: false })
+                .limit(10);
 
-    // ── Tier Update (Manual Cron) ──
-    async function runTierUpdate() {
-        if (!confirm("อัปเดต Tier สมาชิกทุกคนตาม EXP ปัจจุบัน?")) return;
-        let updated = 0;
-        for (const m of allMembers) {
-            const newTier = calcTier(m.current_exp || 0);
-            if (newTier !== m.tier) {
-                await db.from("profiles")
-                    .update({ tier: newTier })
-                    .eq("line_user_id", m.line_user_id);
-                m.tier = newTier;
-                updated++;
+            if (error || !data) {
+                alert("ไม่มีประวัติ");
+                return;
             }
+
+            var history = data.map(function(tx) {
+                return (tx.type === "earn" ? "+" : "-") + tx.points + " แต้ม - " + tx.description;
+            }).join("\n");
+
+            alert("ประวัติ 10 อันล่าสุด:\n\n" + history);
+
+        } catch (err) {
+            alert("ดูประวัติไม่สำเร็จ: " + err.message);
         }
-        renderStats(allMembers);
-        renderTable(allMembers);
-        alert(`อัปเดตสำเร็จ! เปลี่ยน Tier ${updated} คน`);
     }
 
-    function calcTier(exp) {
-        if (exp >= 5000) return "Platinum";
-        if (exp >= 3000) return "Gold";
-        if (exp >= 1000) return "Silver";
-        return "Bronze";
+    async function exportToCSV() {
+        try {
+            document.getElementById("export-btn").disabled = true;
+            document.getElementById("export-btn").textContent = "⏳ กำลังส่งออก...";
+
+            var { data: members, error: membersError } = await db
+                .from("profiles")
+                .select("*")
+                .order("created_at", { ascending: false });
+
+            if (membersError || !members) throw membersError;
+
+            var { data: transactions, error: txError } = await db
+                .from("point_transactions")
+                .select("*");
+
+            if (txError || !transactions) throw txError;
+
+            // สร้าง CSV สำหรับสมาชิก
+            var csv = "ลำดับ,ชื่อสมาชิก,เบอร์โทร,LINE User ID,Tier,แต้ม,EXP,บทบาท,วันที่สมัคร\n";
+            members.forEach(function(m, idx) {
+                var date = new Date(m.created_at).toLocaleDateString("th-TH");
+                csv += (idx + 1) + ',"' + (m.full_name || '-') + '","' + (m.tel || '-') + '",' +
+                       m.line_user_id + "," + m.tier + "," + (m.current_points || 0) + "," +
+                       (m.current_exp || 0) + ',"' + (m.role || 'Customer') + '",' + date + "\n";
+            });
+
+            // สร้าง CSV สำหรับประวัติแต้ม
+            var txcsv = "วันที่,ชื่อสมาชิก,ประเภท,แต้ม,EXP,คำอธิบาย\n";
+            transactions.forEach(function(tx) {
+                var memberName = members.find(function(m) { return m.line_user_id === tx.line_user_id; });
+                var date = new Date(tx.created_at).toLocaleDateString("th-TH");
+                txcsv += date + ',"' + (memberName ? memberName.full_name : 'Unknown') + '",' +
+                         tx.type + "," + tx.points + "," + (tx.exp || 0) + ',"' + 
+                         (tx.description || '') + '"\n';
+            });
+
+            // ดาวน์โหลด Member CSV
+            downloadCSV(csv, "Fat_Myth_Bear_Members.csv");
+
+            // ดาวน์โหลด Transaction CSV
+            setTimeout(function() {
+                downloadCSV(txcsv, "Fat_Myth_Bear_Transactions.csv");
+            }, 500);
+
+            showSuccess("📥 ส่งออก CSV สำเร็จ! (ดาวน์โหลด 2 ไฟล์)");
+
+        } catch (err) {
+            showError("ส่งออกไม่สำเร็จ: " + err.message);
+        } finally {
+            document.getElementById("export-btn").disabled = false;
+            document.getElementById("export-btn").textContent = "📥 Export CSV";
+        }
     }
 
-    // ── Export CSV ──
-    function exportCSV() {
-        if (allMembers.length === 0) { alert("ไม่มีข้อมูล"); return; }
-        const header = "ชื่อ-นามสกุล,เบอร์โทร,Tier,แต้ม,EXP,สิทธิ์";
-        const rows = allMembers.map(m =>
-            `"${m.full_name}","${m.tel}","${m.tier}","${m.current_points}","${m.current_exp}","${m.role}"`
-        );
-        const csv = "\uFEFF" + header + "\n" + rows.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement("a");
-        a.href = url; a.download = "members_fatmythbear.csv"; a.click();
-        URL.revokeObjectURL(url);
+    function downloadCSV(csv, filename) {
+        var bom = "\uFEFF"; // UTF-8 BOM
+        var blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+        var link = document.createElement("a");
+        var url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = "hidden";
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 
-    fetchMembers();
+    function showError(msg) {
+        document.getElementById("error-msg").textContent = msg;
+        document.getElementById("error-msg").style.display = "block";
+        document.getElementById("success-msg").style.display = "none";
+        setTimeout(function() {
+            document.getElementById("error-msg").style.display = "none";
+        }, 4000);
+    }
+
+    function showSuccess(msg) {
+        document.getElementById("success-msg").textContent = msg;
+        document.getElementById("success-msg").style.display = "block";
+        document.getElementById("error-msg").style.display = "none";
+        setTimeout(function() {
+            document.getElementById("success-msg").style.display = "none";
+        }, 3000);
+    }
+
+    init();
 </script>
 </body>
 </html>
