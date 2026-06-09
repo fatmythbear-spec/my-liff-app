@@ -8,248 +8,316 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
     <style>
         :root {
             --primary: #06c755;
             --primary-dark: #05b04b;
-            --bg-color: #f7f9fc;
-            --gold: #bf953f;
-            --silver: #bdc3c7;
-            --bronze: #a8704c;
-            --platinum: #30cfd0;
-            --card-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+            --bg-color: #f4f6f9;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            
+            /* Metallic Rank Colors */
+            --bronze-grad: linear-gradient(135deg, #70483c 0%, #b5826f 50%, #543126 100%);
+            --silver-grad: linear-gradient(135deg, #8a939e 0%, #dedede 50%, #5d666f 100%);
+            --gold-grad: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+            --platinum-grad: linear-gradient(135deg, #1e293b 0%, #475569 50%, #0f172a 100%);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 40px; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 50px; }
 
-        /* หน้าจอโหลดข้อมูล */
+        /* Loading Screen */
         #loading {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; gap: 12px; color: #718096; background: #ffffff; position: fixed; width: 100%; z-index: 9999;
+            height: 100vh; gap: 15px; color: #4a5568; background: #ffffff; position: fixed; width: 100%; z-index: 9999;
         }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #app { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
 
-        /* แถบแดชบอร์ดด้านบน */
-        .top-dashboard {
-            background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%);
-            border-radius: 20px; padding: 20px; color: white; margin-bottom: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;
+        /* Header Premium Dashboard */
+        .header-dashboard {
+            background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+            border-radius: 24px; padding: 24px; color: white; margin-bottom: 20px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.15); position: relative; overflow: hidden;
         }
-        .db-store-info { display: flex; align-items: center; gap: 12px; }
-        .db-logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .db-name { font-weight: 600; font-size: 16px; }
-        .db-sub { font-size: 12px; opacity: 0.8; }
+        .header-user-zone { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .user-meta { display: flex; align-items: center; gap: 14px; }
+        .user-avatar-wrap { width: 48px; height: 48px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); overflow: hidden; background: #fff; }
+        .user-avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-weight: 600; font-size: 18px; letter-spacing: 0.5px; }
+        .profile-sub { font-size: 12px; opacity: 0.7; }
         
-        .db-rank-info { text-align: right; }
-        .db-points { font-size: 24px; font-weight: 700; color: #ffca28; line-height: 1.2; }
-        .db-rank-label { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; margin-top: 4px; text-transform: uppercase; }
-        
-        .badge-bronze { background: rgba(168, 112, 76, 0.3); color: #dd9c74; }
-        .badge-silver { background: rgba(189, 195, 199, 0.3); color: #ecf0f1; }
-        .badge-gold { background: rgba(255, 202, 40, 0.2); color: #ffca28; }
-        .badge-platinum { background: rgba(48, 207, 208, 0.3); color: #30cfd0; }
+        .points-display { text-align: right; }
+        .points-num { font-size: 28px; font-weight: 700; color: #fbbf24; line-height: 1; text-shadow: 0 2px 10px rgba(251,191,36,0.3); }
+        .points-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: 500; }
 
-        /* บัตรสิทธิพิเศษแบบเมทัลลิก */
-        .section-header { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-        .section-header i { color: #ff7043; }
+        /* Custom Premium Progress Bar */
+        .progress-box { background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.8; margin-bottom: 6px; }
+        .bar-container { background: rgba(255,255,255,0.15); height: 8px; border-radius: 99px; overflow: hidden; }
+        .bar-fill { background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: 0%; transition: width 0.6s ease; }
 
-        .rank-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+        /* LUXURY GLOSSY METALLIC CARDS */
+        .section-title { font-size: 18px; font-weight: 700; color: #1f2937; margin: 24px 0 14px 0; display: flex; align-items: center; gap: 8px; }
+        .section-title i { color: #f59e0b; }
         
-        .rank-card {
-            border-radius: 20px; padding: 20px; color: white; position: relative; overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);
+        .tier-stack { display: flex; flex-direction: column; gap: 16px; }
+        .luxury-card {
+            border-radius: 24px; padding: 22px; color: white; position: relative; overflow: hidden;
+            box-shadow: var(--card-shadow); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
         }
-
-        /* เอฟเฟกต์แสงสะท้อนวาว */
-        .rank-card::before {
+        
+        /* Moving Reflection Light */
+        .luxury-card::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: linear-gradient(45deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 55%);
-            transform: rotate(-45deg); animation: shine-metallic 6s infinite ease-in-out; pointer-events: none;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0) 60%);
+            transform: rotate(-45deg); animation: metallic-shine 5s infinite ease-in-out; pointer-events: none;
         }
-        @keyframes shine-metallic {
+        @keyframes metallic-shine {
             0% { transform: translate(-30%, -30%) rotate(-45deg); }
-            22%, 100% { transform: translate(30%, 30%) rotate(-45deg); }
+            30%, 100% { transform: translate(30%, 30%) rotate(-45deg); }
         }
 
-        .rank-card-bronze { background: linear-gradient(135deg, #a8704c 0%, #dd9c74 50%, #895333 100%); }
-        .rank-card-silver { background: linear-gradient(135deg, #bdc3c7 0%, #ecf0f1 50%, #95a5a6 100%); color: #2c3e50; }
-        .rank-card-silver .perk-dot { color: #2c3e50; }
-        .rank-card-gold { background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%); color: #4a3300; }
-        .rank-card-gold .perk-dot { color: #4a3300; }
-        .rank-card-platinum { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+        .card-bronze { background: var(--bronze-grad); }
+        .card-silver { background: var(--silver-grad); color: #1f2937; }
+        .card-silver .perk-item i { color: #4b5563; }
+        .card-silver .status-tag { background: rgba(0,0,0,0.06); color: #1f2937; }
+        .card-gold { background: var(--gold-grad); color: #453005; }
+        .card-gold .perk-item i { color: #785202; }
+        .card-gold .status-tag { background: rgba(0,0,0,0.07); color: #453005; }
+        .card-platinum { background: var(--platinum-grad); }
+        .card-platinum::after {
+            content: 'VIP'; position: absolute; right: -15px; bottom: -10px; font-size: 70px;
+            font-weight: 900; opacity: 0.06; font-style: italic;
+        }
 
-        .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .rank-name-container { display: flex; align-items: center; gap: 8px; }
-        .rank-badge { font-size: 24px; width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; }
-        .rank-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
-        .rank-range { font-size: 11px; opacity: 0.85; }
+        .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-badge-zone { display: flex; align-items: center; gap: 10px; }
+        .card-emoticon { font-size: 26px; }
+        .card-title { font-size: 19px; font-weight: 700; letter-spacing: 0.5px; }
+        .card-range { font-size: 11px; opacity: 0.85; font-weight: 500; }
         
-        .status-badge { font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); }
-        .status-badge.current { background: #ffca28; color: #4a3300; font-weight: 700; box-shadow: 0 4px 10px rgba(255,202,40,0.3); }
-        .inactive-card { opacity: 0.45; filter: grayscale(30%); transform: scale(0.98); }
+        .status-tag { font-size: 11px; font-weight: 600; padding: 5px 14px; border-radius: 99px; background: rgba(255,255,255,0.18); backdrop-filter: blur(5px); }
+        .status-tag.active { background: #fbbf24; color: #1f2937; box-shadow: 0 4px 12px rgba(251,191,36,0.4); font-weight: 700; }
+        .card-locked { opacity: 0.5; filter: grayscale(35%); transform: scale(0.98); }
 
-        .perk-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
-        .perk-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
-        .perk-dot { font-size: 12px; opacity: 0.9; }
+        .perk-stack { display: flex; flex-direction: column; gap: 8px; }
+        .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.4; font-weight: 400; }
+        .perk-item i { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,0.85); }
 
-        /* ระบบคอมมูนิตี้ไทม์ไลน์ */
-        .page-title { font-size: 20px; font-weight: 700; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        /* INTERACTIVE COMMUNITY INTERFACE */
+        .community-container { background: white; border-radius: 24px; padding: 20px; margin-top: 24px; box-shadow: var(--card-shadow); }
         
-        .tabs-container { display: flex; gap: 8px; margin-bottom: 16px; background: #e2e8f0; padding: 4px; border-radius: 14px; }
-        .tab-btn {
-            flex: 1; text-align: center; padding: 10px 4px; font-size: 13px; font-weight: 600;
-            color: #4a5568; border: none; background: transparent; border-radius: 10px; cursor: pointer;
+        /* Tab Bar System */
+        .tab-bar { display: flex; background: #f3f4f6; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
+        .tab-trigger {
+            flex: 1; text-align: center; padding: 12px 8px; font-size: 14px; font-weight: 600;
+            color: #6b7280; border: none; background: transparent; border-radius: 12px; cursor: pointer;
             transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        .tab-btn.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px rgba(6,199,85,0.2); }
+        .tab-trigger.active { background: white; color: #111827; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
-        /* ส่วนกล่องสร้างโพสต์ */
+        /* Create Post Component */
         .create-post-box {
-            background: white; border-radius: 18px; padding: 16px; margin-bottom: 20px;
-            box-shadow: var(--card-shadow); border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 12px;
+            background: #f9fafb; border-radius: 16px; padding: 14px; border: 1px dashed #e5e7eb;
+            margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px; transition: 0.3s;
         }
-        .post-input-row { display: flex; gap: 12px; align-items: flex-start; }
-        .post-user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e2e8f0; object-fit: cover; }
+        .input-row { display: flex; gap: 12px; align-items: flex-start; }
+        .input-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; }
         .post-textarea {
             flex: 1; background: transparent; border: none; outline: none; font-family: inherit;
-            font-size: 13.5px; resize: none; min-height: 44px; color: #1a202c; padding-top: 6px;
+            font-size: 14px; resize: none; min-height: 44px; color: #1f2937; padding-top: 6px;
         }
-
-        .rating-selector-zone { display: none; align-items: center; gap: 8px; font-size: 13px; color: #4a5568; padding-left: 48px; }
-        .stars-select { color: #cbd5e1; font-size: 16px; cursor: pointer; display: flex; gap: 4px; }
-        .stars-select i.active { color: #ffca28; }
+        .post-textarea::placeholder { color: #9ca3af; }
         
-        .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 180px; border: 1px solid #e2e8f0; }
+        /* Image Preview Box */
+        .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 160px; }
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .btn-remove-preview { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; }
+        .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; }
 
-        .post-control-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px; }
-        .btn-capture-trigger {
-            background: #fff; border: 1px solid #cbd5e1; color: #4a5568; padding: 8px 14px;
-            border-radius: 10px; font-size: 12.5px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        .control-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6; padding-top: 10px; }
+        .media-actions { display: flex; gap: 8px; }
+        .action-icon-btn {
+            background: #fff; border: 1px solid #e5e7eb; color: #4b5563; padding: 8px 12px;
+            border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
-        .btn-capture-trigger i { color: var(--primary); }
-        .btn-submit-post {
-            background: var(--primary); color: white; border: none; padding: 8px 20px;
-            border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+        .action-icon-btn i { color: #10b981; font-size: 15px; }
+        .submit-post-btn {
+            background: var(--primary); color: white; border: none; padding: 8px 18px;
+            border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;
         }
-        .btn-submit-post:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .submit-post-btn:hover { background: var(--primary-dark); }
 
-        /* แผงควบคุมสไตล์ฟีด */
-        .community-panel { display: none; position: relative; padding-left: 20px; }
-        .community-panel.active { display: block; }
-        .community-panel::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
-
-        .post-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border: 1px solid #f1f5f9; }
-        .post-card::before { content: ''; position: absolute; left: -20px; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e0; border: 2px solid #ffffff; box-shadow: 0 0 0 2px #cbd5e0; }
+        /* Post Render Views */
+        .content-panel { display: none; }
+        .content-panel.active { display: block; }
         
-        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .post-author { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
-        .post-avatar { width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 14px; object-fit: cover; }
-        .post-meta-right { display: flex; align-items: center; gap: 10px; }
-        .post-date { font-size: 11px; color: #a0aec0; }
+        .feed-card {
+            background: #fff; border: 1px solid #f0f2f5; border-radius: 18px; padding: 16px;
+            margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.01);
+        }
+        .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .author-info { display: flex; align-items: center; gap: 10px; }
+        .author-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #f3f4f6; }
+        .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
+        .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
         
-        .btn-delete-post { background: #fee2e2; color: #ef4444; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; }
+        .badge-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: #f0fdf4; color: var(--primary); }
+        .badge-review { background: #fffbeb; color: #d97706; }
+        
+        /* Delete Button */
+        .delete-btn { background: #fee2e2; color: #ef4444; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
+        .delete-btn:hover { background: #fca5a5; }
 
-        .post-content { font-size: 13px; color: #4a5568; line-height: 1.5; word-break: break-word; }
-        .post-img-container { width: 100%; border-radius: 12px; margin-top: 10px; overflow: hidden; background: #f1f5f9; }
-        .post-img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
-        .review-rating { color: #ffca28; font-size: 12px; margin-bottom: 6px; }
+        .feed-text { font-size: 13.5px; color: #374151; line-height: 1.5; word-break: break-word; margin-bottom: 10px; }
+        .feed-media { width: 100%; border-radius: 14px; overflow: hidden; margin-bottom: 12px; background: #f3f4f6; }
+        .feed-media img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
+        
+        .stars-row { color: #f59e0b; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px; }
 
-        .empty-state { text-align: center; padding: 40px; color: #a0aec0; font-size: 14px; }
-        .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; display: block; }
+        /* Social Counters Interface */
+        .react-bar { display: flex; gap: 16px; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 10px 4px; margin-bottom: 10px; }
+        .react-btn {
+            background: transparent; border: none; color: #6b7280; font-size: 13px;
+            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.1s;
+        }
+        .react-btn.active { transform: scale(1.15); }
+        .react-btn.btn-like.active { color: #3b82f6; font-weight: 600; }
+        .react-btn.btn-heart.active { color: #ef4444; font-weight: 600; }
+        
+        /* Comment Subsystem */
+        .comment-section { background: #f9fafb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .comment-row { font-size: 12.5px; line-height: 1.4; color: #4b5563; display: flex; gap: 6px; word-break: break-word; }
+        .comment-user { font-weight: 600; color: #111827; flex-shrink: 0; }
+        
+        .comment-input-box { display: flex; gap: 8px; margin-top: 4px; }
+        .comment-input {
+            flex: 1; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;
+            padding: 6px 10px; font-size: 12px; outline: none; font-family: inherit;
+        }
+        .comment-send-btn { background: #e5e7eb; border: none; color: #4b5563; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังเชื่อมต่อคอมมูนิตี้...</p>
+    <p style="font-size: 14px; font-weight: 500;">กำลังรันระบบคอมมูนิตี้ระดับพรีเมียม...</p>
 </div>
 
 <div id="app">
-    <div class="top-dashboard">
-        <div class="db-store-info">
-            <img src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" class="db-logo" id="user-top-avatar" alt="">
-            <div>
-                <div class="db-name" id="user-top-name">Fat Myth Bear Bingsu</div>
-                <div class="db-sub" id="current-tier-text">ระดับ: กำลังยืนยันสิทธิ์...</div>
+    <div class="header-dashboard">
+        <div class="header-user-zone">
+            <div class="user-meta">
+                <div class="user-avatar-wrap">
+                    <img id="user-display-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" alt="Avatar">
+                </div>
+                <div>
+                    <div class="profile-name" id="user-display-name">Fat Myth Bear Member</div>
+                    <div class="profile-sub" id="user-tier-label">ระดับสมาชิกระดับสิทธิ์: Bronze</div>
+                </div>
+            </div>
+            <div class="points-display">
+                <div class="points-num" id="user-points-val">0</div>
+                <div class="points-label">Total EXP</div>
             </div>
         </div>
-        <div class="db-rank-info">
-            <div class="db-points" id="db-points">0</div>
-            <div id="db-rank-badge" class="db-rank-label badge-bronze">Bronze Member</div>
+        
+        <div class="progress-box">
+            <div class="progress-labels">
+                <span>ความคืบหน้าระดับถัดไป</span>
+                <span id="progress-text-percent">0/1,000 EXP</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-fill" id="progress-bar-fill"></div>
+            </div>
         </div>
     </div>
 
-    <div class="section-header"><i class="fa-solid fa-gem"></i><span>สิทธิพิเศษและบัตรสมาชิกของคุณ</span></div>
-    <div class="rank-grid" id="rank-grid"></div>
-
-    <div class="page-title"><i class="fa-solid fa-users"></i><span>คอมมูนิตี้ไทม์ไลน์</span></div>
-
-    <div class="tabs-container">
-        <button class="tab-btn active" id="btn-tab-promo" onclick="switchTab('promo')"><i class="fa-solid fa-bullhorn"></i> โปรโมชั่นร้าน</button>
-        <button class="tab-btn" id="btn-tab-review" onclick="switchTab('review')"><i class="fa-solid fa-star"></i> รีวิวจากลูกค้า</button>
+    <div class="section-title">
+        <i class="fa-solid fa-gem"></i>
+        <span>ระดับยศและบัตรสิทธิพิเศษพรีเมียม</span>
     </div>
+    
+    <div class="tier-stack" id="tier-cards-container"></div>
 
-    <div class="create-post-box" id="global-create-post-box">
-        <div class="post-input-row">
-            <img class="post-user-avatar" id="current-user-post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
-            <textarea class="post-textarea" id="community-post-text" placeholder="พิมพ์แบ่งปันเรื่องราวดีๆ หน้าร้านวันนี้..."></textarea>
+    <div class="community-container">
+        <div class="section-title" style="margin-top: 0; margin-bottom: 14px;">
+            <i class="fa-solid fa-comments"></i>
+            <span>คอมมูนิตี้หน้าร้าน Fat Myth Bear</span>
         </div>
-        <div class="rating-selector-zone" id="review-rating-zone">
-            <span>ให้คะแนนร้าน:</span>
-            <div class="stars-select" id="star-picker-container">
-                <i class="fa-solid fa-star active" onclick="setPostRating(1)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(2)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(3)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(4)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(5)"></i>
+
+        <div class="tab-bar">
+            <button class="tab-trigger active" id="tab-promo-btn" onclick="toggleCommunityTab('promo')">
+                <i class="fa-solid fa-bullhorn"></i> ข่าวโปรโมชั่น
+            </button>
+            <button class="tab-trigger" id="tab-review-btn" onclick="toggleCommunityTab('review')">
+                <i class="fa-solid fa-star"></i> รีวิวลูกค้า
+            </button>
+        </div>
+
+        <div class="create-post-box" id="create-post-container">
+            <div class="input-row">
+                <img class="input-avatar" id="current-user-avatar-small" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
+                <textarea class="post-textarea" id="post-input-text" placeholder="แชร์ความรู้สึกหรือโปรโมชั่นวันนี้ของคุณที่นี่..."></textarea>
+            </div>
+            
+            <div class="preview-wrapper" id="image-preview-container">
+                <button class="remove-preview-btn" onclick="clearSelectedImage()">×</button>
+                <img id="image-preview-target" src="">
+            </div>
+
+            <div class="control-row">
+                <div class="media-actions">
+                    <input type="file" id="media-file-capture" accept="image/*" style="display: none;" onchange="handleImageSelection(event)">
+                    <button class="action-icon-btn" onclick="triggerMediaSelector()">
+                        <i class="fa-solid fa-camera"></i> ถ่ายรูป / เลือกรูป
+                    </button>
+                </div>
+                <button class="submit-post-btn" onclick="publishNewPost()">ส่งโพสต์</button>
             </div>
         </div>
-        <div class="preview-wrapper" id="post-image-preview-box">
-            <button class="btn-remove-preview" onclick="cancelSelectedImage()">×</button>
-            <img id="post-image-preview-img" src="">
+
+        <div id="panel-promo" class="content-panel active">
+            <div id="feed-promo-list"></div>
         </div>
-        <div class="post-control-row">
-            <div>
-                <input type="file" id="camera-file-input" accept="image/*" style="display: none;" onchange="processSelectedImage(event)">
-                <button class="btn-capture-trigger" onclick="openDeviceCamera()"><i class="fa-solid fa-camera"></i> แนบรูปภาพ</button>
-            </div>
-            <button class="btn-submit-post" id="btn-submit-post-trigger" onclick="executePublishPost()">ส่งข้อมูล</button>
+        <div id="panel-review" class="content-panel">
+            <div id="feed-review-list"></div>
         </div>
     </div>
-
-    <div id="panel-promo" class="community-panel active"><div id="list-promo"></div></div>
-    <div id="panel-review" class="community-panel"><div id="list-review"></div></div>
 </div>
 
 <script>
-    // การตั้งค่าตัวแปรระบบให้เชื่อมต่ออย่างถูกต้องแม่นยำ
-    var LIFF_ID = "2010298031-prC3lMly"; 
+    var LIFF_ID = "2010298031-TOsCbkzl";
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-    var { createClient } = supabase;
-    var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var currentUserId = "MOCK_USER_ID";
-    var currentUserName = "สมาชิกทั่วไป";
-    var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
-    var currentUserRole = "Customer"; 
-    var currentActiveTab = "promo"; 
-    var encodedBase64ImageStr = ""; 
-    var selectedReviewRating = 5; 
+    var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var TIER_DATA = [
-        { id: 'Bronze', name: 'Bronze', range: '0 - 1,000 EXP', icon: '🥉', perks: ['ส่วนลด 10% ในเดือนเกิด', 'สะสมแต้มทุกครั้งที่ซื้อสำเร็จ'] },
-        { id: 'Silver', name: 'Silver', range: '1,000 - 3,000 EXP', icon: '🥈', perks: ['เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน', 'Early Access เมนูใหม่ก่อนใคร'] },
-        { id: 'Gold', name: 'Gold', range: '3,000 - 5,000 EXP', icon: '🥇', perks: ['ส่วนลดถาวร 5% ทุกบิลหน้าร้าน', 'คูปองบิงซูฟรีรายไตรมาส'] },
-        { id: 'Platinum', name: 'Platinum', range: '5,000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิลวีไอพี', 'สิทธิ์สำรองโต๊ะ VIP ล่วงหน้า'] }
+    // 🌟 ส่วนสำคัญ: นำ Line User ID ของแอดมินมาใส่ที่ตัวแปรนี้ (ใส่ได้มากกว่า 1 คน)
+    var ADMIN_LINE_IDS = [
+        "U1234567890abcdef...", // เปลี่ยนเป็น ID ของแอดมินจริงๆ ที่ต้องการให้มีสิทธิ์ลบโพสต์ทั้งหมดและโพสต์ข่าวได้
+        "U0987654321fedcba..."
     ];
+    
+    var currentUserId = "MOCK_USER_ID";
+    var currentUserName = "คุณ (สมาชิกทั่วไป)";
+    var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
+    var isAdmin = false;
+
+    var activeCommunityTab = "promo"; 
+    var encodedBase64Image = ""; 
+    var localMemoryFeed = [];
+
+    var TIER_MASTER_CONFIG = {
+        Bronze: { min: 0, next: 1000, emote: "🥉", title: "BRONZE BEAR", perks: ["สิทธิ์สะสมคะแนนแลกรับส่วนลดของรางวัล", "รับสิทธิ์ส่วนลดพิเศษ 10% ในเดือนเกิดหน้าร้าน"] },
+        Silver: { min: 1000, next: 3000, emote: "🥈", title: "SILVER BEAR", perks: ["ส่วนลดถาวร 5% สำหรับเมนูบิงซูทุกรายการ", "สิทธิ์ในการชิมและสั่งซื้อเมนูพิเศษก่อนใคร (Early Access)"] },
+        Gold: { min: 3000, next: 5000, emote: "🥇", title: "GOLDEN BEAR", perks: ["รับส่วนลดพรีเมียมถาวร 5% ทุกบิลหน้าร้าน", "ฟรี ท็อปปิ้งมูลค่า 15 บาท จำนวน 1 สิทธิ์ต่อเดือน"] },
+        Platinum: { min: 5000, next: 999999, emote: "💎", title: "PLATINUM BEAR", perks: ["รับส่วนลดระดับ VIP ถาวร 10% ทุกรายการบิลสำเร็จ", "สิทธิ์สำรองโต๊ะพิเศษและสิทธิ์รับคูปองทานฟรีถ้วยใหญ่ในเดือนเกิด"] }
+    };
 
     function init() {
         liff.init({ liffId: LIFF_ID }).then(function() {
@@ -260,299 +328,382 @@
                     currentUserId = profile.userId;
                     currentUserName = profile.displayName || "สมาชิก Fat Myth Bear";
                     currentUserAvatar = profile.pictureUrl || currentUserAvatar;
+                    
+                    // ตรวจสอบสิทธิ์ว่าผู้ใช้นี้เป็น Admin หรือไม่
+                    isAdmin = ADMIN_LINE_IDS.includes(currentUserId);
 
-                    document.getElementById("user-top-avatar").src = currentUserAvatar;
-                    document.getElementById("current-user-post-avatar").src = currentUserAvatar;
-                    document.getElementById("user-top-name").textContent = currentUserName;
+                    document.getElementById("user-display-avatar").src = currentUserAvatar;
+                    document.getElementById("current-user-avatar-small").src = currentUserAvatar;
+                    document.getElementById("user-display-name").textContent = currentUserName;
 
-                    loadRealtimeProfile();
-                    loadCommunityData();
-                }).catch(function(err) {
+                    syncUserBackendData();
+                }).catch(function() {
                     bootAppWithFallback();
                 });
             }
-        }).catch(function(err) {
+        }).catch(function() {
             bootAppWithFallback();
         });
     }
 
+    function syncUserBackendData() {
+        db.from("profiles").select("full_name, line_user_id, current_exp, tier")
+        .eq("line_user_id", currentUserId)
+        .then(function(res) {
+            var exp = 0;
+            var tier = "Bronze";
+            if (res.data && res.data.length > 0) {
+                var row = res.data[0];
+                exp = row.current_exp || 0;
+                tier = row.tier || "Bronze";
+                if(row.full_name) currentUserName = row.full_name;
+                document.getElementById("user-display-name").textContent = currentUserName;
+            }
+            renderDashboardAndCards(tier, exp);
+            
+            // เมื่อดึงข้อมูลยูสเซอร์เสร็จแล้ว ให้ดึงข้อมูล Community Posts ต่อทันที (ป้องกันการหายเมื่อรีเฟรช)
+            loadCommunityPostsFromDB();
+        })
+        .catch(function() {
+            renderDashboardAndCards("Bronze", 0);
+            loadCommunityPostsFromDB();
+        });
+    }
+
+    // ฟังก์ชันดึงโพสต์ทั้งหมดจากฐานข้อมูลเมื่อเข้าหน้าแอป
+    async function loadCommunityPostsFromDB() {
+        try {
+            var { data: posts, error } = await db.from("fmb_community_posts").select("*").order("created_at", { ascending: false });
+            
+            if (posts && posts.length > 0) {
+                localMemoryFeed = posts.map(function(p) {
+                    return {
+                        id: p.id,
+                        type: p.type || "review",
+                        author: p.author_name || "สมาชิก",
+                        avatar: "👤",
+                        text: p.content_text || "",
+                        image: p.image_payload || "",
+                        line_user_id: p.line_user_id || "",
+                        likes: p.likes || 0,
+                        hearts: p.hearts || 0,
+                        liked: false, // ตั้งค่าเริ่มต้น local status
+                        hearted: false,
+                        comments: p.comments || []
+                    };
+                });
+            }
+            renderCommunityFeedUI();
+            toggleCommunityTab(activeCommunityTab); // เช็คสิทธิ์และอัปเดต UI 
+        } catch (err) {
+            console.error("Error loading posts from database:", err);
+            renderCommunityFeedUI();
+        }
+    }
+
     function bootAppWithFallback() {
-        renderRankCards("Bronze");
-        loadCommunityData();
-        switchTab("promo"); // บังคับสลับแท็บเริ่มต้นแบบปลอดภัย
+        renderDashboardAndCards("Bronze", 0);
+        loadCommunityPostsFromDB();
+    }
+
+    function renderDashboardAndCards(userTier, userExp) {
+        var formattedTier = userTier.charAt(0).toUpperCase() + userTier.slice(1).toLowerCase();
+        if(!TIER_MASTER_CONFIG[formattedTier]) formattedTier = "Bronze";
+        
+        var tierInfo = TIER_MASTER_CONFIG[formattedTier];
+        var minExp = tierInfo.min;
+        var nextExp = tierInfo.next;
+        
+        var calculatedPct = Math.min(100, Math.round(((userExp - minExp) / (nextExp - minExp)) * 100));
+        if (calculatedPct < 0) calculatedPct = 0;
+
+        document.getElementById("user-tier-label").textContent = "ระดับสมาชิกระดับสิทธิ์: " + formattedTier.toUpperCase();
+        document.getElementById("user-points-val").textContent = Number(userExp).toLocaleString();
+        document.getElementById("progress-text-percent").textContent = userExp.toLocaleString() + " / " + nextExp.toLocaleString() + " EXP";
+        document.getElementById("progress-bar-fill").style.width = calculatedPct + "%";
+
+        var container = document.getElementById("tier-cards-container");
+        var htmlMarkup = "";
+        var tierKeys = ["Bronze", "Silver", "Gold", "Platinum"];
+
+        for (var i = 0; i < tierKeys.length; i++) {
+            var key = tierKeys[i];
+            var conf = TIER_MASTER_CONFIG[key];
+            var isCurrent = (key.toLowerCase() === formattedTier.toLowerCase());
+            var rangeStr = "สะสมครบ " + conf.min.toLocaleString() + " - " + (conf.next > 100000 ? "ขึ้นไป" : conf.next.toLocaleString()) + " EXP";
+            
+            htmlMarkup += '<div class="luxury-card card-' + key.toLowerCase() + ' ' + (!isCurrent ? 'card-locked' : '') + '">';
+            htmlMarkup += '  <div class="card-top">';
+            htmlMarkup += '    <div class="card-badge-zone">';
+            htmlMarkup += '      <span class="card-emoticon">' + conf.emote + '</span>';
+            htmlMarkup += '      <div>';
+            htmlMarkup += '        <div class="card-title">' + conf.title + '</div>';
+            htmlMarkup += '        <div class="card-range">' + rangeStr + '</div>';
+            htmlMarkup += '      </div>';
+            htmlMarkup += '    </div>';
+            htmlMarkup += '    <span class="status-tag ' + (isCurrent ? 'active' : '') + '">' + (isCurrent ? 'ระดับของคุณ' : 'สิทธิ์สมาชิก') + '</span>';
+            htmlMarkup += '  </div>';
+            htmlMarkup += '  <div class="perk-stack">';
+            for (var j = 0; j < conf.perks.length; j++) {
+                htmlMarkup += '    <div class="perk-item"><i class="fa-solid fa-circle-check"></i><span>' + conf.perks[j] + '</span></div>';
+            }
+            htmlMarkup += '  </div>';
+            htmlMarkup += '</div>';
+        }
+        
+        container.innerHTML = htmlMarkup;
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
-    function loadRealtimeProfile() {
-        db.from("profiles").select("*").eq("line_user_id", currentUserId)
-        .then(function(res) {
-            var tier = 'Bronze';
-            var userPoints = 0;
+    function toggleCommunityTab(targetTab) {
+        activeCommunityTab = targetTab;
+        document.getElementById("tab-promo-btn").classList.remove("active");
+        document.getElementById("tab-review-btn").classList.remove("active");
+        document.getElementById("panel-promo").classList.remove("active");
+        document.getElementById("panel-review").classList.remove("active");
 
-            if (res.data && res.data.length > 0) {
-                var row = res.data[0];
-                currentUserRole = row.role || "Customer";
-                tier = row.tier || 'Bronze';
-                userPoints = row.current_points || row.current_exp || 0;
-                if(row.full_name) currentUserName = row.full_name;
-                document.getElementById("user-top-name").textContent = currentUserName;
-            } else {
-                currentUserRole = "Customer";
-            }
-
-            var formattedTier = tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
-            document.getElementById("current-tier-text").textContent = "ระดับ: " + formattedTier + " (" + currentUserRole + ")";
-            document.getElementById("db-points").textContent = Number(userPoints).toLocaleString() + " pts";
-            
-            var badgeEl = document.getElementById("db-rank-badge");
-            badgeEl.textContent = formattedTier + " Member";
-            badgeEl.className = "db-rank-label badge-" + formattedTier.toLowerCase();
-
-            renderRankCards(formattedTier);
-            switchTab(currentActiveTab);
-
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
-        })
-        .catch(function(e) {
-            console.error("Profile Error:", e);
-            currentUserRole = "Customer";
-            renderRankCards("Bronze");
-            switchTab(currentActiveTab);
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
-        });
-    }
-
-    function renderRankCards(currentTier) {
-        var container = document.getElementById("rank-grid");
-        var html = "";
-        for (var i = 0; i < TIER_DATA.length; i++) {
-            var tier = TIER_DATA[i];
-            var isActive = tier.id.toLowerCase() === currentTier.toLowerCase();
-            
-            html += '<div class="rank-card rank-card-' + tier.id.toLowerCase() + ' ' + (!isActive ? 'inactive-card' : '') + '">';
-            html += '  <div class="rank-header">';
-            html += '    <div class="rank-name-container">';
-            html += '      <div class="rank-badge">' + tier.icon + '</div>';
-            html += '      <div>';
-            html += '        <div class="rank-title">' + tier.name + '</div>';
-            html += '        <div class="rank-range">' + tier.range + '</div>';
-            html += '      </div>';
-            html += '    </div>';
-            html += isActive ? '    <span class="status-badge current">ระดับปัจจุบัน</span>' : '    <span class="status-badge">สิทธิ์สมาชิก</span>';
-            html += '  </div>';
-            html += '  <div class="perk-list">';
-            for (var j = 0; j < tier.perks.length; j++) {
-                html += '    <div class="perk-item"><i class="fa-solid fa-check perk-dot"></i>' + tier.perks[j] + '</div>';
-            }
-            html += '  </div>';
-            html += '</div>';
-        }
-        container.innerHTML = html;
-    }
-
-    function loadCommunityData() {
-        db.from("news_promo").select("*").order("created_at", { ascending: false })
-        .then(function(resPromo) {
-            renderPromoList(resPromo.data || []);
-        })
-        .catch(function(err) { console.error(err); renderPromoList([]); });
-
-        db.from("user_reviews").select("*").order("created_at", { ascending: false })
-        .then(function(resReview) {
-            renderReviewList(resReview.data || []);
-        })
-        .catch(function(err) { console.error(err); renderReviewList([]); });
-    }
-
-    function renderPromoList(data) {
-        var container = document.getElementById("list-promo");
-        if (!data || data.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bullhorn"></i>ไม่มีโพสต์ข่าวโปรโมชั่นในขณะนี้</div>';
-            return;
-        }
-
-        var html = "";
-        for (var i = 0; i < data.length; i++) {
-            var item = data[i];
-            var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
-            var canDelete = (currentUserRole === "Admin") || (item.user_id === currentUserId);
-            var deleteBtn = canDelete ? '<button class="btn-delete-post" onclick="executeDeletePost(' + item.id + ', \'promo\')"><i class="fa-solid fa-trash"></i> ลบ</button>' : '';
-
-            html += '<div class="post-card">';
-            html += '  <div class="post-header">';
-            html += '    <div class="post-author"><div class="post-avatar">🐻</div><span>' + (item.title || "Fat Myth Bear Shop") + '</span></div>';
-            html += '    <div class="post-meta-right"><div class="post-date">' + dateStr + '</div>' + deleteBtn + '</div>';
-            html += '  </div>';
-            html += '  <div>';
-            html += '    <div class="post-content">' + (item.content || "") + '</div>';
-            if (item.img_url) {
-                html += '    <div class="post-img-container"><img src="' + item.img_url + '" class="post-img"></div>';
-            }
-            html += '  </div>';
-            html += '</div>';
-        }
-        container.innerHTML = html;
-    }
-
-    function renderReviewList(data) {
-        var container = document.getElementById("list-review");
-        if (!data || data.length === 0) {
-            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-star"></i>ไม่มีโพสต์รีวิวจากลูกค้าในขณะนี้</div>';
-            return;
-        }
-
-        var html = "";
-        for (var i = 0; i < data.length; i++) {
-            var item = data[i];
-            var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
-            var canDelete = (currentUserRole === "Admin") || (item.user_id === currentUserId);
-            var deleteBtn = canDelete ? '<button class="btn-delete-post" onclick="executeDeletePost(' + item.id + ', \'review\')"><i class="fa-solid fa-trash"></i> ลบ</button>' : '';
-            var ratingNum = item.rating || 5;
-            var stars = "★".repeat(ratingNum) + "☆".repeat(5 - ratingNum);
-
-            html += '<div class="post-card">';
-            html += '  <div class="post-header">';
-            html += '    <div class="post-author"><img class="post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png"><span>คุณ ' + (item.user_nickname || "ลูกค้าผู้ทรงเกียรติ") + '</span></div>';
-            html += '    <div class="post-meta-right"><div class="post-date">' + dateStr + '</div>' + deleteBtn + '</div>';
-            html += '  </div>';
-            html += '  <div>';
-            html += '    <div class="review-rating">' + stars + '</div>';
-            html += '    <div class="post-content">' + (item.content || "") + '</div>';
-            if (item.img_url) {
-                html += '    <div class="post-img-container"><img src="' + item.img_url + '" class="post-img"></div>';
-            }
-            html += '  </div>';
-            html += '</div>';
-        }
-        container.innerHTML = html;
-    }
-
-    // แก้ไขจุดนี้: ถอดการพึ่งพาตัวแปรระบบ event ออก เพื่อให้ WebView ของสมาร์ตโฟนไม่ค้าง
-    function switchTab(status) {
-        currentActiveTab = status;
-        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-        document.querySelectorAll('.community-panel').forEach(function(p) { p.classList.remove('active'); });
-
-        document.getElementById('btn-tab-' + status).classList.add('active');
-        document.getElementById('panel-' + status).classList.add('active');
-
-        var postBox = document.getElementById("global-create-post-box");
-        var txtField = document.getElementById("community-post-text");
-        var ratingZone = document.getElementById("review-rating-zone");
-
-        if (status === "promo") {
-            if (currentUserRole !== "Admin") {
-                postBox.style.display = "none";
-            } else {
-                postBox.style.display = "flex";
-                txtField.placeholder = "แชร์ข้อมูลโปรโมชั่นหน้าร้านในฐานะ Admin...";
-                ratingZone.style.display = "none";
-            }
-        } else {
-            postBox.style.display = "flex";
-            txtField.placeholder = "เขียนรีวิวความประทับใจบิงซูและบริการวันนี้ของคุณ...";
-            ratingZone.style.display = "flex";
-        }
-    }
-
-    function executePublishPost() {
-        var textContent = document.getElementById("community-post-text").value.trim();
-        if (!textContent && !encodedBase64ImageStr) {
-            alert("กรุณาพิมพ์รายละเอียดข้อความ หรือเลือกรูปภาพก่อนครับ");
-            return;
-        }
-
-        if (currentActiveTab === "promo" && currentUserRole !== "Admin") {
-            alert("สิทธิ์ของคุณไม่สามารถเขียนโพสต์ในแท็บข่าวโปรโมชั่นได้ครับ");
-            return;
-        }
-
-        var submitBtn = document.getElementById("btn-submit-post-trigger");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "กำลังบันทึก...";
-
-        var insertData = {};
-        var targetTable = "";
-
-        if (currentActiveTab === "promo") {
-            targetTable = "news_promo";
-            insertData = {
-                title: currentUserName, 
-                content: textContent,
-                img_url: encodedBase64ImageStr || null,
-                user_id: currentUserId
-            };
-        } else {
-            targetTable = "user_reviews";
-            insertData = {
-                user_nickname: currentUserName,
-                rating: selectedReviewRating,
-                content: textContent,
-                img_url: encodedBase64ImageStr || null,
-                user_id: currentUserId
-            };
-        }
-
-        db.from(targetTable).insert([insertData])
-        .then(function(res) {
-            document.getElementById("community-post-text").value = "";
-            cancelSelectedImage();
-            setPostRating(5);
-            
-            loadCommunityData();
-            alert("บันทึกโพสต์สำเร็จเสร็จสิ้น!");
-        })
-        .catch(function(err) {
-            alert("เกิดข้อผิดพลาด: " + err.message);
-        })
-        .finally(function() {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "ส่งโพสต์ลงตาราง";
-        });
-    }
-
-    function executeDeletePost(id, type) {
-        if (!confirm("คุณต้องการลบโพสต์นี้แบบถาวรใช่หรือไม่?")) return;
-        var targetTable = (type === "promo") ? "news_promo" : "user_reviews";
+        document.getElementById("tab-" + targetTab + "-btn").classList.add("active");
+        document.getElementById("panel-" + targetTab).classList.add("active");
         
-        db.from(targetTable).delete().eq("id", id)
-        .then(function(res) {
-            alert("ลบโพสต์เรียบร้อยแล้วครับ");
-            loadCommunityData();
-        })
-        .catch(function(err) {
-            console.error(err);
-            alert("ไม่สามารถลบข้อมูลได้: " + err.message);
-        });
+        // 🔒 ระบบสิทธิพิเศษ: จำกัดพื้นที่การโพสต์ข่าวเฉพาะแอดมินเท่านั้น
+        var createBox = document.getElementById("create-post-container");
+        if (targetTab === "promo" && !isAdmin) {
+            createBox.style.display = "none"; // ซ่อนกล่องพิมพ์ถ้าไม่ใช่แอดมินและอยู่หน้าโปรโมชั่น
+        } else {
+            createBox.style.display = "flex"; // แสดงปกติ
+        }
+
+        var textPlaceholder = (targetTab === "promo") ? "แชร์ข่าวสารโปรโมชั่นวันนี้ของคุณที่นี่ (เฉพาะแอดมิน)..." : "เขียนรีวิวความประทับใจเมนูบิงซูและบริการของคุณที่นี่...";
+        document.getElementById("post-input-text").placeholder = textPlaceholder;
     }
 
-    function openDeviceCamera() { document.getElementById("camera-file-input").click(); }
-    function processSelectedImage(event) {
+    function triggerMediaSelector() {
+        document.getElementById("media-file-capture").click();
+    }
+
+    function handleImageSelection(event) {
         var file = event.target.files[0];
         if (!file) return;
         var reader = new FileReader();
         reader.onload = function(e) {
-            encodedBase64ImageStr = e.target.result;
-            document.getElementById("post-image-preview-img").src = encodedBase64ImageStr;
-            document.getElementById("post-image-preview-box").style.display = "block";
+            encodedBase64Image = e.target.result;
+            document.getElementById("image-preview-target").src = encodedBase64Image;
+            document.getElementById("image-preview-container").style.display = "block";
         };
         reader.readAsDataURL(file);
     }
-    function cancelSelectedImage() {
-        encodedBase64ImageStr = "";
-        document.getElementById("camera-file-input").value = "";
-        document.getElementById("post-image-preview-box").style.display = "none";
+
+    function clearSelectedImage() {
+        encodedBase64Image = "";
+        document.getElementById("media-file-capture").value = "";
+        document.getElementById("image-preview-container").style.display = "none";
+        document.getElementById("image-preview-target").src = "";
     }
-    function setPostRating(val) {
-        selectedReviewRating = val;
-        var stars = document.querySelectorAll("#star-picker-container i");
-        stars.forEach(function(star, index) {
-            if (index < val) star.classList.add("active");
-            else star.classList.remove("active");
-        });
+
+    async function publishNewPost() {
+        // เช็คการอนุญาตส่งข้อมูลซ้ำอีกชั้นเพื่อความปลอดภัย
+        if (activeCommunityTab === "promo" && !isAdmin) {
+            alert("ขออภัยครับ เฉพาะแอดมินเท่านั้นที่สามารถโพสต์ลงในหน้าข่าวโปรโมชั่นได้");
+            return;
+        }
+
+        var textInput = document.getElementById("post-input-text").value.trim();
+        if (!textInput && !encodedBase64Image) {
+            alert("กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งโพสต์ครับ");
+            return;
+        }
+
+        var btn = document.querySelector(".submit-post-btn");
+        btn.innerHTML = "กำลังส่ง..."; btn.disabled = true;
+
+        var newPostPayload = {
+            type: activeCommunityTab,
+            author_name: currentUserName,
+            content_text: textInput,
+            image_payload: encodedBase64Image,
+            line_user_id: currentUserId,
+            likes: 0,
+            hearts: 0,
+            comments: []
+        };
+
+        try {
+            // บันทึกเข้าฐานข้อมูลจริงทันที
+            var { data, error } = await db.from("fmb_community_posts").insert([newPostPayload]).select();
+            if (error) throw error;
+            
+            if(data && data.length > 0) {
+                var insertedPost = data[0];
+                
+                // อัปเดต Feed ในเครื่องให้แสดงโพสต์ใหม่
+                localMemoryFeed.unshift({
+                    id: insertedPost.id,
+                    type: insertedPost.type,
+                    author: insertedPost.author_name,
+                    avatar: "👤",
+                    text: insertedPost.content_text,
+                    image: insertedPost.image_payload,
+                    line_user_id: insertedPost.line_user_id,
+                    likes: 0,
+                    hearts: 0,
+                    liked: false,
+                    hearted: false,
+                    comments: []
+                });
+            }
+
+            document.getElementById("post-input-text").value = "";
+            clearSelectedImage();
+            renderCommunityFeedUI();
+        } catch (e) {
+            alert("เกิดข้อผิดพลาดในการโพสต์ข้อมูล โปรดลองอีกครั้ง");
+        } finally {
+            btn.innerHTML = "ส่งโพสต์"; btn.disabled = false;
+        }
+    }
+
+    // ฟังก์ชันใหม่สำหรับการลบโพสต์อย่างสมบูรณ์
+    async function deletePost(postId) {
+        if (!confirm("คุณยืนยันที่จะลบโพสต์นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+
+        // อัปเดตลบหน้าบ้านทันทีเพื่อให้ User รู้สึกเร็ว
+        localMemoryFeed = localMemoryFeed.filter(function(post) { return post.id !== postId; });
+        renderCommunityFeedUI();
+
+        // ยิงคำสั่งลบหลังบ้าน
+        try {
+            await db.from("fmb_community_posts").delete().eq("id", postId);
+        } catch (error) {
+            console.error("ลบโพสต์ในฐานข้อมูลล้มเหลว", error);
+        }
+    }
+
+    function renderCommunityFeedUI() {
+        var promoBox = document.getElementById("feed-promo-list");
+        var reviewBox = document.getElementById("feed-review-list");
+        
+        var htmlPromo = "";
+        var htmlReview = "";
+
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            var post = localMemoryFeed[i];
+            var feedMarkup = "";
+            
+            feedMarkup += '<div class="feed-card" id="post-card-' + post.id + '">';
+            feedMarkup += '  <div class="feed-header">';
+            feedMarkup += '    <div class="author-info">';
+            feedMarkup += '      <div class="author-avatar">' + post.avatar + '</div>';
+            feedMarkup += '      <div>';
+            feedMarkup += '        <div class="author-name">' + post.author + '</div>';
+            feedMarkup += '        <div class="post-time">เมื่อสักครู่นี้</div>';
+            feedMarkup += '      </div>';
+            feedMarkup += '    </div>';
+            
+            feedMarkup += '    <div class="header-actions">';
+            if(post.type === "promo") {
+                feedMarkup += '      <span class="badge-type">ข่าวโปรโมชั่น</span>';
+            } else {
+                feedMarkup += '      <span class="badge-type badge-review">รีวิวลูกค้า</span>';
+            }
+            
+            // 🔒 ระบบสิทธิพิเศษการลบโพสต์
+            // แอดมินลบได้ทุกโพสต์ / ลูกค้าลบได้เฉพาะโพสต์ของตัวเอง (ตรงกับ line_user_id)
+            var canDelete = isAdmin || (post.line_user_id === currentUserId && currentUserId !== "MOCK_USER_ID");
+            if (canDelete) {
+                feedMarkup += '      <button class="delete-btn" onclick="deletePost(\'' + post.id + '\')"><i class="fa-solid fa-trash-can"></i> ลบ</button>';
+            }
+            feedMarkup += '    </div>';
+
+            feedMarkup += '  </div>';
+
+            if (post.type === "review") { feedMarkup += '  <div class="stars-row">★★★★★</div>'; }
+            if (post.text) { feedMarkup += '  <div class="feed-text">' + post.text + '</div>'; }
+            if (post.image) { feedMarkup += '  <div class="feed-media"><img src="' + post.image + '" alt="Post media"></div>'; }
+
+            feedMarkup += '  <div class="react-bar">';
+            feedMarkup += '    <button class="react-btn btn-like ' + (post.liked ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'like\')">';
+            feedMarkup += '      <i class="fa-' + (post.liked ? 'solid' : 'regular') + ' fa-thumbs-up"></i> ถูกใจ (' + post.likes + ')';
+            feedMarkup += '    </button>';
+            feedMarkup += '    <button class="react-btn btn-heart ' + (post.hearted ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'heart\')">';
+            feedMarkup += '      <i class="fa-' + (post.hearted ? 'solid' : 'regular') + ' fa-heart"></i> รักเลย (' + post.hearts + ')';
+            feedMarkup += '    </button>';
+            feedMarkup += '  </div>';
+
+            feedMarkup += '  <div class="comment-section" id="comment-zone-' + post.id + '">';
+            for (var m = 0; m < post.comments.length; m++) {
+                var comment = post.comments[m];
+                feedMarkup += '    <div class="comment-row"><span class="comment-user">' + comment.user + ':</span> <span>' + comment.text + '</span></div>';
+            }
+            
+            if (post.comments.length === 0) {
+                feedMarkup += '    <div class="comment-row" style="color:#9ca3af; font-style:italic;">ยังไม่มีความเห็น มาร่วมพูดคุยกันเป็นคนแรกเลย</div>';
+            }
+
+            feedMarkup += '    <div class="comment-input-box">';
+            feedMarkup += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
+            feedMarkup += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
+            feedMarkup += '    </div>';
+            feedMarkup += '  </div>';
+            feedMarkup += '</div>';
+
+            if (post.type === "promo") { htmlPromo += feedMarkup; } else { htmlReview += feedMarkup; }
+        }
+
+        promoBox.innerHTML = htmlPromo || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีข่าวโปรโมชั่นอัปเดตในขณะนี้</p>';
+        reviewBox.innerHTML = htmlReview || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
+    }
+
+    async function triggerInteraction(postId, actionType) {
+        var targetItem = null;
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            if (localMemoryFeed[i].id === postId) {
+                targetItem = localMemoryFeed[i];
+                if (actionType === "like") {
+                    targetItem.liked = !targetItem.liked;
+                    targetItem.likes += targetItem.liked ? 1 : -1;
+                } else if (actionType === "heart") {
+                    targetItem.hearted = !targetItem.hearted;
+                    targetItem.hearts += targetItem.hearted ? 1 : -1;
+                }
+                break;
+            }
+        }
+        renderCommunityFeedUI();
+
+        // บันทึกการอัปเดตไลค์ไปที่หลังบ้าน Supabase
+        if(targetItem) {
+            try {
+                await db.from("fmb_community_posts").update({ likes: targetItem.likes, hearts: targetItem.hearts }).eq("id", postId);
+            } catch (err) { }
+        }
+    }
+
+    async function submitComment(postId) {
+        var commentField = document.getElementById("input-field-" + postId);
+        var textComment = commentField.value.trim();
+        if (!textComment) return;
+
+        var targetItem = null;
+        for (var i = 0; i < localMemoryFeed.length; i++) {
+            if (localMemoryFeed[i].id === postId) {
+                targetItem = localMemoryFeed[i];
+                targetItem.comments.push({
+                    user: currentUserName,
+                    text: textComment
+                });
+                break;
+            }
+        }
+        commentField.value = "";
+        renderCommunityFeedUI();
+
+        // บันทึกคอมเมนต์ใหม่ลง Supabase
+        if (targetItem) {
+            try {
+                await db.from("fmb_community_posts").update({ comments: targetItem.comments }).eq("id", postId);
+            } catch (err) { }
+        }
     }
 
     init();
