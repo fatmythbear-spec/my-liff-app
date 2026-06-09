@@ -3,323 +3,370 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สิทธิพิเศษ - Fat Myth Bear</title>
+    <title>คอมมูนิตี้ & สิทธิพิเศษ - Fat Myth Bear</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f0f0; min-height: 100vh; }
+        :root {
+            --primary: #06c755;
+            --bg-color: #f7f9fc;
+            --gold: #bf953f;
+            --silver: #bdc3c7;
+            --bronze: #a8704c;
+            --platinum: #30cfd0;
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 40px; }
+
+        /* Loading Screen */
         #loading {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            height: 100vh; gap: 12px; color: #666;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; gap: 12px; color: #718096; background: #ffffff;
         }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #ddd;
-            border-top-color: #06c755; border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
+        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #app { display: none; padding: 16px; }
 
-        .header {
-            background: linear-gradient(135deg, #1a1a2e, #2d3561);
-            color: white; border-radius: 16px; padding: 20px;
-            margin-bottom: 16px;
+        /* Top Bar Dashboard */
+        .top-dashboard {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2d3561 100%);
+            border-radius: 20px; padding: 20px; color: white; margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;
         }
-        .header-title { font-size: 22px; font-weight: 700; }
-        .header-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .db-store-info { display: flex; align-items: center; gap: 12px; }
+        .db-logo { width: 40px; }
+        .db-name { font-weight: 600; font-size: 16px; }
+        .db-sub { font-size: 12px; opacity: 0.8; }
+        
+        .db-rank-info { text-align: right; }
+        .db-points { font-size: 24px; font-weight: 700; color: #ffca28; line-height: 1.2; }
+        .db-rank-label { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
 
-        .current-tier {
-            background: white; border-radius: 16px; padding: 16px;
-            margin-bottom: 16px; text-align: center;
-        }
-        .tier-badge {
-            display: inline-block; padding: 6px 16px;
-            border-radius: 99px; font-size: 14px; font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .badge-bronze   { background: #cd7f3220; color: #a0522d; }
-        .badge-silver   { background: #a8a9ad20; color: #666; }
-        .badge-gold     { background: #ffd70020; color: #b8860b; }
-        .badge-platinum { background: #667eea20; color: #534AB7; }
+        /* ========================================================
+           LUXURY GLOSSY RANK CARDS (บัตรสิทธิพิเศษหรูหรา)
+        ======================================================== */
+        .section-header { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .section-header i { color: #ff7043; }
 
-        .current-tier-label { font-size: 12px; color: #999; }
-        .current-tier-val { font-size: 20px; font-weight: 700; color: #333; margin: 8px 0; }
-        .exp-progress {
-            background: #f0f0f0; border-radius: 10px; padding: 8px;
-            margin-top: 12px;
-        }
-        .exp-bar {
-            background: linear-gradient(90deg, #06c755, #00a843);
-            height: 8px; border-radius: 99px; margin: 4px 0;
-        }
-        .exp-text { font-size: 11px; color: #666; text-align: center; }
-
-        .section-title {
-            font-size: 16px; font-weight: 700; color: #333;
-            margin: 20px 0 12px 0;
+        .rank-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+        
+        .rank-card {
+            border-radius: 20px; padding: 20px; color: white; position: relative; overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
         }
 
-        .tier-container {
-            display: flex; flex-direction: column; gap: 12px;
+        /* เอฟเฟกต์ความเงาแวววาวเมทัลลิก (glossy metallic shimmer animation) */
+        .rank-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 55%);
+            transform: rotate(-45deg); animation: shine-metallic 6s infinite ease-in-out; pointer-events: none;
+        }
+        @keyframes shine-metallic {
+            0% { transform: translate(-30%, -30%) rotate(-45deg); }
+            20%, 100% { transform: translate(30%, 30%) rotate(-45deg); }
         }
 
-        .tier-card {
-            border-radius: 16px; padding: 16px; color: white;
-            position: relative; overflow: hidden;
-        }
-        .tier-bronze   { background: linear-gradient(135deg, #cd7f32, #a0522d); }
-        .tier-silver   { background: linear-gradient(135deg, #a8a9ad, #d6d6d6); }
-        .tier-gold     { background: linear-gradient(135deg, #ffd700, #daa520); }
-        .tier-platinum { background: linear-gradient(135deg, #667eea, #764ba2); }
+        /* เมทัลลิกไล่ระดับสีตาม Rank จริง (Bronze, Silver, Gold, Platinum) */
+        .rank-card-bronze { background: linear-gradient(135deg, #a8704c 0%, #dd9c74 50%, #895333 100%); }
+        .rank-card-silver { background: linear-gradient(135deg, #bdc3c7 0%, #ecf0f1 50%, #95a5a6 100%); color: #2c3e50; }
+        .rank-card-gold { background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%); color: #4a3300; }
+        .rank-card-platinum { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
 
-        .tier-header {
-            font-size: 18px; font-weight: 700; margin-bottom: 12px;
-        }
-        .tier-exp { font-size: 12px; opacity: 0.9; margin-bottom: 8px; }
-        .perk-list { margin-top: 10px; }
-        .perk-item {
-            display: flex; align-items: flex-start; gap: 8px;
-            font-size: 13px; margin-bottom: 6px;
-        }
-        .perk-dot { font-size: 12px; flex-shrink: 0; }
+        .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .rank-name-container { display: flex; align-items: center; gap: 8px; }
+        .rank-badge { font-size: 28px; width: 45px; height: 45px; border-radius: 12px; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; }
+        .rank-title { font-size: 20px; font-weight: 700; }
+        .rank-range { font-size: 11px; opacity: 0.8; }
+        
+        .status-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,0.2); }
+        .status-badge.current { background: #ffca28; color: #4a3300; }
 
-        .news-section {
-            background: white; border-radius: 16px;
-            padding: 16px; margin-bottom: 16px;
-        }
-        .news-title { font-size: 16px; font-weight: 700; color: #333; margin-bottom: 12px; }
-        .news-item {
-            border-left: 4px solid #06c755; padding-left: 12px;
-            margin-bottom: 12px;
-        }
-        .news-item:last-child { margin-bottom: 0; }
-        .news-date { font-size: 11px; color: #999; }
-        .news-text { font-size: 13px; color: #333; margin-top: 4px; }
+        .perk-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .perk-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .perk-dot { font-size: 12px; opacity: 0.7; }
 
-        .empty { text-align: center; color: #999; padding: 20px; font-size: 14px; }
+        /* ========================================================
+           COMMUNITY TIMELINE SYSTEM (ระบบคอมมูนิตี้ไทม์ไลน์)
+        ======================================================= */
+        .page-title { font-size: 22px; font-weight: 700; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        
+        .tabs-container { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn {
+            flex: 1; text-align: center; padding: 10px 4px; font-size: 13px; font-weight: 500;
+            color: #4a5568; border: none; background: #e2e8f0; border-radius: 12px; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn i { margin-right: 6px; }
+        .tab-btn.active { background: var(--primary); color: #ffffff; font-weight: 600; box-shadow: 0 4px 12px rgba(6,199,85,0.25); }
+
+        .community-panel { display: none; position: relative; padding-left: 20px; }
+        .community-panel.active { display: block; }
+        .community-panel::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+
+        .post-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; position: relative; }
+        .post-card::before { content: ''; position: absolute; left: -20px; top: 12px; width: 10px; height: 10px; border-radius: 50%; background: #cbd5e0; border: 2px solid #ffffff; box-shadow: 0 0 0 2px #cbd5e0; }
+        
+        .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .post-author { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+        .post-avatar { width: 32px; height: 32px; border-radius: 50%; background: #edf2f7; display: flex; align-items: center; justify-content: center; font-weight: 600; color: #718096; }
+        .post-date { font-size: 11px; color: #a0aec0; }
+        
+        .post-title { font-size: 15px; font-weight: 600; color: #1a202c; margin-bottom: 4px; }
+        .post-content { font-size: 13px; color: #4a5568; line-height: 1.5; }
+        
+        .post-img-container { width: 100%; border-radius: 12px; margin-top: 10px; overflow: hidden; }
+        .post-img { width: 100%; height: 150px; object-fit: cover; }
+        
+        .review-rating { color: #ffca28; font-size: 13px; margin-bottom: 6px; }
+
+        .empty-state { text-align: center; padding: 40px; color: #a0aec0; font-size: 14px; }
+        .empty-state i { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+
+        /* สไตล์สีเมื่อคูปองถูกใช้แล้ว/Inactive */
+        .inactive-card .perk-dot { color: rgba(255,255,255,0.4); }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดสิทธิพิเศษ...</p>
+    <p>กำลังโหลดข้อมูลคอมมูนิตี้...</p>
 </div>
 
 <div id="app">
-    <div class="header">
-        <div class="header-title">👑 สิทธิพิเศษสมาชิก</div>
-        <div class="header-sub">Fat Myth Bear Bingsu Cafe</div>
-    </div>
-
-    <!-- Current Tier -->
-    <div class="current-tier">
-        <div class="tier-badge" id="current-tier-badge">Bronze</div>
-        <div class="current-tier-label">ระดับปัจจุบัน</div>
-        <div class="current-tier-val" id="current-tier-name">Bronze</div>
-        <div class="exp-progress">
-            <div class="exp-bar" id="exp-progress-bar" style="width: 0%"></div>
-            <div class="exp-text" id="exp-text">0 / 1,000 EXP</div>
+    <div class="top-dashboard">
+        <div class="db-store-info">
+            <img src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" class="db-logo" alt="">
+            <div>
+                <div class="db-name">Fat Myth Bear Bingsu</div>
+                <div class="db-sub" id="current-tier-text">ระดับ: Gold</div>
+            </div>
+        </div>
+        <div class="db-rank-info">
+            <div class="db-points" id="db-points">3,420</div>
+            <div id="db-rank-badge" class="db-rank-label">pts</div>
         </div>
     </div>
 
-    <!-- Tier Benefits -->
-    <div class="section-title">📋 สิทธิ์ตามระดับยศ</div>
-    <div class="tier-container" id="tier-list"></div>
+    <div class="section-header">
+        <i class="fa-solid fa-gem"></i>
+        <span>สิทธิพิเศษของคุณ</span>
+    </div>
+    
+    <div class="rank-grid" id="rank-grid">
+        </div>
 
-    <!-- News & Promotions -->
-    <div class="news-section">
-        <div class="news-title">📢 ข่าวสารและโปรโมชัน</div>
-        <div id="news-list"></div>
+    <div class="page-title">
+        <i class="fa-solid fa-users"></i>
+        <span>คอมมูนิตี้</span>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('promo')">
+            <i class="fa-solid fa-bullhorn"></i> โปรโมชั่น
+        </button>
+        <button class="tab-btn" onclick="switchTab('review')">
+            <i class="fa-solid fa-star"></i> รีวิว
+        </button>
+    </div>
+
+    <div id="panel-promo" class="community-panel active">
+        <div id="list-promo"></div>
+    </div>
+
+    <div id="panel-review" class="community-panel">
+        <div id="list-review"></div>
     </div>
 </div>
 
 <script>
-    var LIFF_ID = "2010298031-TOsCbkzl";
+    var LIFF_ID = "2010298031-prC3lMly"; // LIFF ID คงเดิมจากไฟล์หลักของคุณ
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
-
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var TIER_DATA = {
-        Bronze: {
-            min: 0,
-            next: 1000,
-            perks: [
-                "ส่วนลด 10% ในเดือนเกิด",
-                "สะสมแต้มทุกครั้งที่ซื้อ"
-            ]
-        },
-        Silver: {
-            min: 1000,
-            next: 3000,
-            perks: [
-                "เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน",
-                "Early Access เมนูใหม่ก่อนใคร",
-                "ส่วนลด 5% ทุกบิล"
-            ]
-        },
-        Gold: {
-            min: 3000,
-            next: 5000,
-            perks: [
-                "ส่วนลดถาวร 5% ทุกบิล",
-                "คูปองบิงซูฟรีรายไตรมาส",
-                "สิทธิ์ลดราคาเพิ่มเติมในวันพิเศษ",
-                "ลูกค้าพิเศษของร้าน"
-            ]
-        },
-        Platinum: {
-            min: 5000,
-            next: null,
-            perks: [
-                "ส่วนลดถาวร 10% ทุกบิล",
-                "สิทธิ์สำรองโต๊ะ VIP",
-                "คูปองของขวัญพิเศษประจำปี",
-                "ส่วนลดเพิ่มเติมสำหรับเพื่อน",
-                "ลูกค้า VIP ของร้าน"
-            ]
-        }
-    };
-
-    var BADGES = {
-        Bronze: "badge-bronze",
-        Silver: "badge-silver",
-        Gold: "badge-gold",
-        Platinum: "badge-platinum"
-    };
-
-    var TIER_COLORS = {
-        Bronze: "tier-bronze",
-        Silver: "tier-silver",
-        Gold: "tier-gold",
-        Platinum: "tier-platinum"
-    };
-
     var currentUserId = "";
-    var userData = null;
+
+    // ข้อมูลระดับยศและสิทธิประโยชน์จำเพาะ (config ตามภาพตัวอย่าง)
+    var TIER_DATA = [
+        { id: 'Bronze', name: 'Bronze', range: '0 - 1000 EXP', icon: '🥉', perks: ['ส่วนลด 10% ในเดือนเกิด', 'สะสมแต้มทุกครั้งที่ซื้อ'] },
+        { id: 'Silver', name: 'Silver', range: '1000 - 3000 EXP', icon: '🥈', perks: ['เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน', 'Early Access เมนูใหม่ก่อนใคร', 'ส่วนลด 5% ทุกบิล'] },
+        { id: 'Gold', name: 'Gold', range: '3000 - 5000 EXP', icon: '🥇', perks: ['ส่วนลดถาวร 5% ทุกบิล', 'คูปองบิงซูฟรีรายไตรมาส', 'สิทธิ์ลดราคาในวันพิเศษ'] },
+        { id: 'Platinum', name: 'Platinum', range: '5000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิล', 'สิทธิ์สำรองโต๊ะ VIP', 'คูปองของขวัญพิเศษประจำปี'] }
+    ];
 
     async function init() {
         try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-                return;
-            }
-
+            if (!liff.isLoggedIn()) { liff.login(); return; }
             var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            var { data, error } = await db
-                .from("profiles")
-                .select("full_name, line_user_id, current_exp, tier")
-                .eq("line_user_id", currentUserId)
-                .single();
+            // โหลดข้อมูลโปรไฟล์ (ระดับแรงค์และคะแนน Real-time) และคอมมูนิตี้
+            await Promise.all([
+                loadRealtimeProfile(),
+                loadCommunityData()
+            ]);
 
-            if (error || !data) {
-                window.location.href = "https://liff.line.me/2010298031-TOsCbkzl";
-                return;
-            }
-
-            userData = data;
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
-
-            renderCurrentTier();
-            renderTierBenefits();
-            renderNews();
-
         } catch (err) {
-            document.getElementById("loading").innerHTML =
-                '<p style="color:red">เกิดข้อผิดพลาด: ' + err.message + '</p>';
+            console.error("Initialization Error:", err);
+            document.getElementById("loading").innerHTML = '<p style="color:red; padding:20px;">เกิดข้อผิดพลาดในการโหลดระบบคอมมูนิตี้</p>';
         }
     }
 
-    function renderCurrentTier() {
-        var tier = userData.tier || "Bronze";
-        var exp = userData.current_exp || 0;
-        var tierData = TIER_DATA[tier];
-        var expMin = tierData.min;
-        var expNext = tierData.next || tierData.min + 1000;
-        var pct = Math.min(100, Math.round((exp - expMin) / (expNext - expMin) * 100));
+    // ฟังก์ชันดึงโปรไฟล์และ EXP/Points Real-time มาสลักบนแดชบอร์ดด้านบนสุด
+    async function loadRealtimeProfile() {
+        try {
+            var { data, error } = await db
+                .from("profiles")
+                .select("*")
+                .eq("line_user_id", currentUserId)
+                .single();
+            if (error) throw error;
+            
+            var tier = data.tier || 'Bronze';
+            document.getElementById("current-tier-text").textContent = "ระดับ: " + tier;
+            document.getElementById("db-points").textContent = (data.current_points || 0).toLocaleString();
+            
+            // ปรับสี Badge ฝั่งขวาบนตามแรงค์
+            var badgeEl = document.getElementById("db-rank-badge");
+            badgeEl.textContent = tier + " Member";
+            badgeEl.className = "db-rank-label badge-" + tier.toLowerCase();
 
-        document.getElementById("current-tier-badge").className = 
-            "tier-badge " + BADGES[tier];
-        document.getElementById("current-tier-badge").textContent = tier;
-        document.getElementById("current-tier-name").textContent = tier;
-        document.getElementById("exp-progress-bar").style.width = pct + "%";
-        document.getElementById("exp-text").textContent = 
-            exp.toLocaleString() + " / " + expNext.toLocaleString() + " EXP";
+            // เรนเดอร์การ์ดสิทธิพิเศษตามลำดับแรงค์จริง
+            renderRankCards(tier);
+
+        } catch (e) { console.error("Realtime fetch Error:", e); }
     }
 
-    function renderTierBenefits() {
-        var html = "";
-        var tiers = ["Bronze", "Silver", "Gold", "Platinum"];
-        var currentTier = userData.tier || "Bronze";
+    // ฟังก์ชันเรนเดอร์การ์ดสิทธิพิเศษตามลำดับยศหรูหราแบบ real-time
+    function renderRankCards(currentTier) {
+        var container = document.getElementById("rank-grid");
+        container.innerHTML = "";
 
-        for (var i = 0; i < tiers.length; i++) {
-            var tier = tiers[i];
-            var data = TIER_DATA[tier];
-            var isCurrent = tier === currentTier;
-            var expRange = data.min + " - " + (data.next || "∞") + " EXP";
-
-            html += '<div class="tier-card ' + TIER_COLORS[tier] + '" style="' + 
-                (isCurrent ? 'border: 3px solid #ffd700;' : '') + '">';
-            html += '<div class="tier-header">' + (isCurrent ? '✓ ' : '') + tier + '</div>';
-            html += '<div class="tier-exp">' + expRange + '</div>';
-            html += '<div class="perk-list">';
-
-            for (var j = 0; j < data.perks.length; j++) {
-                html += '<div class="perk-item">';
-                html += '<span class="perk-dot">✓</span>';
-                html += '<span>' + data.perks[j] + '</span>';
-                html += '</div>';
-            }
-
-            html += '</div></div>';
-        }
-
-        document.getElementById("tier-list").innerHTML = html;
+        TIER_DATA.forEach(function(tier) {
+            var isActive = tier.id === currentTier;
+            
+            htmlAvailable = `
+                <div class="rank-card rank-card-${tier.id.toLowerCase()} ${!isActive ? 'inactive-card' : ''}">
+                    <div class="rank-header">
+                        <div class="rank-name-container">
+                            <div class="rank-badge">${tier.icon}</div>
+                            <div>
+                                <div class="rank-title">${tier.name}</div>
+                                <div class="rank-range">${tier.range}</div>
+                            </div>
+                        </div>
+                        ${isActive ? '<span class="status-badge current">ระดับปัจจุบัน</span>' : '<span class="status-badge">ปลดล็อกแล้ว</span>'}
+                    </div>
+                    <div class="perk-list">
+                        ${tier.perks.map(p => '<div class="perk-item"><i class="fa-solid fa-check perk-dot"></i>' + p + '</div>').join('')}
+                    </div>
+                </div>`;
+            
+            container.innerHTML += htmlAvailable;
+        });
     }
 
-    function renderNews() {
-        var news = [
-            {
-                date: "เมื่อ 3 วันที่แล้ว",
-                title: "โปรโมชั่น Birthday Month",
-                desc: "สมาชิก Bronze ได้ส่วนลด 10% ในเดือนเกิด"
-            },
-            {
-                date: "เมื่อ 1 สัปดาห์ที่แล้ว",
-                title: "เมนูใหม่ Mochi Bingsu",
-                desc: "สมาชิก Silver สามารถสั่งได้ก่อนใคร"
-            },
-            {
-                date: "เมื่อ 2 สัปดาห์ที่แล้ว",
-                title: "โปรแกรมแนะนำเพื่อน",
-                desc: "แนะนำเพื่อนสมัครสมาชิก ได้ 50 แต้มพิเศษ"
-            }
-        ];
+    // ฟังก์ชันดึงและเรนเดอร์ข้อมูลแยกข่าวสารและรีวิว
+    async function loadCommunityData() {
+        try {
+            // โหลดข่าวสารโปรโมชั่น (สมมติว่าดึงจากฐานข้อมูล "news_promo")
+            var { data: promoData, error: promoError } = await db
+                .from("news_promo")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(10);
+            
+            // โหลดรีวิวลูกค้า (สมมติว่าดึงจากฐานข้อมูล "user_reviews")
+            var { data: reviewData, error: reviewError } = await db
+                .from("user_reviews")
+                .select("*")
+                .order("created_at", { ascending: false })
+                .limit(10);
 
-        var html = "";
-        for (var i = 0; i < news.length; i++) {
-            var item = news[i];
-            html += '<div class="news-item">';
-            html += '<div class="news-date">' + item.date + '</div>';
-            html += '<div class="news-text"><strong>' + item.title + '</strong><br>' + item.desc + '</div>';
-            html += '</div>';
+            renderPromoList(promoData);
+            renderReviewList(reviewData);
+
+        } catch (err) { console.error(err); }
+    }
+
+    // เรนเดอร์ข่าวสารโปรโมชั่นจากทางร้าน
+    function renderPromoList(data) {
+        var container = document.getElementById("list-promo");
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bullhorn"></i>ไม่มีข่าวสารในขณะนี้</div>';
+            return;
         }
 
-        if (news.length === 0) {
-            html = '<div class="empty">ยังไม่มีข่าวสาร</div>';
+        container.innerHTML = data.map(function(item) {
+            var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+            return `
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="post-avatar">🐻</div>
+                            <span>Fat Myth Bear Shop</span>
+                        </div>
+                        <div class="post-date">${dateStr}</div>
+                    </div>
+                    <div>
+                        <div class="post-title">${item.title || 'ประกาศจากทางร้าน'}</div>
+                        <div class="post-content">${item.content || 'ข้อมูลประกาศทางร้าน'}</div>
+                        ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // เรนเดอร์รีวิวลูกค้าจากทางบ้าน
+    function renderReviewList(data) {
+        var container = document.getElementById("list-review");
+        if (!data || data.length === 0) {
+            container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-star"></i>ยังไม่มีรีวิวในขณะนี้</div>';
+            return;
         }
 
-        document.getElementById("news-list").innerHTML = html;
+        container.innerHTML = data.map(function(item) {
+            var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+            
+            return `
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <div class="post-avatar">👤</div>
+                            <span>คุณ${item.user_nickname || 'สมาชิกผู้ทรงเกียรติ'}</span>
+                        </div>
+                        <div class="post-date">${dateStr}</div>
+                    </div>
+                    <div>
+                        <div class="review-rating">${'★'.repeat(item.rating)}${'☆'.repeat(5-item.rating)}</div>
+                        <div class="post-content">${item.content || 'ความคิดเห็นเพิ่มเติม'}</div>
+                        ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ฟังก์ชันสลับเมนูหน้าต่างแท็บคอมมูนิตี้
+    function switchTab(status) {
+        var buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        
+        var panels = document.querySelectorAll('.community-panel');
+        panels.forEach(p => p.classList.remove('active'));
+
+        // คืนค่าความ Active ให้กับเป้าหมายที่ถูกคลิกเข้ามาใหม่
+        event.currentTarget.classList.add('active');
+        document.getElementById('panel-' + status).classList.add('active');
     }
 
     init();
