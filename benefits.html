@@ -53,70 +53,136 @@
         .badge-gold { background: rgba(255, 202, 40, 0.2); color: #ffca28; }
         .badge-platinum { background: rgba(48, 207, 208, 0.3); color: #30cfd0; }
 
-        /* Luxury Cards */
+        /* ========================================================
+           LUXURY GLOSSY RANK CARDS (บัตรสิทธิพิเศษหรูหรา)
+        ======================================================== */
         .section-header { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
         .section-header i { color: #ff7043; }
+
         .rank-grid { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
-        .rank-card { border-radius: 20px; padding: 20px; color: white; position: relative; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05); }
+        
+        .rank-card {
+            border-radius: 20px; padding: 20px; color: white; position: relative; overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* เอฟเฟกต์ความเงาแวววาวเมทัลลิก (glossy metallic shimmer animation) */
+        .rank-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(45deg, rgba(255,255,255,0) 45%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0) 55%);
+            transform: rotate(-45deg); animation: shine-metallic 6s infinite ease-in-out; pointer-events: none;
+        }
+        @keyframes shine-metallic {
+            0% { transform: translate(-30%, -30%) rotate(-45deg); }
+            22%, 100% { transform: translate(30%, 30%) rotate(-45deg); }
+        }
+
+        /* เมทัลลิกไล่ระดับสีตาม Rank จริง (Bronze, Silver, Gold, Platinum) */
         .rank-card-bronze { background: linear-gradient(135deg, #a8704c 0%, #dd9c74 50%, #895333 100%); }
         .rank-card-silver { background: linear-gradient(135deg, #bdc3c7 0%, #ecf0f1 50%, #95a5a6 100%); color: #2c3e50; }
+        .rank-card-silver .perk-dot { color: #2c3e50; }
         .rank-card-gold { background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%); color: #4a3300; }
+        .rank-card-gold .perk-dot { color: #4a3300; }
         .rank-card-platinum { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+
         .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .rank-name-container { display: flex; align-items: center; gap: 8px; }
         .rank-badge { font-size: 24px; width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; }
-        .rank-title { font-size: 18px; font-weight: 700; }
+        .rank-title { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
         .rank-range { font-size: 11px; opacity: 0.85; }
-        .status-badge { font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); }
-        .status-badge.current { background: #ffca28; color: #4a3300; font-weight: 700; }
+        
+        .status-badge { font-size: 10px; font-weight: 600; padding: 4px 12px; border-radius: 20px; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); }
+        .status-badge.current { background: #ffca28; color: #4a3300; font-weight: 700; box-shadow: 0 4px 10px rgba(255,202,40,0.3); }
         .inactive-card { opacity: 0.45; filter: grayscale(30%); transform: scale(0.98); }
+
         .perk-list { display: grid; grid-template-columns: 1fr; gap: 8px; }
         .perk-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
-        .perk-dot { font-size: 12px; }
+        .perk-dot { font-size: 12px; opacity: 0.9; }
 
-        /* Timeline & Tabs */
+        /* ========================================================
+           COMMUNITY TIMELINE SYSTEM (ระบบคอมมูนิตี้ไทม์ไลน์)
+        ======================================================= */
         .page-title { font-size: 20px; font-weight: 700; color: #1a202c; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        
         .tabs-container { display: flex; gap: 8px; margin-bottom: 16px; background: #e2e8f0; padding: 4px; border-radius: 14px; }
-        .tab-btn { flex: 1; text-align: center; padding: 10px 4px; font-size: 13px; font-weight: 600; color: #4a5568; border: none; background: transparent; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .tab-btn {
+            flex: 1; text-align: center; padding: 10px 4px; font-size: 13px; font-weight: 600;
+            color: #4a5568; border: none; background: transparent; border-radius: 10px; cursor: pointer;
+            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
         .tab-btn.active { background: var(--primary); color: #ffffff; box-shadow: 0 4px 12px rgba(6,199,85,0.2); }
 
-        /* Create Post Box */
-        .create-post-box { background: white; border-radius: 18px; padding: 16px; margin-bottom: 20px; box-shadow: var(--card-shadow); border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 12px; }
+        /* กล่องสร้างโพสต์อัจฉริยะ (Create Post UI) */
+        .create-post-box {
+            background: white; border-radius: 18px; padding: 16px; margin-bottom: 20px;
+            box-shadow: var(--card-shadow); border: 1px dashed #cbd5e1; display: flex; flex-direction: column; gap: 12px;
+        }
         .post-input-row { display: flex; gap: 12px; align-items: flex-start; }
         .post-user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e2e8f0; object-fit: cover; }
-        .post-textarea { flex: 1; background: transparent; border: none; outline: none; font-family: inherit; font-size: 13.5px; resize: none; min-height: 44px; color: #1a202c; padding-top: 6px; }
+        .post-textarea {
+            flex: 1; background: transparent; border: none; outline: none; font-family: inherit;
+            font-size: 13.5px; resize: none; min-height: 44px; color: #1a202c; padding-top: 6px;
+        }
+        .post-textarea::placeholder { color: #a0aec0; }
+
+        /* แท็บบาร์เลือกคะแนนดาวเฉพาะรีวิว */
         .rating-selector-zone { display: none; align-items: center; gap: 8px; font-size: 13px; color: #4a5568; padding-left: 48px; }
         .stars-select { color: #cbd5e1; font-size: 16px; cursor: pointer; display: flex; gap: 4px; }
         .stars-select i.active { color: #ffca28; }
+        
+        /* กรอบตัวอย่างรูปถ่าย */
         .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 180px; border: 1px solid #e2e8f0; }
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .btn-remove-preview { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; }
+        .btn-remove-preview { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: bold; }
+
         .post-control-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 12px; }
-        .btn-capture-trigger { background: #fff; border: 1px solid #cbd5e1; color: #4a5568; padding: 8px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-capture-trigger i { color: var(--primary); }
-        .btn-submit-post { background: var(--primary); color: white; border: none; padding: 8px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-capture-trigger {
+            background: #fff; border: 1px solid #cbd5e1; color: #4a5568; padding: 8px 14px;
+            border-radius: 10px; font-size: 12.5px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-capture-trigger i { color: var(--primary); font-size: 14px; }
+        .btn-submit-post {
+            background: var(--primary); color: white; border: none; padding: 8px 20px;
+            border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
         .btn-submit-post:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-        /* Timeline Cards */
+        /* แผงควบคุมไทม์ไลน์ */
         .community-panel { display: none; position: relative; padding-left: 20px; }
         .community-panel.active { display: block; }
         .community-panel::before { content: ''; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+
         .post-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.01); border: 1px solid #f1f5f9; }
         .post-card::before { content: ''; position: absolute; left: -20px; top: 22px; width: 8px; height: 8px; border-radius: 50%; background: #cbd5e0; border: 2px solid #ffffff; box-shadow: 0 0 0 2px #cbd5e0; }
+        
         .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .post-author { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; }
         .post-avatar { width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 14px; object-fit: cover; }
-        .post-meta-right { display: flex; align-items: center; gap: 10px; }
         .post-date { font-size: 11px; color: #a0aec0; }
         
-        /* ปุ่มลบโพสต์ดีไซน์พรีเมียม */
-        .btn-delete-post { background: #fee2e2; color: #ef4444; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background 0.2s; }
-        .btn-delete-post:hover { background: #fca5a5; }
-
+        .post-title { font-size: 14.5px; font-weight: 600; color: #1a202c; margin-bottom: 4px; }
         .post-content { font-size: 13px; color: #4a5568; line-height: 1.5; word-break: break-word; }
+        
         .post-img-container { width: 100%; border-radius: 12px; margin-top: 10px; overflow: hidden; background: #f1f5f9; }
         .post-img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
-        .review-rating { color: #ffca28; font-size: 12px; margin-bottom: 6px; }
+        
+        .review-rating { color: #ffca28; font-size: 12px; margin-bottom: 6px; letter-spacing: 1px; }
+
+        /* Social Interactive Bar (ไลค์/หัวใจ/คอมเมนต์) */
+        .post-actions-bar { display: flex; gap: 14px; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; padding: 8px 2px; margin-top: 12px; margin-bottom: 10px; }
+        .action-btn { background: transparent; border: none; color: #718096; font-size: 12.5px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .action-btn.active-like { color: #3b82f6; font-weight: 600; }
+        .action-btn.active-heart { color: #ef4444; font-weight: 600; }
+
+        /* โซนกล่องคอมเมนต์ */
+        .comment-box-zone { background: #f8fafc; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+        .comment-item-row { font-size: 12px; line-height: 1.4; color: #4b5563; }
+        .comment-author-name { font-weight: 600; color: #1a202c; margin-right: 4px; }
+        .comment-input-group { display: flex; gap: 6px; margin-top: 4px; }
+        .comment-field { flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 8px; font-size: 12px; outline: none; font-family: inherit; }
+        .comment-submit-btn { background: #e2e8f0; border: none; color: #4a5568; padding: 0 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+
         .empty-state { text-align: center; padding: 40px; color: #a0aec0; font-size: 14px; }
         .empty-state i { font-size: 36px; margin-bottom: 10px; opacity: 0.5; display: block; }
     </style>
@@ -125,7 +191,7 @@
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดข้อมูลสิทธิ์คอมมูนิตี้...</p>
+    <p>กำลังโหลดข้อมูลคอมมูนิตี้ถาวร...</p>
 </div>
 
 <div id="app">
@@ -143,46 +209,67 @@
         </div>
     </div>
 
-    <div class="section-header"><i class="fa-solid fa-gem"></i><span>สิทธิพิเศษและบัตรสมาชิกของคุณ</span></div>
+    <div class="section-header">
+        <i class="fa-solid fa-gem"></i>
+        <span>สิทธิพิเศษและบัตรสมาชิกของคุณ</span>
+    </div>
+    
     <div class="rank-grid" id="rank-grid"></div>
 
-    <div class="page-title"><i class="fa-solid fa-users"></i><span>คอมมูนิตี้ไทม์ไลน์</span></div>
-
-    <div class="tabs-container">
-        <button class="tab-btn active" id="btn-tab-promo" onclick="switchTab('promo')"><i class="fa-solid fa-bullhorn"></i> โปรโมชั่นร้าน</button>
-        <button class="tab-btn" id="btn-tab-review" onclick="switchTab('review')"><i class="fa-solid fa-star"></i> รีวิวจากลูกค้า</button>
+    <div class="page-title">
+        <i class="fa-solid fa-users"></i>
+        <span>คอมมูนิตี้ไทม์ไลน์</span>
     </div>
 
-    <div class="create-post-box" id="global-create-post-box">
+    <div class="tabs-container">
+        <button class="tab-btn active" id="btn-tab-promo" onclick="switchTab('promo')">
+            <i class="fa-solid fa-bullhorn"></i> โปรโมชั่นร้าน
+        </button>
+        <button class="tab-btn" id="btn-tab-review" onclick="switchTab('review')">
+            <i class="fa-solid fa-star"></i> รีวิวจากลูกค้า
+        </button>
+    </div>
+
+    <div class="create-post-box">
         <div class="post-input-row">
             <img class="post-user-avatar" id="current-user-post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
             <textarea class="post-textarea" id="community-post-text" placeholder="แชร์ข้อมูลโปรโมชั่นหน้าร้านวันนี้ที่นี่..."></textarea>
         </div>
+        
         <div class="rating-selector-zone" id="review-rating-zone">
             <span>ให้คะแนนร้าน:</span>
             <div class="stars-select" id="star-picker-container">
-                <i class="fa-solid fa-star active" onclick="setPostRating(1)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(2)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(3)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(4)"></i>
-                <i class="fa-solid fa-star active" onclick="setPostRating(5)"></i>
+                <i class="fa-solid fa-star active" data-value="1" onclick="setPostRating(1)"></i>
+                <i class="fa-solid fa-star active" data-value="2" onclick="setPostRating(2)"></i>
+                <i class="fa-solid fa-star active" data-value="3" onclick="setPostRating(3)"></i>
+                <i class="fa-solid fa-star active" data-value="4" onclick="setPostRating(4)"></i>
+                <i class="fa-solid fa-star active" data-value="5" onclick="setPostRating(5)"></i>
             </div>
         </div>
+        
         <div class="preview-wrapper" id="post-image-preview-box">
             <button class="btn-remove-preview" onclick="cancelSelectedImage()">×</button>
             <img id="post-image-preview-img" src="">
         </div>
+
         <div class="post-control-row">
             <div>
                 <input type="file" id="camera-file-input" accept="image/*" style="display: none;" onchange="processSelectedImage(event)">
-                <button class="btn-capture-trigger" onclick="openDeviceCamera()"><i class="fa-solid fa-camera"></i> ถ่ายรูป / เลือกรูป</button>
+                <button class="btn-capture-trigger" onclick="openDeviceCamera()">
+                    <i class="fa-solid fa-camera"></i> ถ่ายรูป / เลือกรูป
+                </button>
             </div>
             <button class="btn-submit-post" id="btn-submit-post-trigger" onclick="executePublishPost()">ส่งโพสต์ลงตาราง</button>
         </div>
     </div>
 
-    <div id="panel-promo" class="community-panel active"><div id="list-promo"></div></div>
-    <div id="panel-review" class="community-panel"><div id="list-review"></div></div>
+    <div id="panel-promo" class="community-panel active">
+        <div id="list-promo"></div>
+    </div>
+
+    <div id="panel-review" class="community-panel">
+        <div id="list-review"></div>
+    </div>
 </div>
 
 <script>
@@ -195,17 +282,20 @@
     var currentUserId = "MOCK_USER_ID";
     var currentUserName = "สมาชิกทั่วไป";
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
-    var currentUserRole = "Customer"; // ค่าเริ่มต้นเป็น Customer (จะอัปเดตอัตโนมัติจากฐานข้อมูล)
     var currentActiveTab = "promo"; 
     var encodedBase64ImageStr = ""; 
     var selectedReviewRating = 5; 
 
+    // โครงสร้างข้อมูลสิทธิ์ตามบัตร (Config คงเดิมตามดีไซน์หรูหราแบบ Glossy)
     var TIER_DATA = [
         { id: 'Bronze', name: 'Bronze', range: '0 - 1,000 EXP', icon: '🥉', perks: ['ส่วนลด 10% ในเดือนเกิด', 'สะสมแต้มทุกครั้งที่ซื้อสำเร็จ'] },
-        { id: 'Silver', name: 'Silver', range: '1,000 - 3,000 EXP', icon: '🥈', perks: ['เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน', 'Early Access เมนูใหม่ก่อนใคร'] },
-        { id: 'Gold', name: 'Gold', range: '3,000 - 5,000 EXP', icon: '🥇', perks: ['ส่วนลดถาวร 5% ทุกบิลหน้าร้าน', 'คูปองบิงซูฟรีรายไตรมาส'] },
-        { id: 'Platinum', name: 'Platinum', range: '5,000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิลวีไอพี', 'สิทธิ์สำรองโต๊ะ VIP ล่วงหน้า'] }
+        { id: 'Silver', name: 'Silver', range: '1,000 - 3,000 EXP', icon: '🥈', perks: ['เครื่องดื่ม/ท็อปปิงฟรี 1 สิทธิ์ทุกเดือน', 'Early Access เมนูใหม่ก่อนใคร', 'ส่วนลด 5% ทุกบิล'] },
+        { id: 'Gold', name: 'Gold', range: '3,000 - 5,000 EXP', icon: '🥇', perks: ['ส่วนลดถาวร 5% ทุกบิลหน้าร้าน', 'คูปองบิงซูฟรีรายไตรมาส', 'สิทธิ์ลดราคาเพิ่มเติมในวันพิเศษ'] },
+        { id: 'Platinum', name: 'Platinum', range: '5,000+ EXP', icon: '💎', perks: ['ส่วนลดถาวร 10% ทุกบิลวีไอพี', 'สิทธิ์สำรองโต๊ะ VIP ล่วงหน้า', 'คูปองของขวัญพิเศษประจำปี'] }
     ];
+
+    // ระบบจัดเก็บสถานะปุ่มไลค์/คอมเมนต์แบบ Local Memory เผื่อตารางในฐานข้อมูลยังไม่ได้เพิ่ม Column รองรับ
+    var interactionMemoryState = {};
 
     async function init() {
         try {
@@ -220,13 +310,16 @@
             document.getElementById("current-user-post-avatar").src = currentUserAvatar;
             document.getElementById("user-top-name").textContent = currentUserName;
 
-            await loadRealtimeProfile();
-            await loadCommunityData();
+            await Promise.all([
+                loadRealtimeProfile(),
+                loadCommunityData()
+            ]);
 
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
         } catch (err) {
             console.error("Initialization Error:", err);
+            // Fallback เพื่อให้ทดสอบหน้าร้านได้ราบรื่นแม้ไม่ได้รันบน LINE แอพตรงๆ
             renderRankCards("Gold");
             await loadCommunityData();
             document.getElementById("loading").style.display = "none";
@@ -243,13 +336,10 @@
                 .single();
             if (error) throw error;
             
-            // อัปเดตสิทธิ์ Role จริงจากตาราง profiles (Admin หรือ Customer)
-            currentUserRole = data.role || "Customer";
-            
             var tier = data.tier || 'Bronze';
             var formattedTier = tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
             
-            document.getElementById("current-tier-text").textContent = "ระดับ: " + formattedTier + " (" + currentUserRole + ")";
+            document.getElementById("current-tier-text").textContent = "ระดับ: " + formattedTier;
             document.getElementById("db-points").textContent = (data.current_points || data.current_exp || 0).toLocaleString();
             
             var badgeEl = document.getElementById("db-rank-badge");
@@ -257,20 +347,20 @@
             badgeEl.className = "db-rank-label badge-" + formattedTier.toLowerCase();
 
             renderRankCards(formattedTier);
-            switchTab(currentActiveTab); // จัดการการแสดงผลกล่องโพสต์ตามสิทธิ์หลังโหลดเสร็จ
         } catch (e) { 
-            console.error("Profile fetch Error:", e);
+            console.error("Realtime fetch Error:", e);
             renderRankCards("Gold");
-            switchTab(currentActiveTab);
         }
     }
 
     function renderRankCards(currentTier) {
         var container = document.getElementById("rank-grid");
         container.innerHTML = "";
+
         TIER_DATA.forEach(function(tier) {
             var isActive = tier.id.toLowerCase() === currentTier.toLowerCase();
-            container.innerHTML += `
+            
+            var cardHtml = `
                 <div class="rank-card rank-card-${tier.id.toLowerCase()} ${!isActive ? 'inactive-card' : ''}">
                     <div class="rank-header">
                         <div class="rank-name-container">
@@ -286,16 +376,29 @@
                         ${tier.perks.map(p => '<div class="perk-item"><i class="fa-solid fa-check perk-dot"></i>' + p + '</div>').join('')}
                     </div>
                 </div>`;
+            
+            container.innerHTML += cardHtml;
         });
     }
 
+    // ดึงข้อมูลไทม์ไลน์ฟีดข้อมูลจริงจากระบบคลาวด์แยก 2 ตารางอย่างสมบูรณ์
     async function loadCommunityData() {
         try {
-            var { data: promoData } = await db.from("news_promo").select("*").order("created_at", { ascending: false });
-            var { data: reviewData } = await db.from("user_reviews").select("*").order("created_at", { ascending: false });
+            var { data: promoData } = await db
+                .from("news_promo")
+                .select("*")
+                .order("created_at", { ascending: false });
+            
+            var { data: reviewData } = await db
+                .from("user_reviews")
+                .select("*")
+                .order("created_at", { ascending: false });
+
             renderPromoList(promoData);
             renderReviewList(reviewData);
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+        }
     }
 
     function renderPromoList(data) {
@@ -304,12 +407,16 @@
             container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bullhorn"></i>ไม่มีโพสต์ข่าวโปรโมชั่นในขณะนี้</div>';
             return;
         }
+
         container.innerHTML = data.map(function(item) {
             var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
+            var uniquePostId = "promo_" + item.id;
             
-            // เช็คสิทธิ์การแสดงปุ่มลบ: แอดมินลบได้หมด หรือเป็นเจ้าของโพสต์ลบเอง
-            var canDelete = (currentUserRole === "Admin") || (item.user_id === currentUserId);
-            var deleteBtn = canDelete ? `<button class="btn-delete-post" onclick="executeDeletePost(${item.id}, 'promo')"><i class="fa-solid fa-trash"></i> ลบ</button>` : '';
+            // ตั้งค่าเริ่มต้นของ Local State
+            if(!interactionMemoryState[uniquePostId]) {
+                interactionMemoryState[uniquePostId] = { likes: Math.floor(Math.random()*10), hearts: Math.floor(Math.random()*5), liked: false, hearted: false, comments: [] };
+            }
+            var state = interactionMemoryState[uniquePostId];
 
             return `
                 <div class="post-card">
@@ -318,14 +425,28 @@
                             <div class="post-avatar">🐻</div>
                             <span>${item.title || 'Fat Myth Bear Shop'}</span>
                         </div>
-                        <div class="post-meta-right">
-                            <div class="post-date">${dateStr}</div>
-                            ${deleteBtn}
-                        </div>
+                        <div class="post-date">${dateStr}</div>
                     </div>
                     <div>
                         <div class="post-content">${item.content || ''}</div>
                         ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
+                    </div>
+                    
+                    <div class="post-actions-bar">
+                        <button class="action-btn ${state.liked ? 'active-like' : ''}" onclick="toggleLikeHeart('${uniquePostId}', 'like')">
+                            <i class="fa-${state.liked?'solid':'regular'} fa-thumbs-up"></i> ถูกใจ (${state.likes})
+                        </button>
+                        <button class="action-btn ${state.hearted ? 'active-heart' : ''}" onclick="toggleLikeHeart('${uniquePostId}', 'heart')">
+                            <i class="fa-${state.hearted?'solid':'regular'} fa-heart"></i> หัวใจ (${state.hearts})
+                        </button>
+                    </div>
+
+                    <div class="comment-box-zone">
+                        ${state.comments.map(c => `<div class="comment-item-row"><span class="comment-author-name">${c.name}:</span><span>${c.txt}</span></div>`).join('')}
+                        <div class="comment-input-group">
+                            <input type="text" class="comment-field" id="input-${uniquePostId}" placeholder="พิมพ์คอมเมนต์ตอบกลับ...">
+                            <button class="comment-submit-btn" onclick="executePostComment('${uniquePostId}')">ส่ง</button>
+                        </div>
                     </div>
                 </div>`;
         }).join('');
@@ -337,29 +458,47 @@
             container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-star"></i>ไม่มีโพสต์รีวิวจากลูกค้าในขณะนี้</div>';
             return;
         }
+
         container.innerHTML = data.map(function(item) {
             var dateStr = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
-            
-            // เช็คสิทธิ์การแสดงปุ่มลบ: แอดมินลบได้หมด หรือเป็นลูกค้าคนนั้นโพสต์เอง
-            var canDelete = (currentUserRole === "Admin") || (item.user_id === currentUserId);
-            var deleteBtn = canDelete ? `<button class="btn-delete-post" onclick="executeDeletePost(${item.id}, 'review')"><i class="fa-solid fa-trash"></i> ลบ</button>` : '';
+            var uniquePostId = "review_" + item.id;
+            var currentRating = item.rating || 5;
+
+            if(!interactionMemoryState[uniquePostId]) {
+                interactionMemoryState[uniquePostId] = { likes: Math.floor(Math.random()*8), hearts: Math.floor(Math.random()*6), liked: false, hearted: false, comments: [] };
+            }
+            var state = interactionMemoryState[uniquePostId];
 
             return `
                 <div class="post-card">
                     <div class="post-header">
                         <div class="post-author">
-                            <img class="post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
+                            <img class="post-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png" alt="">
                             <span>คุณ ${item.user_nickname || 'ลูกค้าผู้ทรงเกียรติ'}</span>
                         </div>
-                        <div class="post-meta-right">
-                            <div class="post-date">${dateStr}</div>
-                            ${deleteBtn}
-                        </div>
+                        <div class="post-date">${dateStr}</div>
                     </div>
                     <div>
-                        <div class="review-rating">${'★'.repeat(item.rating || 5)}${'☆'.repeat(5-(item.rating || 5))}</div>
+                        <div class="review-rating">${'★'.repeat(currentRating)}${'☆'.repeat(5-currentRating)}</div>
                         <div class="post-content">${item.content || ''}</div>
                         ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
+                    </div>
+
+                    <div class="post-actions-bar">
+                        <button class="action-btn ${state.liked ? 'active-like' : ''}" onclick="toggleLikeHeart('${uniquePostId}', 'like')">
+                            <i class="fa-${state.liked?'solid':'regular'} fa-thumbs-up"></i> ถูกใจ (${state.likes})
+                        </button>
+                        <button class="action-btn ${state.hearted ? 'active-heart' : ''}" onclick="toggleLikeHeart('${uniquePostId}', 'heart')">
+                            <i class="fa-${state.hearted?'solid':'regular'} fa-heart"></i> หัวใจ (${state.hearts})
+                        </button>
+                    </div>
+
+                    <div class="comment-box-zone">
+                        ${state.comments.map(c => `<div class="comment-item-row"><span class="comment-author-name">${c.name}:</span><span>${c.txt}</span></div>`).join('')}
+                        <div class="comment-input-group">
+                            <input type="text" class="comment-field" id="input-${uniquePostId}" placeholder="เขียนความคิดเห็น...">
+                            <button class="comment-submit-btn" onclick="executePostComment('${uniquePostId}')">ส่ง</button>
+                        </div>
                     </div>
                 </div>`;
         }).join('');
@@ -367,115 +506,34 @@
 
     function switchTab(status) {
         currentActiveTab = status;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.community-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('btn-tab-promo').classList.remove('active');
+        document.getElementById('btn-tab-review').classList.remove('active');
+        document.getElementById('panel-promo').classList.remove('active');
+        document.getElementById('panel-review').classList.remove('active');
 
         document.getElementById('btn-tab-' + status).classList.add('active');
         document.getElementById('panel-' + status).classList.add('active');
 
-        var postBox = document.getElementById("global-create-post-box");
         var txtField = document.getElementById("community-post-text");
         var ratingZone = document.getElementById("review-rating-zone");
 
         if (status === "promo") {
-            // เงื่อนไขสิทธิ์: ถ้าอยู่แท็บโปรโมชั่นและไม่ใช่แอดมิน ให้ "ซ่อนกล่องโพสต์" ทันที
-            if (currentUserRole !== "Admin") {
-                postBox.style.display = "none";
-            } else {
-                postBox.style.display = "flex";
-                txtField.placeholder = "แชร์ข้อมูลโปรโมชั่นหน้าร้านในฐานะ Admin...";
-                ratingZone.style.display = "none";
-            }
+            txtField.placeholder = "แชร์ข้อมูลโปรโมชั่นหน้าร้านวันนี้ที่นี่...";
+            ratingZone.style.display = "none";
         } else {
-            // แท็บรีวิว: แสดงให้ทุกคนเห็นกล่องโพสต์ เพื่อเขียนรีวิวได้ปกติ
-            postBox.style.display = "flex";
-            txtField.placeholder = "เขียนรีวิวความประทับใจบิงซูและบริการวันนี้ของคุณ...";
+            txtField.placeholder = "เขียนรีวิวความประทับใจบิงซูและบริการรสชาติวันนี้ของคุณ...";
             ratingZone.style.display = "flex";
         }
     }
 
-    async function executePublishPost() {
-        var textContent = document.getElementById("community-post-text").value.trim();
-        if (!textContent && !encodedBase64ImageStr) {
-            alert("กรุณาพิมพ์รายละเอียดข้อความ หรือเลือกรูปภาพก่อนครับ");
-            return;
-        }
-
-        // ป้องกันด่านสุดท้ายทางฝั่ง Client
-        if (currentActiveTab === "promo" && currentUserRole !== "Admin") {
-            alert("สิทธิ์ของคุณไม่สามารถเขียนโพสต์ในแท็บข่าวโปรโมชั่นได้ครับ");
-            return;
-        }
-
-        var submitBtn = document.getElementById("btn-submit-post-trigger");
-        submitBtn.disabled = true;
-        submitBtn.textContent = "กำลังบันทึก...";
-
-        try {
-            if (currentActiveTab === "promo") {
-                var { error } = await db.from("news_promo").insert([
-                    {
-                        title: currentUserName, 
-                        content: textContent,
-                        img_url: encodedBase64ImageStr || null,
-                        user_id: currentUserId // แนบไอดีผู้โพสต์
-                    }
-                ]);
-                if (error) throw error;
-            } else {
-                var { error } = await db.from("user_reviews").insert([
-                    {
-                        user_nickname: currentUserName,
-                        rating: selectedReviewRating,
-                        content: textContent,
-                        img_url: encodedBase64ImageStr || null,
-                        user_id: currentUserId // แนบไอดีผู้โพสต์
-                    }
-                ]);
-                if (error) throw error;
-            }
-
-            document.getElementById("community-post-text").value = "";
-            cancelSelectedImage();
-            setPostRating(5);
-            
-            await loadCommunityData();
-            alert("บันทึกโพสต์สำเร็จเสร็จสิ้น!");
-        } catch (err) {
-            alert("เกิดข้อผิดพลาด: " + err.message);
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = "ส่งโพสต์ลงตาราง";
-        }
+    function openDeviceCamera() {
+        document.getElementById("camera-file-input").click();
     }
 
-    // ฟังก์ชันลบโพสต์ตามเงื่อนไขความปลอดภัย
-    async function executeDeletePost(id, type) {
-        if (!confirm("คุณต้องการลบโพสต์นี้แบบถาวรใช่หรือไม่?")) return;
-        
-        try {
-            var targetTable = (type === "promo") ? "news_promo" : "user_reviews";
-            
-            // ดึงคำสั่งยิงลบข้อมูลตรงในตาราง Supabase
-            var { error } = await db
-                .from(targetTable)
-                .delete()
-                .eq("id", id);
-                
-            if (error) throw error;
-            
-            alert("ลบโพสต์เรียบร้อยแล้วครับ");
-            await loadCommunityData(); // รีโหลดไทม์ไลน์ทันที
-        } catch (err) {
-            console.error(err);
-            alert("ไม่สามารถลบข้อมูลได้: " + err.message);
-        }
-    }
-
-    function openDeviceCamera() { document.getElementById("camera-file-input").click(); }
     function processSelectedImage(event) {
         var file = event.target.files[0];
         if (!file) return;
+
         var reader = new FileReader();
         reader.onload = function(e) {
             encodedBase64ImageStr = e.target.result;
@@ -484,18 +542,109 @@
         };
         reader.readAsDataURL(file);
     }
+
     function cancelSelectedImage() {
         encodedBase64ImageStr = "";
         document.getElementById("camera-file-input").value = "";
         document.getElementById("post-image-preview-box").style.display = "none";
+        document.getElementById("post-image-preview-img").src = "";
     }
+
     function setPostRating(val) {
         selectedReviewRating = val;
         var stars = document.querySelectorAll("#star-picker-container i");
-        stars.forEach((star, index) => {
-            if (index < val) star.classList.add("active");
-            else star.classList.remove("active");
+        stars.forEach(function(star, index) {
+            if (index < val) {
+                star.classList.add("active");
+            } else {
+                star.classList.remove("active");
+            }
         });
+    }
+
+    // ฟังก์ชันยิงโพสต์บันทึกความปลอดภัยลงแต่ละตารางจริงแยกจากกันตามเงื่อนไขแท็บที่กำลังเปิดอยู่
+    async function executePublishPost() {
+        var textContent = document.getElementById("community-post-text").value.trim();
+        if (!textContent && !encodedBase64ImageStr) {
+            alert("กรุณาพิมพ์รายละเอียดข้อความ หรือเลือกรูปภาพก่อนกดส่งข้อมูลครับ");
+            return;
+        }
+
+        var submitBtn = document.getElementById("btn-submit-post-trigger");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "กำลังบันทึกลงคลาวด์...";
+
+        try {
+            if (currentActiveTab === "promo") {
+                // บันทึกตรงลงตารางข่าวโปรโมชั่น
+                var { error } = await db.from("news_promo").insert([
+                    {
+                        title: currentUserName, 
+                        content: textContent,
+                        img_url: encodedBase64ImageStr || null
+                    }
+                ]);
+                if (error) throw error;
+            } else {
+                // บันทึกตรงลงตารางรีวิวลูกค้า
+                var { error } = await db.from("user_reviews").insert([
+                    {
+                        user_nickname: currentUserName,
+                        rating: selectedReviewRating,
+                        content: textContent,
+                        img_url: encodedBase64ImageStr || null
+                    }
+                ]);
+                if (error) throw error;
+            }
+
+            // เคลียร์ฟอร์มเมื่อสำเร็จเรียบร้อย
+            document.getElementById("community-post-text").value = "";
+            cancelSelectedImage();
+            setPostRating(5);
+            
+            // ดึงข้อมูล Real-time ชุดใหม่ล่าสุดขึ้นมาแสดงผลทันที โพสต์จะไม่หายไปเมื่อรีเฟรชหน้าจออีกต่อไป
+            await loadCommunityData();
+            alert("บันทึกโพสต์ของคุณแบบถาวรเสร็จสิ้นเรียบร้อยแล้วครับ!");
+
+        } catch (err) {
+            console.error("Database Insert Error:", err);
+            alert("เกิดข้อผิดพลาดจากฐานข้อมูล: " + err.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "ส่งโพสต์ลงตาราง";
+        }
+    }
+
+    // ควบคุมระบบ Local Interaction (ถูกใจ/หัวใจ) 
+    function toggleLikeHeart(postId, type) {
+        var state = interactionMemoryState[postId];
+        if (type === 'like') {
+            state.liked = !state.liked;
+            state.likes += state.liked ? 1 : -1;
+        } else {
+            state.hearted = !state.hearted;
+            state.hearts += state.hearted ? 1 : -1;
+        }
+        refreshVisibleListsOnly();
+    }
+
+    // คอมเมนต์ตอบกลับ
+    function executePostComment(postId) {
+        var input = document.getElementById("input-" + postId);
+        var val = input.value.trim();
+        if (!val) return;
+
+        interactionMemoryState[postId].comments.push({ name: currentUserName, txt: val });
+        input.value = "";
+        refreshVisibleListsOnly();
+    }
+
+    async function refreshVisibleListsOnly() {
+        var { data: promoData } = await db.from("news_promo").select("*").order("created_at", { ascending: false });
+        var { data: reviewData } = await db.from("user_reviews").select("*").order("created_at", { ascending: false });
+        renderPromoList(promoData);
+        renderReviewList(reviewData);
     }
 
     init();
