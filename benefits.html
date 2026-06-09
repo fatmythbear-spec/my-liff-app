@@ -81,7 +81,7 @@
 
         .rank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .rank-name-container { display: flex; align-items: center; gap: 8px; }
-        .rank-badge { font-size: 24px; width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; }
+        .rank-badge { font-size: 24px; width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,0.2); width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; }
         .rank-title { font-size: 18px; font-weight: 700; }
         .rank-range { font-size: 11px; opacity: 0.8; }
         
@@ -184,7 +184,6 @@
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
     
-    // สร้างการเชื่อมต่อแบบดั้งเดิมตามไฟล์แรกที่รันผ่านฉลุย
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -204,19 +203,18 @@
             } else {
                 liff.getProfile().then(function(profile) {
                     currentUserId = profile.userId;
-                    // รันฟังก์ชันทีละตัวแบบไฟล์แรกเพื่อความเสถียรสูงสุด
+                    // เริ่มต้นทำงานดึงข้อมูลจากฐานข้อมูล
                     loadRealtimeProfile();
                     loadCommunityData();
                 }).catch(function(err) {
-                    showFallback();
+                    showAppWithDefault();
                 });
             }
         }).catch(function(err) {
-            showFallback();
+            showAppWithDefault();
         });
     }
 
-    // แก้ไขจุดสำคัญ: ใช้รูปแบบจับคู่ข้อมูลตรงๆ แบบไฟล์แรก ไม่ใช้ฟังก์ชันกรองขั้นสูงที่ส่งผลให้หลังบ้านแจ้ง 400 Bad Request
     function loadRealtimeProfile() {
         db.from("profiles").select("*").eq("line_user_id", currentUserId)
         .then(function(res) {
@@ -227,34 +225,39 @@
                 userTier = res.data[0].tier || "Bronze";
                 userPoints = res.data[0].current_points || 0;
             }
-
             updateDashboardUI(userTier, userPoints);
         })
         .catch(function(err) {
-            // หากระบบดึงค่าไม่ได้ ให้เปิดหน้าเว็บด้วยระดับ Bronze ทันทีเพื่อความปลอดภัย
             updateDashboardUI("Bronze", 0);
         });
     }
 
     function updateDashboardUI(userTier, userPoints) {
-        document.getElementById("current-tier-text").textContent = "ระดับของคุณ: " + userTier.toUpperCase();
-        document.getElementById("db-points").textContent = Number(userPoints).toLocaleString() + " pts";
-        
+        // อัปเดตข้อความบนหน้าจอ
+        var tierTextEl = document.getElementById("current-tier-text");
+        var pointsEl = document.getElementById("db-points");
         var badgeEl = document.getElementById("db-rank-badge");
-        badgeEl.className = "db-rank-label badge-" + userTier.toLowerCase();
-        badgeEl.textContent = userTier + " MEMBER";
+
+        if(tierTextEl) tierTextEl.textContent = "ระดับของคุณ: " + userTier.toUpperCase();
+        if(pointsEl) pointsEl.textContent = Number(userPoints).toLocaleString() + " pts";
+        
+        if(badgeEl) {
+            badgeEl.className = "db-rank-label badge-" + userTier.toLowerCase();
+            badgeEl.textContent = userTier + " MEMBER";
+        }
 
         renderLuxuryCards(userTier);
         
-        // เมื่อประมวลผล UI สิทธิพิเศษเรียบร้อยให้ปิดหน้า Loading ทันที
+        // ปิดหน้าโหลดดิ้งเพื่อเปิดให้เห็นข้อมูลแอป
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
     function renderLuxuryCards(userTier) {
         var grid = document.getElementById("rank-grid");
-        var html = "";
+        if (!grid) return; // ดักไว้เผื่อ Element ไม่พร้อมทำงานบนมือถือ
 
+        var html = "";
         for (var i = 0; i < TIER_CONFIG.length; i++) {
             var tier = TIER_CONFIG[i];
             var isCurrent = (tier.id.toLowerCase() === userTier.toLowerCase());
@@ -281,7 +284,6 @@
     }
 
     function loadCommunityData() {
-        // ดึงข้อมูลข่าวสารโปรโมชั่นร้านค้า
         db.from("news_promo").select("*").order("created_at", { ascending: false }).limit(10)
         .then(function(res) {
             renderPromoMarkup(res.data || []);
@@ -290,7 +292,6 @@
             renderPromoMarkup([]);
         });
 
-        // ดึงข้อมูลคะแนนรีวิวลูกค้า
         db.from("user_reviews").select("*").order("created_at", { ascending: false }).limit(10)
         .then(function(res) {
             renderReviewMarkup(res.data || []);
@@ -302,6 +303,8 @@
 
     function renderPromoMarkup(data) {
         var box = document.getElementById("list-promo");
+        if (!box) return;
+
         if (!data || data.length === 0) {
             box.innerHTML = `
                 <div class="post-card">
@@ -336,6 +339,8 @@
 
     function renderReviewMarkup(data) {
         var box = document.getElementById("list-review");
+        if (!box) return;
+
         if (!data || data.length === 0) {
             box.innerHTML = `
                 <div class="post-card">
@@ -381,10 +386,8 @@
         document.getElementById("panel-" + tabName).classList.add("active");
     }
 
-    function showFallback() {
-        document.getElementById("loading").style.display = "none";
-        document.getElementById("app").style.display = "block";
-        renderLuxuryCards("Bronze");
+    function showAppWithDefault() {
+        updateDashboardUI("Bronze", 0);
     }
 
     init();
