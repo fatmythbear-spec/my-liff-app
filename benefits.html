@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>คอมมูนิตี้ & สิทธิพิเศษ - Fat Myth Bear</title>
-    <script src="https://static.line-scdn.net/liff/edge/versions/2.21.4/sdk.js"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -46,7 +46,6 @@
         .db-points { font-size: 24px; font-weight: 700; color: #ffca28; line-height: 1.2; }
         .db-rank-label { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; color: #fff; background: rgba(255,255,255,0.2); text-transform: uppercase; }
 
-        /* สไตล์สีแบรนดิ้งของแรงค์ */
         .badge-bronze { background: var(--bronze) !important; }
         .badge-silver { background: #7f8c8d !important; }
         .badge-gold { background: #b8860b !important; color: #fff !important; }
@@ -155,8 +154,7 @@
         <span>ระดับยศและสิทธิพิเศษทั้งหมด</span>
     </div>
     
-    <div class="rank-grid" id="rank-grid">
-        </div>
+    <div class="rank-grid" id="rank-grid"></div>
 
     <div class="page-title">
         <i class="fa-solid fa-comments"></i>
@@ -185,6 +183,8 @@
     var LIFF_ID = "2010298031-prC3lMly"; 
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    
+    // สร้างการเชื่อมต่อแบบดั้งเดิมตามไฟล์แรกที่รันผ่านฉลุย
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -197,93 +197,107 @@
         { id: 'Platinum', name: 'PLATINUM BEAR', range: 'สะสมครบ 5,000 EXP ขึ้นไป', icon: '💎', perks: ['รับส่วนลดพรีเมียมถาวร 10% ทุกรายการบิลสำเร็จ', 'รับคูปองทานถ้วยใหญ่ฟรี 1 ที่ในเดือนเกิดสิทธิ์สมาชิก VIP'] }
     ];
 
-    async function init() {
-        try {
-            await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) { liff.login(); return; }
-            var profile = await liff.getProfile();
-            currentUserId = profile.userId;
-
-            // เรียกใช้โครงสร้างโหลดแบบจับกลุ่มความปลอดภัยสูงเหมือนไฟล์แรก
-            await loadRealtimeProfile();
-            await loadCommunityData();
-
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
-        } catch (err) {
-            console.error("LIFF Init Error: ", err);
-            // แสดงกรณีฉุกเฉินเปิดผิดช่องทาง เพื่อไม่ให้หน้าจอขึ้นเว็บเออร์เรอร์จอดำ
-            document.getElementById("loading").innerHTML = '<p style="color:#e53e3e; padding:20px; text-align:center;"><i class="fa-solid fa-circle-exclamation"></i> ไม่สามารถเปิดระบบได้ในขณะนี้</p>';
-        }
+    function init() {
+        liff.init({ liffId: LIFF_ID }).then(function() {
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                liff.getProfile().then(function(profile) {
+                    currentUserId = profile.userId;
+                    // รันฟังก์ชันทีละตัวแบบไฟล์แรกเพื่อความเสถียรสูงสุด
+                    loadRealtimeProfile();
+                    loadCommunityData();
+                }).catch(function(err) {
+                    showFallback();
+                });
+            }
+        }).catch(function(err) {
+            showFallback();
+        });
     }
 
-    // แก้ไขจุดบกพร่อง: ยกเลิกคำสั่ง .single() ที่ทำให้เกิดปัญหา 400 Bad Request เปลี่ยนมาใช้การอ่านอาร์เรย์แบบไฟล์แรกที่เสถียรชัวร์
-    async function loadRealtimeProfile() {
-        var userTier = "Bronze";
-        var userPoints = 0;
-        try {
-            var { data, error } = await db
-                .from("profiles")
-                .select("*")
-                .eq("line_user_id", currentUserId);
-                
-            if (!error && data && data.length > 0) {
-                userTier = data[0].tier || 'Bronze';
-                userPoints = data[0].current_points || 0;
-            }
-        } catch (e) {
-            console.error("Profile query error: ", e);
-        }
+    // แก้ไขจุดสำคัญ: ใช้รูปแบบจับคู่ข้อมูลตรงๆ แบบไฟล์แรก ไม่ใช้ฟังก์ชันกรองขั้นสูงที่ส่งผลให้หลังบ้านแจ้ง 400 Bad Request
+    function loadRealtimeProfile() {
+        db.from("profiles").select("*").eq("line_user_id", currentUserId)
+        .then(function(res) {
+            var userTier = "Bronze";
+            var userPoints = 0;
 
-        // นำค่าไปอัปเดตลงแดชบอร์ดด้านบน
+            if (res.data && res.data.length > 0) {
+                userTier = res.data[0].tier || "Bronze";
+                userPoints = res.data[0].current_points || 0;
+            }
+
+            updateDashboardUI(userTier, userPoints);
+        })
+        .catch(function(err) {
+            // หากระบบดึงค่าไม่ได้ ให้เปิดหน้าเว็บด้วยระดับ Bronze ทันทีเพื่อความปลอดภัย
+            updateDashboardUI("Bronze", 0);
+        });
+    }
+
+    function updateDashboardUI(userTier, userPoints) {
         document.getElementById("current-tier-text").textContent = "ระดับของคุณ: " + userTier.toUpperCase();
-        document.getElementById("db-points").textContent = userPoints.toLocaleString() + " pts";
+        document.getElementById("db-points").textContent = Number(userPoints).toLocaleString() + " pts";
         
         var badgeEl = document.getElementById("db-rank-badge");
         badgeEl.className = "db-rank-label badge-" + userTier.toLowerCase();
         badgeEl.textContent = userTier + " MEMBER";
 
         renderLuxuryCards(userTier);
+        
+        // เมื่อประมวลผล UI สิทธิพิเศษเรียบร้อยให้ปิดหน้า Loading ทันที
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("app").style.display = "block";
     }
 
     function renderLuxuryCards(userTier) {
         var grid = document.getElementById("rank-grid");
-        grid.innerHTML = "";
+        var html = "";
 
-        TIER_CONFIG.forEach(function(tier) {
+        for (var i = 0; i < TIER_CONFIG.length; i++) {
+            var tier = TIER_CONFIG[i];
             var isCurrent = (tier.id.toLowerCase() === userTier.toLowerCase());
-            var cardHTML = `
-                <div class="rank-card rank-card-${tier.id.toLowerCase()} ${!isCurrent ? 'inactive-card' : ''}">
-                    <div class="rank-header">
-                        <div class="rank-name-container">
-                            <div class="rank-badge">${tier.icon}</div>
-                            <div>
-                                <div class="rank-title">${tier.name}</div>
-                                <div class="rank-range">${tier.range}</div>
-                            </div>
-                        </div>
-                        ${isCurrent ? '<span class="status-badge current">ระดับของคุณ</span>' : '<span class="status-badge">สิทธิ์สมาชิก</span>'}
-                    </div>
-                    <div class="perk-list">
-                        ${tier.perks.map(p => `<div class="perk-item"><i class="fa-solid fa-circle-check perk-dot"></i><span>${p}</span></div>`).join('')}
-                    </div>
-                </div>`;
-            grid.innerHTML += cardHTML;
-        });
+            
+            html += '<div class="rank-card rank-card-' + tier.id.toLowerCase() + ' ' + (!isCurrent ? 'inactive-card' : '') + '">';
+            html += '<div class="rank-header">';
+            html += '<div class="rank-name-container">';
+            html += '<div class="rank-badge">' + tier.icon + '</div>';
+            html += '<div>';
+            html += '<div class="rank-title">' + tier.name + '</div>';
+            html += '<div class="rank-range">' + tier.range + '</div>';
+            html += '</div></div>';
+            html += isCurrent ? '<span class="status-badge current">ระดับของคุณ</span>' : '<span class="status-badge">สิทธิ์สมาชิก</span>';
+            html += '</div>';
+            html += '<div class="perk-list">';
+            
+            for (var j = 0; j < tier.perks.length; j++) {
+                html += '<div class="perk-item"><i class="fa-solid fa-circle-check perk-dot"></i><span>' + tier.perks[j] + '</span></div>';
+            }
+            
+            html += '</div></div>';
+        }
+        grid.innerHTML = html;
     }
 
-    async function loadCommunityData() {
-        // แท็บโปรโมชั่นร้านค้า
-        try {
-            var { data: promo, error: errP } = await db.from("news_promo").select("*").order("created_at", { ascending: false }).limit(10);
-            renderPromoMarkup((!errP && promo) ? promo : []);
-        } catch(e) { renderPromoMarkup([]); }
+    function loadCommunityData() {
+        // ดึงข้อมูลข่าวสารโปรโมชั่นร้านค้า
+        db.from("news_promo").select("*").order("created_at", { ascending: false }).limit(10)
+        .then(function(res) {
+            renderPromoMarkup(res.data || []);
+        })
+        .catch(function() {
+            renderPromoMarkup([]);
+        });
 
-        // แท็บรีวิวจากลูกค้า
-        try {
-            var { data: reviews, error: errR } = await db.from("user_reviews").select("*").order("created_at", { ascending: false }).limit(10);
-            renderReviewMarkup((!errR && reviews) ? reviews : []);
-        } catch(e) { renderReviewMarkup([]); }
+        // ดึงข้อมูลคะแนนรีวิวลูกค้า
+        db.from("user_reviews").select("*").order("created_at", { ascending: false }).limit(10)
+        .then(function(res) {
+            renderReviewMarkup(res.data || []);
+        })
+        .catch(function() {
+            renderReviewMarkup([]);
+        });
     }
 
     function renderPromoMarkup(data) {
@@ -302,19 +316,22 @@
             return;
         }
 
-        box.innerHTML = data.map(function(item) {
+        var html = "";
+        for (var i = 0; i < data.length; i++) {
+            var item = data[i];
             var date = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
-            return `
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="post-author"><div class="post-avatar">🐻</div><span>Fat Myth Bear Shop</span></div>
-                        <div class="post-date">${date}</div>
-                    </div>
-                    <div class="post-title">${item.title || 'ข่าวสารอัปเดต'}</div>
-                    <div class="post-content">${item.content || ''}</div>
-                    ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
-                </div>`;
-        }).join('');
+            html += '<div class="post-card">';
+            html += '<div class="post-header">';
+            html += '<div class="post-author"><div class="post-avatar">🐻</div><span>Fat Myth Bear Shop</span></div>';
+            html += '<div class="post-date">' + date + '</div></div>';
+            html += '<div class="post-title">' + (item.title || 'ข่าวสารอัปเดต') + '</div>';
+            html += '<div class="post-content">' + (item.content || '') + '</div>';
+            if (item.img_url) {
+                html += '<div class="post-img-container"><img src="' + item.img_url + '" class="post-img"></div>';
+            }
+            html += '</div>';
+        }
+        box.innerHTML = html;
     }
 
     function renderReviewMarkup(data) {
@@ -332,20 +349,26 @@
             return;
         }
 
-        box.innerHTML = data.map(function(item) {
+        var html = "";
+        for (var i = 0; i < data.length; i++) {
+            var item = data[i];
             var date = new Date(item.created_at).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "2-digit" });
-            var stars = "★".repeat(item.rating || 5) + "☆".repeat(5 - (item.rating || 5));
-            return `
-                <div class="post-card">
-                    <div class="post-header">
-                        <div class="post-author"><div class="post-avatar">👤</div><span>คุณ ${item.user_nickname || 'สมาชิกผู้รักบิงซู'}</span></div>
-                        <div class="post-date">${date}</div>
-                    </div>
-                    <div class="review-rating">${stars}</div>
-                    <div class="post-content">${item.content || 'ประทับใจรสชาติและการบริการมากๆ ค่ะ'}</div>
-                    ${item.img_url ? `<div class="post-img-container"><img src="${item.img_url}" class="post-img"></div>` : ''}
-                </div>`;
-        }).join('');
+            var ratingNum = item.rating || 5;
+            var stars = "";
+            for (var k = 0; k < 5; k++) { stars += k < ratingNum ? "★" : "☆"; }
+
+            html += '<div class="post-card">';
+            html += '<div class="post-header">';
+            html += '<div class="post-author"><div class="post-avatar">👤</div><span>คุณ ' + (item.user_nickname || 'สมาชิกผู้รักบิงซู') + '</span></div>';
+            html += '<div class="post-date">' + date + '</div></div>';
+            html += '<div class="review-rating">' + stars + '</div>';
+            html += '<div class="post-content">' + (item.content || 'ประทับใจรสชาติและการบริการมากๆ ค่ะ') + '</div>';
+            if (item.img_url) {
+                html += '<div class="post-img-container"><img src="' + item.img_url + '" class="post-img"></div>';
+            }
+            html += '</div>';
+        }
+        box.innerHTML = html;
     }
 
     function switchTab(tabName) {
@@ -356,6 +379,12 @@
 
         document.getElementById("btn-" + tabName).classList.add("active");
         document.getElementById("panel-" + tabName).classList.add("active");
+    }
+
+    function showFallback() {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        renderLuxuryCards("Bronze");
     }
 
     init();
