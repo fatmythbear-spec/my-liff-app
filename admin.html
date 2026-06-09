@@ -131,6 +131,8 @@
             background: white; border-radius: 32px; padding: 24px;
             width: 90%; max-width: 400px;
         }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+        .modal-text { margin-bottom: 20px; color: #334155; }
         .modal-buttons { display: flex; gap: 12px; margin-top: 20px; }
         .modal-btn { flex: 1; padding: 12px; border-radius: 40px; border: none; font-weight: 700; cursor: pointer; }
         .modal-btn-cancel { background: #e2e8f0; }
@@ -193,8 +195,12 @@
         </div>
 
         <div class="table-container">
-            <table><thead><tr><th>#</th><th>ชื่อสมาชิก</th><th>เบอร์โทร</th><th>Tier</th><th>แต้ม</th><th>EXP</th><th>บทบาท</th><th>จัดการ</th></tr></thead>
-            <tbody id="members-table"><tr><td colspan="8" class="empty">กำลังโหลด...</td></tr></tbody></table>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>ชื่อสมาชิก</th><th>เบอร์โทร</th><th>Tier</th><th>แต้ม</th><th>EXP</th><th>บทบาท</th><th>จัดการ</th></tr>
+                </thead>
+                <tbody id="members-table"><tr><td colspan="8" class="empty">กำลังโหลด...</td></tr></tbody>
+            </table>
         </div>
     </div>
 
@@ -212,7 +218,8 @@
                 <button class="btn-stop" onclick="stopQRScanner()">ปิดกล้อง</button>
             </div>
             <div id="scan-result" style="display:none; margin-top:16px; padding:16px; background:#e0f2e9; border-radius:20px">
-                <b id="result-name">-</b><div id="result-info" style="font-size:13px; margin-top:5px"></div>
+                <b id="result-name">-</b>
+                <div id="result-info" style="font-size:13px; margin-top:5px"></div>
             </div>
         </div>
     </div>
@@ -253,7 +260,7 @@
         </div>
     </div>
 
-    <!-- สาขา (placeholder) -->
+    <!-- สาขา -->
     <div id="branch" class="tab-content"><div class="card"><h3>🏪 จัดการสาขา</h3><p style="color:#64748b">กำลังพัฒนา</p></div></div>
 
     <!-- จัดการแอดมิน -->
@@ -263,7 +270,9 @@
             <input type="text" class="form-input" id="admin-search" placeholder="ชื่อหรือเบอร์โทร">
             <button class="btn-primary" style="margin-top:8px" onclick="searchAdminMembers()">ค้นหา</button>
             <div id="admin-result" style="margin-top:16px; display:none">
-                <div class="table-container"><table><thead><tr><th>ชื่อ</th><th>บทบาท</th><th>จัดการ</th></tr></thead><tbody id="admin-table"></tbody></table></div>
+                <div class="table-container">
+                    <table><thead><tr><th>ชื่อ</th><th>บทบาท</th><th>จัดการ</th></tr></thead><tbody id="admin-table"></tbody></table>
+                </div>
             </div>
         </div>
     </div>
@@ -294,13 +303,24 @@
 
 <script>
     // ========== CONFIGURATION ==========
-    // ใช้ LIFF ID เดียวกับ member/coupon เพื่อความเสถียร
     const LIFF_ID = "2010298031-TOsCbkzl";
     const SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     const SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
+    // ป้องกันการประกาศซ้ำ (แก้ไขปัญหา Identifier 'supabase' already declared)
+    let supabase;
+    if (typeof window.supabaseClient === 'undefined') {
+        if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } else {
+            // fallback กรณี supabase js โหลดไม่ทัน
+            supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        window.supabaseClient = supabase;
+    } else {
+        supabase = window.supabaseClient;
+    }
+
     let allMembers = [];
     let deleteTargetId = "";
     let qrScanner = null;
@@ -336,8 +356,7 @@
             for (let m of data) {
                 const correctTier = getTierFromExp(m.current_exp || 0);
                 if (m.tier !== correctTier) {
-                    // อัปเดตใน DB แบบเงียบ
-                    supabase.from("profiles").update({ tier: correctTier }).eq("line_user_id", m.line_user_id).then();
+                    await supabase.from("profiles").update({ tier: correctTier }).eq("line_user_id", m.line_user_id);
                     m.tier = correctTier;
                 }
                 fixedMembers.push(m);
@@ -345,7 +364,7 @@
             allMembers = fixedMembers;
             updateStatsAndRender();
             document.getElementById("export-btn").disabled = false;
-            loadAnalytics(); // โหลดสถิติเพิ่มเติม
+            loadAnalytics();
         } catch (err) {
             console.error("loadMembers error:", err);
             showError("โหลดข้อมูลไม่สำเร็จ: " + err.message);
@@ -451,6 +470,10 @@
         readerDiv.style.display = "block";
         document.getElementById("scanner-controls").style.display = "flex";
         readerDiv.innerHTML = "";
+        if (typeof Html5Qrcode === 'undefined') {
+            showError("ระบบสแกน QR ไม่พร้อม กรุณารีเฟรช");
+            return;
+        }
         qrScanner = new Html5Qrcode("qr-reader");
         qrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
             (decodedText) => { qrScanner.pause(); processScanResult(decodedText); },
@@ -465,7 +488,7 @@
                 document.getElementById("scanner-controls").style.display = "none";
                 qrScanner = null;
                 scannerActive = false;
-            });
+            }).catch(e => console.warn(e));
         }
     }
     async function processScanResult(qrData) {
@@ -605,16 +628,15 @@
         document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("show"));
         document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
         document.getElementById(tabName).classList.add("show");
-        event.target.classList.add("active");
-        if(tabName === "analytics") loadAnalytics();
+        if (event && event.target) event.target.classList.add("active");
+        if (tabName === "analytics") loadAnalytics();
+        if (tabName !== "scanner" && scannerActive) stopQRScanner();
     }
-
-    document.getElementById("points-amount")?.addEventListener("input", updateExpPreview);
 
     // เริ่มต้นระบบ
     async function init() {
         try {
-            // 1. ตั้ง timeout เผื่อ LIFF ไม่ตอบ
+            // ตั้ง timeout เผื่อ LIFF ไม่ตอบ
             const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("LIFF init timeout")), 10000));
             await Promise.race([liff.init({ liffId: LIFF_ID }), timeoutPromise]);
             
@@ -633,12 +655,17 @@
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
             await loadMembers();
+            
+            // bind event สำหรับ preview exp
+            const pointsAmount = document.getElementById("points-amount");
+            if (pointsAmount) pointsAmount.addEventListener("input", updateExpPreview);
         } catch (err) {
             console.error("Init error:", err);
             document.getElementById("loading").innerHTML = `<div style="color:red;text-align:center">เกิดข้อผิดพลาด: ${err.message}<br>กรุณาลองใหม่หรือติดต่อผู้ดูแลระบบ</div>`;
         }
     }
 
+    // เรียกเริ่มต้น
     init();
 </script>
 </body>
