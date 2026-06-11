@@ -15,8 +15,6 @@
             --primary-dark: #05b04b;
             --bg-color: #f4f6f9;
             --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            
-            /* Metallic Rank Colors */
             --bronze-grad: linear-gradient(135deg, #70483c 0%, #b5826f 50%, #543126 100%);
             --silver-grad: linear-gradient(135deg, #8a939e 0%, #dedede 50%, #5d666f 100%);
             --gold-grad: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
@@ -26,7 +24,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Kanit', sans-serif; background: var(--bg-color); color: #2d3748; min-height: 100vh; padding-bottom: 50px; }
 
-        /* Loading Screen */
         #loading {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh; gap: 15px; color: #4a5568; background: #ffffff; position: fixed; width: 100%; z-index: 9999;
@@ -36,7 +33,6 @@
 
         #app { display: none; padding: 16px; max-width: 480px; margin: 0 auto; }
 
-        /* Header Premium Dashboard */
         .header-dashboard {
             background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
             border-radius: 24px; padding: 24px; color: white; margin-bottom: 20px;
@@ -53,13 +49,11 @@
         .points-num { font-size: 28px; font-weight: 700; color: #fbbf24; line-height: 1; text-shadow: 0 2px 10px rgba(251,191,36,0.3); }
         .points-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; font-weight: 500; }
 
-        /* Custom Premium Progress Bar */
         .progress-box { background: rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); }
         .progress-labels { display: flex; justify-content: space-between; font-size: 11px; opacity: 0.8; margin-bottom: 6px; }
         .bar-container { background: rgba(255,255,255,0.15); height: 8px; border-radius: 99px; overflow: hidden; }
         .bar-fill { background: linear-gradient(90deg, #10b981, #34d399); height: 100%; width: 0%; transition: width 0.6s ease; }
 
-        /* LUXURY GLOSSY METALLIC CARDS */
         .section-title { font-size: 18px; font-weight: 700; color: #1f2937; margin: 24px 0 14px 0; display: flex; align-items: center; gap: 8px; }
         .section-title i { color: #f59e0b; }
         
@@ -106,7 +100,6 @@
         .perk-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.4; font-weight: 400; }
         .perk-item i { margin-top: 3px; font-size: 12px; color: rgba(255,255,255,0.85); }
 
-        /* INTERACTIVE COMMUNITY INTERFACE */
         .community-container { background: white; border-radius: 24px; padding: 20px; margin-top: 24px; box-shadow: var(--card-shadow); }
         
         .tab-bar { display: flex; background: #f3f4f6; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
@@ -117,7 +110,6 @@
         }
         .tab-trigger.active { background: white; color: #111827; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 
-        /* Create Post Component */
         .create-post-box {
             background: #f9fafb; border-radius: 16px; padding: 14px; border: 1px dashed #e5e7eb;
             margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px;
@@ -130,7 +122,6 @@
         }
         .post-textarea::placeholder { color: #9ca3af; }
         
-        /* Image Preview Box */
         .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 160px; border: 1px solid #e5e7eb; }
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; z-index: 10; }
@@ -148,7 +139,6 @@
         }
         .submit-post-btn:hover { background: var(--primary-dark); }
 
-        /* Post Render Views */
         .content-panel { display: none; }
         .content-panel.active { display: block; }
         
@@ -159,7 +149,7 @@
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .author-info { display: flex; align-items: center; gap: 10px; }
         .author-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #f3f4f6; }
-        .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
+        .author-name { font-size: 13px; font-weight: 600; color: #111827; }
         .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
         
         .badge-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: #f0fdf4; color: var(--primary); }
@@ -170,18 +160,15 @@
         .feed-media img { width: 100%; max-height: 240px; object-fit: cover; display: block; }
         
         .stars-row { color: #f59e0b; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px; }
-
-        /* Social Counters Interface */
+        
         .react-bar { display: flex; gap: 16px; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 10px 4px; margin-bottom: 10px; }
         .react-btn {
             background: transparent; border: none; color: #6b7280; font-size: 13px;
-            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: transform 0.1s;
+            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
         }
-        .react-btn:active { transform: scale(1.15); }
         .react-btn.btn-like.active { color: #3b82f6; font-weight: 600; }
         .react-btn.btn-heart.active { color: #ef4444; font-weight: 600; }
         
-        /* Comment Subsystem */
         .comment-section { background: #f9fafb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         .comment-row { font-size: 12.5px; line-height: 1.4; color: #4b5563; display: flex; gap: 6px; word-break: break-word; }
         .comment-user { font-weight: 600; color: #111827; flex-shrink: 0; }
@@ -192,13 +179,14 @@
             padding: 6px 10px; font-size: 12px; outline: none; font-family: inherit;
         }
         .comment-send-btn { background: #e5e7eb; border: none; color: #4b5563; padding: 0 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .delete-btn { background: transparent; border: none; color: #ef4444; font-size: 13px; cursor: pointer; padding: 4px 6px; }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p style="font-size: 14px; font-weight: 500;">กำลังรันระบบคอมมูนิตี้ระดับพรีเมียม...</p>
+    <p style="font-size: 14px; font-weight: 500;">กำลังรันระบบคอมมูนิตี้ฐานข้อมูลจริง...</p>
 </div>
 
 <div id="app">
@@ -293,7 +281,7 @@
     var currentUserId = "MOCK_USER_ID";
     var currentUserName = "คุณ (สมาชิกทั่วไป)";
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
-    var currentUserRole = "Member"; 
+    var currentUserRole = "Member";
     var activeCommunityTab = "promo"; 
     var encodedBase64Image = ""; 
 
@@ -341,7 +329,7 @@
                 var row = res.data[0];
                 exp = row.current_exp || 0;
                 tier = row.tier || "Bronze";
-                currentUserRole = row.role || "Member"; 
+                currentUserRole = row.role || "Member";
                 if(row.full_name) currentUserName = row.full_name;
                 document.getElementById("user-display-name").textContent = currentUserName;
             }
@@ -406,48 +394,39 @@
         
         container.innerHTML = htmlMarkup;
         
-        // ดึงข้อมูลฟีดจริงจากระบบ Supabase
         fetchCommunityPosts();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
+    // ฟังก์ชันดึงโพสต์จริงแบบ Real-time ผสมผสานคอลัมน์ครบชุดของคุณ
     function fetchCommunityPosts() {
         db.from("fmb_community_posts")
         .select("*")
-        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .then(function(res) {
             if (res.data) {
                 localMemoryFeed = res.data.map(function(item) {
-                    var parsedComments = [];
-                    if (item.comments) {
-                        try {
-                            parsedComments = typeof item.comments === "string" ? JSON.parse(item.comments) : item.comments;
-                        } catch(e) {
-                            parsedComments = [];
-                        }
-                    }
                     return {
                         id: item.id,
-                        type: item.type,
+                        type: item.type || "promo",
                         author: item.author_name || "ไม่ระบุชื่อ",
-                        avatar: item.author_avatar || "https://cdn-icons-png.flaticon.com/512/4343/4343510.png",
                         text: item.content_text || "",
                         image: item.image_payload || "",
+                        line_user_id: item.line_user_id,
                         likes: item.likes || 0,
                         hearts: item.hearts || 0,
+                        comments: Array.isArray(item.comments) ? item.comments : [],
                         liked: false, 
-                        hearted: false,
-                        comments: Array.isArray(parsedComments) ? parsedComments : [],
-                        line_user_id: item.line_user_id
+                        hearted: false
                     };
                 });
+                renderCommunityFeedUI();
             }
-            renderCommunityFeedUI();
         })
         .catch(function(err) {
-            console.error("Error fetching posts:", err);
+            console.error("Error fetching data: ", err);
         });
     }
 
@@ -489,6 +468,7 @@
         document.getElementById("image-preview-target").src = "";
     }
 
+    // ✨ ฟังก์ชันบันทึกข้อมูลโพสต์ที่แก้ปัญหาให้โยนครบทุกตัวแปรเข้าฐานข้อมูลเรียบร้อย
     function publishNewPost() {
         var textInput = document.getElementById("post-input-text").value.trim();
         if (!textInput && !encodedBase64Image) {
@@ -496,27 +476,27 @@
             return;
         }
 
+        // นำตัวแปรไลค์ หัวใจ คอมเมนต์ ที่คุณเตรียมไว้ ยัดส่งเข้าตาราง Supabase พร้อมกัน
         var payload = {
             type: activeCommunityTab,
             author_name: currentUserName,
-            author_avatar: currentUserAvatar,
             content_text: textInput,
             image_payload: encodedBase64Image,
             line_user_id: currentUserId,
             likes: 0,
             hearts: 0,
-            comments: []
+            comments: [] // โยน Array เปล่าเข้าคอลัมน์ jsonb ได้ทันที ไร้ปัญหา
         };
 
         db.from("fmb_community_posts").insert([payload])
         .then(function(res) {
             document.getElementById("post-input-text").value = "";
             clearSelectedImage();
-            // ทำการดาวน์โหลดดึงข้อมูลเวอร์ชันล่าสุดจากฐานข้อมูลทันที ทำให้ข้อมูลไม่หาย
-            fetchCommunityPosts();
-        }).catch(function(err) {
-            console.error(err);
-            alert("เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์");
+            fetchCommunityPosts(); // อัปเดตเพื่อดึงข้อมูลจริงจากระบบทันที
+        })
+        .catch(function(err) {
+            console.error("Insert error: ", err);
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาเช็คสิทธิ์ RLS บนระบบด้วยครับ");
         });
     }
 
@@ -534,19 +514,17 @@
             feedMarkup += '<div class="feed-card">';
             feedMarkup += '  <div class="feed-header">';
             feedMarkup += '    <div class="author-info">';
-            feedMarkup += '      <img class="author-avatar" src="' + post.avatar + '" onerror="this.src=\'https://cdn-icons-png.flaticon.com/512/4343/4343510.png\'">';
+            feedMarkup += '      <img class="author-avatar" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">';
             feedMarkup += '      <div>';
             feedMarkup += '        <div class="author-name">' + post.author + '</div>';
-            feedMarkup += '        <div class="post-time">โพสต์จริงในฐานข้อมูล</div>';
+            feedMarkup += '        <div class="post-time">ระบบฐานข้อมูลเสถียร</div>';
             feedMarkup += '      </div>';
             feedMarkup += '    </div>';
             
-            feedMarkup += '    <div style="display: flex; align-items: center; gap: 8px;">';
-            
+            feedMarkup += '    <div style="display: flex; align-items: center; gap: 4px;">';
             if (post.line_user_id === currentUserId || currentUserRole === "Admin") {
-                feedMarkup += '      <button onclick="deletePost(\'' + post.id + '\')" style="background: transparent; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px 8px;"><i class="fa-solid fa-trash-can"></i></button>';
+                feedMarkup += '      <button class="delete-btn" onclick="deletePost(\'' + post.id + '\')"><i class="fa-solid fa-trash-can"></i></button>';
             }
-
             if(post.type === "promo") {
                 feedMarkup += '      <span class="badge-type">ข่าวโปรโมชั่น</span>';
             } else {
@@ -567,17 +545,18 @@
                 feedMarkup += '  <div class="feed-media"><img src="' + post.image + '" alt="Post media"></div>';
             }
 
+            // แสดงยอดไลค์ ยอดหัวใจจริงตามฐานข้อมูล
             feedMarkup += '  <div class="react-bar">';
-            feedMarkup += '    <button class="react-btn btn-like ' + (post.liked ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'like\')">';
+            feedMarkup += '    <button class="react-btn btn-like ' + (post.liked ? 'active' : '') + '" onclick="updateInteraction(\'' + post.id + '\', \'like\')">';
             feedMarkup += '      <i class="fa-' + (post.liked ? 'solid' : 'regular') + ' fa-thumbs-up"></i> ถูกใจ (' + post.likes + ')';
             feedMarkup += '    </button>';
-            feedMarkup += '    <button class="react-btn btn-heart ' + (post.hearted ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'heart\')">';
+            feedMarkup += '    <button class="react-btn btn-heart ' + (post.hearted ? 'active' : '') + '" onclick="updateInteraction(\'' + post.id + '\', \'heart\')">';
             feedMarkup += '      <i class="fa-' + (post.hearted ? 'solid' : 'regular') + ' fa-heart"></i> ถูกใจสิ่งนี้ (' + post.hearts + ')';
             feedMarkup += '    </button>';
             feedMarkup += '  </div>';
 
+            // คอมเมนต์จริงจากฐานข้อมูล
             feedMarkup += '  <div class="comment-section" id="comment-zone-' + post.id + '">';
-            
             for (var m = 0; m < post.comments.length; m++) {
                 var comment = post.comments[m];
                 feedMarkup += '    <div class="comment-row"><span class="comment-user">' + comment.user + ':</span> <span>' + comment.text + '</span></div>';
@@ -589,7 +568,7 @@
 
             feedMarkup += '    <div class="comment-input-box">';
             feedMarkup += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
-            feedMarkup += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
+            feedMarkup += '      <button class="comment-send-btn" onclick="addNewComment(\'' + post.id + '\')">ส่ง</button>';
             feedMarkup += '    </div>';
             feedMarkup += '  </div>';
             
@@ -606,72 +585,53 @@
         reviewBox.innerHTML = htmlReview || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
     }
 
-    function triggerInteraction(postId, actionType) {
-        var targetItem = null;
-        for (var i = 0; i < localMemoryFeed.length; i++) {
-            if (localMemoryFeed[i].id === postId) {
-                var item = localMemoryFeed[i];
-                if (actionType === "like") {
-                    item.liked = !item.liked;
-                    item.likes += item.liked ? 1 : -1;
-                } else if (actionType === "heart") {
-                    item.hearted = !item.hearted;
-                    item.hearts += item.hearted ? 1 : -1;
-                }
-                targetItem = item;
-                break;
-            }
+    // อัปเดตไลค์/หัวใจลง Supabase จริง ๆ ไม่หายเวลาเปิดใหม่
+    function updateInteraction(postId, actionType) {
+        var targetPost = localMemoryFeed.find(function(p) { return p.id === postId; });
+        if (!targetPost) return;
+
+        if (actionType === "like") {
+            targetPost.liked = !targetPost.liked;
+            targetPost.likes += targetPost.liked ? 1 : -1;
+        } else if (actionType === "heart") {
+            targetPost.hearted = !targetPost.hearted;
+            targetPost.hearts += targetPost.hearted ? 1 : -1;
         }
-        
-        if(!targetItem) return;
-        renderCommunityFeedUI();
 
         db.from("fmb_community_posts")
-        .update({ likes: targetItem.likes, hearts: targetItem.hearts })
+        .update({ likes: targetPost.likes, hearts: targetPost.hearts })
         .eq("id", postId)
-        .then(function(){})
-        .catch(function(err){ console.error(err); });
+        .then(function() {
+            renderCommunityFeedUI();
+        });
     }
 
-    function submitComment(postId) {
+    // บันทึกคอมเมนต์ใหม่ลงตารางแบบเรียลไทม์
+    function addNewComment(postId) {
         var commentField = document.getElementById("input-field-" + postId);
         var textComment = commentField.value.trim();
         if (!textComment) return;
 
-        var targetItem = null;
-        for (var i = 0; i < localMemoryFeed.length; i++) {
-            if (localMemoryFeed[i].id === postId) {
-                localMemoryFeed[i].comments.push({
-                    user: currentUserName,
-                    text: textComment
-                });
-                targetItem = localMemoryFeed[i];
-                break;
-            }
-        }
-        
-        if(!targetItem) return;
-        commentField.value = "";
-        renderCommunityFeedUI();
+        var targetPost = localMemoryFeed.find(function(p) { return p.id === postId; });
+        if (!targetPost) return;
+
+        var updatedComments = [].concat(targetPost.comments);
+        updatedComments.push({ user: currentUserName, text: textComment });
 
         db.from("fmb_community_posts")
-        .update({ comments: targetItem.comments })
+        .update({ comments: updatedComments })
         .eq("id", postId)
-        .then(function(){})
-        .catch(function(err){ console.error(err); });
+        .then(function() {
+            commentField.value = "";
+            fetchCommunityPosts();
+        });
     }
 
     function deletePost(postId) {
-        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้ถาวรออกจากระบบฐานข้อมูล?")) return;
-        
-        db.from("fmb_community_posts")
-        .delete()
-        .eq("id", postId)
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้ถาวร?")) return;
+        db.from("fmb_community_posts").delete().eq("id", postId)
         .then(function() {
             fetchCommunityPosts();
-        })
-        .catch(function(err) {
-            alert("ไม่สามารถลบโพสต์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง");
         });
     }
 
