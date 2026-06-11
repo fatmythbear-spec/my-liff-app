@@ -191,7 +191,7 @@
     var currentDisplayName = "สมาชิกร้านหมี";
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     var currentUserRank = "Bronze";
-    var currentUserRole = "Customer"; // เพิ่มตัวแปรสิทธิ์เริ่มต้น
+    var currentUserRole = "Customer";
     
     var base64ImageString = { community: "", reviews: "" };
 
@@ -204,10 +204,9 @@
             }
             var profile = await liff.getProfile();
             currentLineId = profile.userId;
-            currentDisplayName = profile.displayName || "สมาชิก VIP"; // ดึงชื่อ LINE มาใช้งานถาวร
+            currentDisplayName = profile.displayName || "สมาชิก VIP"; 
             if(profile.pictureUrl) currentUserAvatar = profile.pictureUrl;
             
-            // ดึงยศและระดับสิทธิ์ (Role) จากระบบ Supabase
             var { data: memberData } = await db
                 .from("profiles")
                 .select("tier, role")
@@ -219,13 +218,8 @@
                 if(memberData.role) currentUserRole = memberData.role;
             }
 
-            // แยกระบบสิทธิ์ (Role-Based): ซ่อนกล่องพิมพ์หน้าข่าวโปรโมชั่นถ้าเป็น Customer
-            if(currentUserRole === "Customer") {
-                var commPostCard = document.getElementById("community-post-card");
-                if(commPostCard) commPostCard.style.display = "none";
-            }
+            // [อัปเดตใหม่]: ไม่มีการซ่อนกล่องโพสต์ในคอมมูนิตี้หมีแล้ว เปิดอิสระให้ลูกค้าทุกคนเห็นและใช้งานได้
 
-            // บรรจุรูปภาพผู้ใช้ลงกล่อง
             var avatars = document.querySelectorAll(".current-user-avatar");
             avatars.forEach(img => img.src = currentUserAvatar);
 
@@ -302,7 +296,6 @@
         }
     }
 
-    // โพสต์ใหม่ส่งขึ้นระบบเชื่อมต่อคอลัมน์ Supabase ชุดแท้ครบถ้วน
     async function publishNewPost(tabType) {
         var inputId = (tabType === 'review') ? 'review-textarea' : 'community-textarea';
         var imgKey = (tabType === 'review') ? 'reviews' : 'community';
@@ -318,13 +311,13 @@
 
         var payload = {
             type: tabType, 
-            author_name: currentDisplayName, // ใช้ชื่อจริงจากระบบ LINE
+            author_name: currentDisplayName, 
             content_text: textContent,
             image_payload: compressedImage,
             line_user_id: currentLineId,
             likes: 0,
             hearts: 0,
-            comments: [] // ตั้งค่า Default คอลัมน์แท้ jsonb เป็น Array เปล่า
+            comments: [] 
         };
 
         var { error } = await db.from("fmb_community_posts").insert([payload]);
@@ -339,7 +332,6 @@
         loadPostsFromSupabase();
     }
 
-    // โพสต์อยู่ถาวร (Data Persistence): ดึงโพสต์ ยอดไลก์ และคอมเมนต์จาก Supabase ทุกครั้ง
     async function loadPostsFromSupabase() {
         var { data: postsList, error } = await db
             .from("fmb_community_posts")
@@ -361,21 +353,17 @@
         var revCount = 0;
 
         postsList.forEach(function(post) {
-            // ระบบตรวจสอบสิทธิ์ลบโพสต์: เจ้าของโพสต์ (line_user_id ตรงกัน) หรือ Admin สูงสุด
             var isAuthorizedToDelete = (post.line_user_id === currentLineId) || (currentLineId === ADMIN_LINE_ID);
             var deleteButtonHtml = isAuthorizedToDelete ? `<button class="delete-post-btn" onclick="erasePostRecord('${post.id}')"><i class="fa-solid fa-trash-can"></i> ลบโพสต์</button>` : '';
 
-            // ตรวจสอบข้อมูลการล็อกเครื่องจาก LocalStorage แค่เพื่อเปลี่ยนสีปุ่มเปิดปิดความสวยงาม
             var permanentLikeKey = `perm_like_${currentLineId}_${post.id}`;
             var permanentHeartKey = `perm_heart_${currentLineId}_${post.id}`;
             var isLiked = localStorage.getItem(permanentLikeKey) === "YES";
             var isHearted = localStorage.getItem(permanentHeartKey) === "YES";
 
-            // ดึงจำนวนนับไลก์/หัวใจตรงมาจากคอลัมน์ใน Supabase
             var totalLikes = post.likes || 0;
             var totalHearts = post.hearts || 0;
 
-            // จัดการข้อมูลคอมเมนต์แบบดึงจากคอลัมน์แท้ "comments" ชนิด jsonb
             var commentList = Array.isArray(post.comments) ? post.comments : [];
             var commentMarkup = "";
             commentList.forEach(function(cm) {
@@ -408,7 +396,7 @@
                             <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i> ถูกใจ (${totalLikes})
                         </button>
                         <button class="interact-btn ${isHearted ? 'heart-active' : ''}" onclick="togglePostVote('${post.id}', 'heart')">
-                            <i class="${isHearted ? 'fa-solid' : 'fa-regular'} fa-heart"></i> หัวใจ (${totalHearts})
+                            <i class="${isHearted ? 'fa-solid' : 'fa-regular'} Earth fa-heart"></i> หัวใจ (${totalHearts})
                         </button>
                     </div>
 
@@ -435,7 +423,6 @@
         if(revCount === 0) revBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
     }
 
-    // ส่งคอมเมนต์ลงคอลัมน์ comments (jsonb) ของ Supabase ตรงแบบ Realtime
     async function publishComment(postId) {
         var inputField = document.getElementById("com-input-" + postId);
         var textComment = inputField.value.trim();
@@ -445,7 +432,7 @@
         if(fError) return;
         
         var commentArray = Array.isArray(currentPost.comments) ? currentPost.comments : [];
-        commentArray.push({ user: currentDisplayName, text: textComment }); // บันทึกด้วยชื่อเล่นจากไลน์
+        commentArray.push({ user: currentDisplayName, text: textComment }); 
 
         var { error } = await db.from("fmb_community_posts").update({ comments: commentArray }).eq("id", postId);
 
@@ -457,7 +444,6 @@
         }
     }
 
-    // กดไลก์ / หัวใจ ปรับสถานะเรียบลอยอัพเดตค่าขึ้นโครงสร้าง Supabase คอลัมน์likes, hearts
     async function togglePostVote(postId, actionType) {
         var permanentLikeKey = `perm_like_${currentLineId}_${postId}`;
         var permanentHeartKey = `perm_heart_${currentLineId}_${postId}`;
@@ -491,7 +477,6 @@
         }
     }
 
-    // ลบโพสต์ตนเองออกจากระบบฐานข้อมูล Supabase
     async function erasePostRecord(postId) {
         if(!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) return;
 
