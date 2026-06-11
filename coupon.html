@@ -56,7 +56,7 @@
         .db-right-ticket i { font-size: 32px; opacity: 0.35; margin-bottom: 12px; }
         .db-right-ticket .ticket-rate-label { font-size: 11px; color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 6px; }
 
-        /* 5 TABS NAVIGATION BAR */
+        /* TABS NAVIGATION BAR */
         .tabs-wrapper {
             margin-bottom: 18px; overflow-x: auto; white-space: nowrap;
             -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;
@@ -119,7 +119,7 @@
         .empty-box { text-align: center; padding: 50px 20px; color: #a0aec0; font-size: 14px; width: 100%; }
         .empty-box i { font-size: 40px; margin-bottom: 10px; display: block; opacity: 0.4; }
 
-        /* SLIDE-UP CONFIRMATION MODAL */
+        /* CONFIRMATION MODAL */
         .modal-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
             backdrop-filter: blur(4px); z-index: 1000; align-items: flex-end; justify-content: center;
@@ -150,7 +150,7 @@
         .btn-modal-cancel { background: #ffffff; border: 1px solid #e2e8f0; color: #6b7280; }
         .btn-modal-confirm { background: #ec4899; color: white; }
 
-        /* QR CODE SCANNING DISPLAY SCREEN */
+        /* QR CODE DISPLAY SCREEN */
         .qr-display-box { background: white; border-radius: 24px; padding: 26px; text-align: center; width: 90%; max-width: 325px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: zoomIn 0.25s ease; }
         @keyframes zoomIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .qr-wrapper-zone { background: #f8fafc; padding: 14px; border-radius: 16px; margin: 16px 0; display: flex; justify-content: center; border: 1px dashed #cbd5e1; }
@@ -168,7 +168,7 @@
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังโหลดคูปองระบบ VIP อัตโนมัติ...</p>
+    <p>กำลังประมวลผลข้อมูลระบบความปลอดภัยแบบ Real-time...</p>
 </div>
 
 <div id="app">
@@ -241,9 +241,9 @@
         </div>
         
         <div class="staff-input-section">
-            <label class="staff-input-label"><i class="fa-solid fa-calculator"></i> ยอดซื้อบิลนี้เพื่อคำนวณแต้ม (บาท)</label>
+            <label class="staff-input-label"><i class="fa-solid fa-calculator"></i> คำนวณแต้มเพิ่มจากบิลนี้ (25 บาท = 1 แต้ม)</label>
             <input type="number" id="staff-bill-amount" class="staff-amount-input" placeholder="0.00" value="0">
-            <button class="staff-trigger-btn" onclick="executeStaffScanAction()">บันทึกและตัดสิทธิ์คูปอง</button>
+            <button class="staff-trigger-btn" onclick="executeStaffScanAction()">สะสมแต้มเพิ่มและปิดหน้างาน</button>
         </div>
 
         <button class="btn-modal btn-modal-cancel" style="margin-top: 6px; width: 100%; padding: 10px; font-size: 13px;" onclick="closeQRModal()">ปิดหน้าจอ</button>
@@ -427,7 +427,7 @@
 
             var isDayLocked = false;
             if (coupon.ruleType === "special_days_monthly") {
-                var dayOfWeek = new Date().getDay(); // อาทิตย์=0, จันทร์=1, อังคาร=2, พุธ=3, พฤหัส=4, ศุกร์=5, เสาร์=6
+                var dayOfWeek = new Date().getDay();
                 if (dayOfWeek !== 1 && dayOfWeek !== 3 && dayOfWeek !== 4) {
                     isDayLocked = true;
                 }
@@ -489,7 +489,7 @@
         
         var warnText = document.getElementById("md-warn-points");
         if (coupon.pointsCost > 0) {
-            warnText.textContent = `จะหัก ⭐ ${coupon.pointsCost} แต้ม จากบัตรสมาชิกของท่าน`;
+            warnText.textContent = `จะหัก ⭐ ${coupon.pointsCost} แต้ม จากบัตรสมาชิกของท่านทันที`;
             warnText.style.display = "block";
         } else {
             warnText.textContent = "สิทธิ์ระดับยศฟรีประจำเดือน (ไม่มีค่าใช้จ่ายคะแนน)";
@@ -503,89 +503,48 @@
         document.getElementById("confirm-modal").classList.remove("show");
     }
 
-    function proceedToQR() {
-        if (!selectedCouponData) {
-            alert("ไม่พบคูปองที่เลือก กรุณาลองใหม่อีกครั้ง");
-            return;
-        }
-        closeConfirmModal();
-
-        document.getElementById("qr-modal-title").textContent = selectedCouponData.title;
-        document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${selectedCouponData.id.toUpperCase().slice(-8)}`;
-        document.getElementById("staff-bill-amount").value = "0"; // รีเซ็ตยอดเงินบิลใหม่ทุกครั้ง
-        document.getElementById("qr-modal").classList.add("show");
-
-        var qrTarget = document.getElementById("qr-canvas-render");
-        qrTarget.innerHTML = ""; 
-
-        var compiledPayload = `FAT_MYTH_BEAR:${currentUserId}:${selectedCouponData.id}:${Date.now()}`;
-
-        setTimeout(function() {
-            new QRCode(qrTarget, {
-                text: compiledPayload,
-                width: 160,
-                height: 160,
-                colorDark : "#1f2937",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }, 100);
-    }
-
-    function closeQRModal() {
-        document.getElementById("qr-modal").classList.remove("show");
-        selectedCouponData = null;
-    }
-
-    /* ตรรกะการประมวลผลคำนวณแต้มและอัปเดตข้อมูล Real-time ฝั่ง Staff หน้าร้าน */
-    async function executeStaffScanAction() {
+    /* ตรรกะแบบ Real-time: กดปุ่มยืนยันแล้วตัดแต้มในคลาวด์และบันทึกสิทธิ์ทันที */
+    async function proceedToQR() {
         if (!selectedCouponData || !globalUserData) {
-            alert("ข้อผิดพลาด: ข้อมูลสิทธิ์คูปองหรือโปรไฟล์ลูกค้าไม่สมบูรณ์");
+            alert("ไม่พบข้อมูลคูปองที่เลือก กรุณาลองใหม่อีกครั้ง");
             return;
         }
 
         var coupon = selectedCouponData;
         var currentBalance = parseInt(globalUserData.current_points) || 0;
-        var currentTotalExp = parseInt(globalUserData.total_exp) || 0;
 
-        // 1. ตรวจสอบเงื่อนไขแต้มสะสมของคูปองก่อนหัก
-        if (coupon.pointsCost > 0) {
-            if (currentBalance < coupon.pointsCost) {
-                alert(`บันทึกไม่สำเร็จ: สมาชิกมีคะแนนคงเหลือ (${currentBalance} แต้ม) ไม่เพียงพอต่อเงื่อนไขคูปองนี้ที่ต้องการ ${coupon.pointsCost} แต้ม`);
-                closeQRModal();
-                return;
-            }
-        }
-
-        // 2. ดึงค่ายอดเงินบิลจาก Input ที่พนักงานกรอกหน้าร้านมาคำนวณแต้มที่จะเพิ่ม (100 บาท = 10 แต้ม)
-        var billAmountInput = document.getElementById("staff-bill-amount").value;
-        var billAmount = parseFloat(billAmountInput) || 0;
-        
-        // คำนวณแต้มสะสมใหม่ที่จะได้รับจากบิล (สูตร: ยอดซื้อ / 10)
-        var pointsEarnedFromBill = Math.floor(billAmount / 10);
-
-        // 3. คำนวณผลลัพธ์แต้มสุทธิ (แต้มเดิม - ค่าคูปอง + แต้มบิลใหม่) และ EXP ใหม่
-        var updatedPointsBalance = currentBalance - coupon.pointsCost + pointsEarnedFromBill;
-        var updatedTotalExp = currentTotalExp + pointsEarnedFromBill;
-
-        if (updatedPointsBalance < 0) updatedPointsBalance = 0;
-
-        // 4. อัปเดตข้อมูลยิงตรงเข้าตารางโปรไฟล์ของ Supabase (หลีกเลี่ยง RPC Schema Network เพื่อแก้ปัญหา Error)
-        var { error } = await db
-            .from("profiles")
-            .update({ 
-                current_points: updatedPointsBalance,
-                total_exp: updatedTotalExp
-            })
-            .eq("line_user_id", currentUserId);
-
-        if (error) {
-            console.error("Supabase Realtime Update Error:", error);
-            alert("บันทึกไม่สำเร็จ: เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล Cloud กรุณาตรวจสอบการตั้งค่าสิทธิ์อีกครั้ง");
+        // ป้องกันความปลอดภัย: เช็คแต้มอีกครั้งหน้าเบสก่อนหักเงินจริง
+        if (coupon.pointsCost > 0 && currentBalance < coupon.pointsCost) {
+            alert(`ขออภัย: แต้มคงเหลือของคุณ (${currentBalance} pts) ไม่เพียงพอต่อการแลกคูปองนี้`);
+            closeConfirmModal();
             return;
         }
 
-        // 5. เซ็ตค่าล็อกความปลอดภัยผ่าน LocalStorage บนโทรศัพท์เครื่องลูกค้าเพื่อเปลี่ยนสถานะเป็นใช้แล้วทันที
+        closeConfirmModal();
+        
+        // แสดงหน้าจอ Loading บันทึกข้อมูลลง Cloud ป้องกันลูกค้ากดย้ำซ้ำซ้อน
+        document.getElementById("loading").style.display = "flex";
+        document.getElementById("app").style.display = "none";
+
+        // คำนวณแต้มใหม่หลังหักค่าคูปองออกทันที
+        var updatedPointsBalance = currentBalance - coupon.pointsCost;
+        if (updatedPointsBalance < 0) updatedPointsBalance = 0;
+
+        // 1. ส่งคำสั่งเขียนอัปเดตลงฐานข้อมูล Supabase แบบเรียลไทม์
+        var { error } = await db
+            .from("profiles")
+            .update({ current_points: updatedPointsBalance })
+            .eq("line_user_id", currentUserId);
+
+        if (error) {
+            console.error("Supabase Error:", error);
+            alert("ระบบ Cloud ขัดข้อง ไม่สามารถตัดแต้มสิทธิ์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง");
+            document.getElementById("loading").style.display = "none";
+            document.getElementById("app").style.display = "block";
+            return;
+        }
+
+        // 2. ล็อกสถานะความปลอดภัยใน LocalStorage เพื่อเปลี่ยนการแสดงผลเป็น "ใช้แล้ว"
         var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
         var singleUseKey = `used_${currentUserId}_${coupon.id}`;
         var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
@@ -596,12 +555,87 @@
             localStorage.setItem(monthlyUseKey, "TRUE");
         }
 
-        // แจ้งสรุปผลลัพธ์ให้พนักงานรับทราบอย่างแม่นยำ
-        alert(`🎉 ดำเนินการสำเร็จ!\nชื่อสมาชิก: ${globalUserData.full_name}\nคูปองที่ใช้: ${coupon.title}\nหักคะแนนคูปอง: -${coupon.pointsCost} แต้ม\nได้รับจากยอดซื้อ: +${pointsEarnedFromBill} แต้ม\nคะแนนสุทธิปัจจุบัน: ${updatedPointsBalance} แต้ม`);
+        // 3. สั่งโหลดดึงคะแนนที่เพิ่งตัดสำเร็จมาโชว์บน Dashboard เขียวทันใจ
+        await loadUserDataAndRender();
+
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("app").style.display = "block";
+
+        // 4. แสดงผลหน้าต่าง QR Code สิทธิ์ใบเสร็จเพื่อให้พนักงานตรวจสอบความถูกต้อง
+        document.getElementById("qr-modal-title").textContent = coupon.title;
+        document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
+        document.getElementById("staff-bill-amount").value = "0"; 
+        document.getElementById("qr-modal").classList.add("show");
+
+        var qrTarget = document.getElementById("qr-canvas-render");
+        qrTarget.innerHTML = ""; 
+
+        var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
+
+        new QRCode(qrTarget, {
+            text: compiledPayload,
+            width: 160,
+            height: 160,
+            colorDark : "#1f2937",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }
+
+    function closeQRModal() {
+        document.getElementById("qr-modal").classList.remove("show");
+        selectedCouponData = null;
+    }
+
+    /* ตรรกะพนักงานหน้าร้าน: สะสมแต้มเพิ่มให้ลูกค้าจากยอดบิลสุทธิ (25 บาท = 1 แต้ม) */
+    async function executeStaffScanAction() {
+        if (!globalUserData) {
+            alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้ากลุ่มนี้ในระบบ");
+            return;
+        }
+
+        var billAmountInput = document.getElementById("staff-bill-amount").value;
+        var billAmount = parseFloat(billAmountInput) || 0;
+        
+        if (billAmount <= 0) {
+            alert("บันทึกสิทธิ์คูปองเรียบร้อยแล้ว (ไม่มีการสะสมแต้มเพิ่มจากยอดบิล)");
+            closeQRModal();
+            return;
+        }
+        
+        // สูตรคำนวณแต้มสะสมใหม่: ยอดซื้อหารด้วย 25
+        var pointsEarnedFromBill = Math.floor(billAmount / 25);
+
+        // ดึงสถานะแต้มล่าสุดในเซิร์ฟเวอร์มาป้องกันปัญหาแต้มทับซ้อน (Concurrency Protection)
+        var { data: freshProfile } = await db
+            .from("profiles")
+            .select("current_points, total_exp")
+            .eq("line_user_id", currentUserId)
+            .single();
+
+        var currentBalance = freshProfile ? freshProfile.current_points : (parseInt(globalUserData.current_points) || 0);
+        var currentTotalExp = freshProfile ? freshProfile.total_exp : (parseInt(globalUserData.total_exp) || 0);
+
+        var finalPoints = currentBalance + pointsEarnedFromBill;
+        var finalExp = currentTotalExp + pointsEarnedFromBill;
+
+        // บันทึกคะแนนสะสมใหม่กลับไปที่ Supabase
+        var { error } = await db
+            .from("profiles")
+            .update({ 
+                current_points: finalPoints,
+                total_exp: finalExp
+            })
+            .eq("line_user_id", currentUserId);
+
+        if (error) {
+            alert("เกิดข้อผิดพลาดในการบันทึกเพิ่มคะแนนบิลลงคลาวด์");
+            return;
+        }
+
+        alert(`🎉 ดำเนินการสำเร็จ!\nชื่อสมาชิก: ${globalUserData.full_name}\nได้รับแต้มสะสมจากยอดซื้อบิล (25 บ. = 1 แต้ม): +${pointsEarnedFromBill} แต้ม\nคะแนนสุทธิปัจจุบันคงเหลือ: ${finalPoints} แต้ม`);
         
         closeQRModal();
-        
-        // สั่งรีเฟรชอัปเดตหน้าจอ Dashboard หลักของลูกค้าแบบ Real-time ทันที
         await loadUserDataAndRender();
     }
 
