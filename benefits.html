@@ -69,7 +69,6 @@
             box-shadow: var(--card-shadow); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
         }
         
-        /* Moving Reflection Light */
         .luxury-card::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: linear-gradient(45deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0) 60%);
@@ -110,7 +109,6 @@
         /* INTERACTIVE COMMUNITY INTERFACE */
         .community-container { background: white; border-radius: 24px; padding: 20px; margin-top: 24px; box-shadow: var(--card-shadow); }
         
-        /* Tab Bar System */
         .tab-bar { display: flex; background: #f3f4f6; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
         .tab-trigger {
             flex: 1; text-align: center; padding: 12px 8px; font-size: 14px; font-weight: 600;
@@ -160,7 +158,7 @@
         }
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .author-info { display: flex; align-items: center; gap: 10px; }
-        .author-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; background: #f3f4f6; }
+        .author-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #f3f4f6; }
         .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
         .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
         
@@ -295,7 +293,7 @@
     var currentUserId = "MOCK_USER_ID";
     var currentUserName = "คุณ (สมาชิกทั่วไป)";
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
-    var currentUserRole = "Member"; // เก็บบทบาทผู้ใช้เริ่มต้น
+    var currentUserRole = "Member"; 
     var activeCommunityTab = "promo"; 
     var encodedBase64Image = ""; 
 
@@ -306,7 +304,6 @@
         Platinum: { min: 5000, next: 999999, emote: "💎", title: "PLATINUM BEAR", perks: ["รับส่วนลดระดับ VIP ถาวร 10% ทุกรายการบิลสำเร็จ", "สิทธิ์สำรองโต๊ะพิเศษและสิทธิ์รับคูปองทานฟรีถ้วยใหญ่ในเดือนเกิด"] }
     };
 
-    // ตัวแปรเก็บข้อมูลโพสต์ที่ถูกโหลดมาจากเซิร์ฟเวอร์จริง
     var localMemoryFeed = [];
 
     function init() {
@@ -344,7 +341,7 @@
                 var row = res.data[0];
                 exp = row.current_exp || 0;
                 tier = row.tier || "Bronze";
-                currentUserRole = row.role || "Member"; // ซิงค์บทบาทจากฐานข้อมูลจริง (เช่น Admin)
+                currentUserRole = row.role || "Member"; 
                 if(row.full_name) currentUserName = row.full_name;
                 document.getElementById("user-display-name").textContent = currentUserName;
             }
@@ -409,14 +406,13 @@
         
         container.innerHTML = htmlMarkup;
         
-        // เรียกดึงข้อมูลฟีดจริงจากตารางฐานข้อมูล Supabase
+        // ดึงข้อมูลฟีดจริงจากระบบ Supabase
         fetchCommunityPosts();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
-    // ฟังก์ชันดึงโพสต์จริงทั้งหมดจาก Supabase เรียงลำดับเวลาใหม่สุดขึ้นก่อน
     function fetchCommunityPosts() {
         db.from("fmb_community_posts")
         .select("*")
@@ -424,18 +420,26 @@
         .then(function(res) {
             if (res.data) {
                 localMemoryFeed = res.data.map(function(item) {
+                    var parsedComments = [];
+                    if (item.comments) {
+                        try {
+                            parsedComments = typeof item.comments === "string" ? JSON.parse(item.comments) : item.comments;
+                        } catch(e) {
+                            parsedComments = [];
+                        }
+                    }
                     return {
                         id: item.id,
                         type: item.type,
                         author: item.author_name || "ไม่ระบุชื่อ",
-                        avatar: item.line_user_id === "MOCK_SHOP_ID" ? "🐻" : "👤",
+                        avatar: item.author_avatar || "https://cdn-icons-png.flaticon.com/512/4343/4343510.png",
                         text: item.content_text || "",
                         image: item.image_payload || "",
                         likes: item.likes || 0,
                         hearts: item.hearts || 0,
                         liked: false, 
                         hearted: false,
-                        comments: item.comments || [],
+                        comments: Array.isArray(parsedComments) ? parsedComments : [],
                         line_user_id: item.line_user_id
                     };
                 });
@@ -444,7 +448,6 @@
         })
         .catch(function(err) {
             console.error("Error fetching posts:", err);
-            renderCommunityFeedUI();
         });
     }
 
@@ -486,7 +489,6 @@
         document.getElementById("image-preview-target").src = "";
     }
 
-    // ฟังก์ชันส่งโพสต์ใหม่ บันทึกลง Supabase จริงและดึงกลับมาโชว์ทันที
     function publishNewPost() {
         var textInput = document.getElementById("post-input-text").value.trim();
         if (!textInput && !encodedBase64Image) {
@@ -494,26 +496,30 @@
             return;
         }
 
-        db.from("fmb_community_posts").insert([{
+        var payload = {
             type: activeCommunityTab,
             author_name: currentUserName,
+            author_avatar: currentUserAvatar,
             content_text: textInput,
             image_payload: encodedBase64Image,
             line_user_id: currentUserId,
             likes: 0,
             hearts: 0,
             comments: []
-        }]).then(function() {
+        };
+
+        db.from("fmb_community_posts").insert([payload])
+        .then(function(res) {
             document.getElementById("post-input-text").value = "";
             clearSelectedImage();
-            // รีโหลดข้อมูลจาก Server ใหม่ทันที ทำให้โพสต์อยู่ถาวรไม่หายไปไหน
+            // ทำการดาวน์โหลดดึงข้อมูลเวอร์ชันล่าสุดจากฐานข้อมูลทันที ทำให้ข้อมูลไม่หาย
             fetchCommunityPosts();
         }).catch(function(err) {
+            console.error(err);
             alert("เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์");
         });
     }
 
-    // การเรนเดอร์เนื้อหารายการฟีดคอมมูนิตี้จากเซิร์ฟเวอร์
     function renderCommunityFeedUI() {
         var promoBox = document.getElementById("feed-promo-list");
         var reviewBox = document.getElementById("feed-review-list");
@@ -528,18 +534,17 @@
             feedMarkup += '<div class="feed-card">';
             feedMarkup += '  <div class="feed-header">';
             feedMarkup += '    <div class="author-info">';
-            feedMarkup += '      <div class="author-avatar">' + post.avatar + '</div>';
+            feedMarkup += '      <img class="author-avatar" src="' + post.avatar + '" onerror="this.src=\'https://cdn-icons-png.flaticon.com/512/4343/4343510.png\'">';
             feedMarkup += '      <div>';
             feedMarkup += '        <div class="author-name">' + post.author + '</div>';
-            feedMarkup += '        <div class="post-time">อัปเดตล่าสุด</div>';
+            feedMarkup += '        <div class="post-time">โพสต์จริงในฐานข้อมูล</div>';
             feedMarkup += '      </div>';
             feedMarkup += '    </div>';
             
             feedMarkup += '    <div style="display: flex; align-items: center; gap: 8px;">';
             
-            // ระบบสิทธิ์ปุ่มลบโพสต์: ปรากฏให้ลบเฉพาะผู้ใช้ที่เป็นเจ้าของโพสต์ หรือ เป็นแอดมินร้าน (role = Admin)
             if (post.line_user_id === currentUserId || currentUserRole === "Admin") {
-                feedMarkup += '      <button onclick="deletePost(\'' + post.id + '\')" style="background: transparent; border: none; color: #ef4444; font-size: 13px; cursor: pointer; padding: 4px 6px;"><i class="fa-solid fa-trash-can"></i></button>';
+                feedMarkup += '      <button onclick="deletePost(\'' + post.id + '\')" style="background: transparent; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px 8px;"><i class="fa-solid fa-trash-can"></i></button>';
             }
 
             if(post.type === "promo") {
@@ -562,7 +567,6 @@
                 feedMarkup += '  <div class="feed-media"><img src="' + post.image + '" alt="Post media"></div>';
             }
 
-            // บาร์ตอบสนองอินเตอร์แอคทีฟ (Like & Heart) Sync สู่ฐานข้อมูล
             feedMarkup += '  <div class="react-bar">';
             feedMarkup += '    <button class="react-btn btn-like ' + (post.liked ? 'active' : '') + '" onclick="triggerInteraction(\'' + post.id + '\', \'like\')">';
             feedMarkup += '      <i class="fa-' + (post.liked ? 'solid' : 'regular') + ' fa-thumbs-up"></i> ถูกใจ (' + post.likes + ')';
@@ -572,7 +576,6 @@
             feedMarkup += '    </button>';
             feedMarkup += '  </div>';
 
-            // แสดงรายการคอมเมนต์ใต้โพสต์
             feedMarkup += '  <div class="comment-section" id="comment-zone-' + post.id + '">';
             
             for (var m = 0; m < post.comments.length; m++) {
@@ -584,7 +587,6 @@
                 feedMarkup += '    <div class="comment-row" style="color:#9ca3af; font-style:italic;">ยังไม่มีความเห็น มาร่วมพูดคุยกันเป็นคนแรกเลย</div>';
             }
 
-            // กล่องพิมพ์คอมเมนต์เพิ่มเติมใต้โพสต์
             feedMarkup += '    <div class="comment-input-box">';
             feedMarkup += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
             feedMarkup += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
@@ -604,7 +606,6 @@
         reviewBox.innerHTML = htmlReview || '<p style="text-align:center; padding:20px; color:#9ca3af; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
     }
 
-    // ฟังก์ชันจัดการเพิ่มลดการกดไลค์และกดหัวใจ Sync ตรงไปที่ Supabase
     function triggerInteraction(postId, actionType) {
         var targetItem = null;
         for (var i = 0; i < localMemoryFeed.length; i++) {
@@ -625,7 +626,6 @@
         if(!targetItem) return;
         renderCommunityFeedUI();
 
-        // บันทึกลงฐานข้อมูล Supabase แบบ Real-time ทันที
         db.from("fmb_community_posts")
         .update({ likes: targetItem.likes, hearts: targetItem.hearts })
         .eq("id", postId)
@@ -633,7 +633,6 @@
         .catch(function(err){ console.error(err); });
     }
 
-    // ฟังก์ชันจัดส่งความคิดเห็นคอมเมนต์ใต้โพสต์ บันทึกลงคอลัมน์ JSONB บนเซิร์ฟเวอร์
     function submitComment(postId) {
         var commentField = document.getElementById("input-field-" + postId);
         var textComment = commentField.value.trim();
@@ -655,7 +654,6 @@
         commentField.value = "";
         renderCommunityFeedUI();
 
-        // อัปเดตลงตาราง Supabase คอลัมน์ comments (JSONB) จริง
         db.from("fmb_community_posts")
         .update({ comments: targetItem.comments })
         .eq("id", postId)
@@ -663,15 +661,13 @@
         .catch(function(err){ console.error(err); });
     }
 
-    // ฟังก์ชันลบข้อมูลโพสต์ออกจากตารางฐานข้อมูลถาวร
     function deletePost(postId) {
-        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้ถาวร?")) return;
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้ถาวรออกจากระบบฐานข้อมูล?")) return;
         
         db.from("fmb_community_posts")
         .delete()
         .eq("id", postId)
         .then(function() {
-            // โหลดรายการฟีดบนหน้าจอใหม่ทันทีหลังลบเสร็จสิ้น ข้อมูลจะหายไปถาวร
             fetchCommunityPosts();
         })
         .catch(function(err) {
