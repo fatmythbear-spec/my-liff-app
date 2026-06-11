@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Kanit', sans-serif; background: #f7f9fc; color: #2d3748; min-height: 100vh; padding-bottom: 80px; }
+        body { font-family: 'Kanit', sans-serif; background: #f7f9fc; color: #2d3748; min-height: 100vh; padding-bottom: 40px; }
 
         /* Loading Screen */
         #loading {
@@ -41,11 +41,8 @@
         .section-header-title { font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
         .section-header-title i { color: #f87171; }
 
-        /* ========================================================
-           REAL-TIME POINTS & COUPON COUNT DASHBOARD (แดชบอร์ดแต้มสีเขียว)
-        ======================================================== */
+        /* REAL-TIME POINTS & COUPON COUNT DASHBOARD */
         .dashboard-card {
-            background: #5cb85c;
             background: linear-gradient(135deg, #66bb6a 0%, #43a047 100%);
             border-radius: 20px; padding: 22px 20px; color: white; margin-bottom: 20px;
             box-shadow: 0 8px 24px rgba(67, 160, 71, 0.2); position: relative; overflow: hidden;
@@ -59,9 +56,7 @@
         .db-right-ticket i { font-size: 32px; opacity: 0.35; margin-bottom: 12px; }
         .db-right-ticket .ticket-rate-label { font-size: 11px; color: rgba(255,255,255,0.75); background: rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 6px; }
 
-        /* ========================================================
-           5 TABS NAVIGATION BAR (บาร์แถบเมนู 5 ช่องตามสกรีนช็อตภาพถ่าย)
-        ======================================================== */
+        /* 5 TABS NAVIGATION BAR */
         .tabs-wrapper {
             margin-bottom: 18px; overflow-x: auto; white-space: nowrap;
             -webkit-overflow-scrolling: touch; padding-bottom: 4px; scrollbar-width: none;
@@ -79,9 +74,7 @@
             box-shadow: 0 4px 10px rgba(93, 64, 55, 0.2);
         }
 
-        /* ========================================================
-           PREMIUM TICKET COUPON LIST DESIGN (รายการตั๋วคูปองแบบในภาพ)
-        ======================================================== */
+        /* PREMIUM TICKET COUPON LIST DESIGN */
         .coupon-list-container { min-height: 150px; }
         
         .coupon-card {
@@ -92,7 +85,6 @@
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* รอยเจาะปรุฉีกตั๋ว */
         .coupon-card::after {
             content: ''; position: absolute; left: 16px; right: 16px; bottom: 32px;
             border-bottom: 1px dashed #e2e8f0; height: 1px; z-index: 1;
@@ -106,7 +98,6 @@
         .cp-title { font-size: 16px; font-weight: 600; color: #111827; line-height: 1.3; }
         .cp-desc { font-size: 13px; color: #718096; margin-top: 4px; font-weight: 300; }
         
-        /* แถบด้านล่างตั๋วคูปองสำหรับแสดงวันหมดอายุและแต้ม */
         .cp-footer-bar {
             position: absolute; bottom: 0; left: 0; right: 0; height: 32px; 
             background: #fafafa; border-top: 1px solid #f1f5f9; padding: 0 18px;
@@ -115,7 +106,6 @@
         .cp-expiry-text { font-size: 11px; color: #a0aec0; display: flex; align-items: center; gap: 4px; }
         .cp-pts-badge { font-size: 11px; color: #d97706; background: #fffbeb; padding: 1px 8px; border-radius: 6px; font-weight: 500; display: flex; align-items: center; gap: 3px; }
 
-        /* ฝั่งขวาปุ่มกดตัดบิล */
         .cp-action-side {
             width: 95px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding-right: 14px; padding-bottom: 32px;
         }
@@ -126,13 +116,10 @@
         .cp-use-btn.locked { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; }
         .cp-use-btn.used { background: #e2e8f0 !important; color: #cbd5e1 !important; cursor: not-allowed; }
 
-        /* สัญลักษณ์หน้าต่างคูปองว่างเปล่า */
         .empty-box { text-align: center; padding: 50px 20px; color: #a0aec0; font-size: 14px; width: 100%; }
         .empty-box i { font-size: 40px; margin-bottom: 10px; display: block; opacity: 0.4; }
 
-        /* ========================================================
-           SLIDE-UP CONFIRMATION MODAL (กล่องหน้าต่างสไลด์ยืนยันแบบในภาพ)
-        ======================================================== */
+        /* SLIDE-UP CONFIRMATION MODAL */
         .modal-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
             backdrop-filter: blur(4px); z-index: 1000; align-items: flex-end; justify-content: center;
@@ -161,35 +148,30 @@
         .modal-btn-group { display: flex; gap: 12px; margin-top: 10px; }
         .btn-modal { flex: 1; padding: 14px 0; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
         .btn-modal-cancel { background: #ffffff; border: 1px solid #e2e8f0; color: #6b7280; }
-        .btn-modal-confirm { background: #ec4899; color: white; } /* สีชมพู/เขียวสไตล์ร้านขนมหวาน */
+        .btn-modal-confirm { background: #ec4899; color: white; }
 
-        /* ========================================================
-           QR CODE SCANNING DISPLAY SCREEN (หน้าต่างแสดงผลคิวอาร์โค้ด)
-        ======================================================== */
+        /* QR CODE SCANNING DISPLAY SCREEN */
         .qr-display-box { background: white; border-radius: 24px; padding: 26px; text-align: center; width: 90%; max-width: 325px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: zoomIn 0.25s ease; }
         @keyframes zoomIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .qr-wrapper-zone { background: #f8fafc; padding: 14px; border-radius: 16px; margin: 16px 0; display: flex; justify-content: center; border: 1px dashed #cbd5e1; }
-        .staff-trigger-btn { width: 100%; padding: 12px; background: #ef4444; color: white; border: none; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
-
-        /* Fixed Footer Menu App */
-        .footer-nav-bar {
-            position: fixed; bottom: 0; left: 0; right: 0; height: 64px; background: #ffffff;
-            border-top: 1px solid #edf2f7; display: flex; justify-content: space-around; align-items: center; z-index: 900;
+        
+        /* STAFF INPUT & TRIGGER ZONE */
+        .staff-input-section {
+            background: #f1f5f9; padding: 12px; border-radius: 14px; margin-top: 10px; margin-bottom: 10px; text-align: left;
         }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #a0aec0; text-decoration: none; font-size: 10px; cursor: pointer; gap: 4px; }
-        .nav-item.active { color: #f87171; font-weight: 500; }
-        .nav-item i { font-size: 18px; }
+        .staff-input-label { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block; }
+        .staff-amount-input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 15px; font-weight: 600; text-align: right; margin-bottom: 8px; }
+        .staff-trigger-btn { width: 100%; padding: 12px; background: #06c755; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(6, 199, 85, 0.2); }
     </style>
 </head>
 <body>
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังดึงข้อมูลคูปองสิทธิ์ VIP อัตโนมัติ...</p>
+    <p>กำลังโหลดคูปองระบบ VIP อัตโนมัติ...</p>
 </div>
 
 <div id="app">
-    <!-- Top Profile Bar Header -->
     <div class="top-user-bar">
         <div class="profile-section">
             <div class="avatar-box">
@@ -209,7 +191,6 @@
         <i class="fa-solid fa-ticket"></i> คูปองสิทธิประโยชน์
     </div>
 
-    <!-- Green Points Dashboard Card -->
     <div class="dashboard-card">
         <div class="db-left">
             <div class="db-label">แต้มของคุณ</div>
@@ -218,11 +199,10 @@
         </div>
         <div class="db-right-ticket">
             <i class="fa-solid fa-receipt"></i>
-            <span class="ticket-rate-label">100 pts = ฿50</span>
+            <span class="ticket-rate-label">100 บาท = 10 pts</span>
         </div>
     </div>
 
-    <!-- 5 Tabs Bar Menu -->
     <div class="tabs-wrapper">
         <div class="tabs-container">
             <button class="tab-btn active" onclick="switchTab('all', this)">ทั้งหมด</button>
@@ -233,11 +213,9 @@
         </div>
     </div>
 
-    <!-- Target Area for Coupons -->
     <div class="coupon-list-container" id="coupons-root"></div>
 </div>
 
-<!-- หน้าต่างโมดอลแผ่นสไลด์ขึ้นยืนยันการใช้คูปอง (Slide-up Bottom Modal) -->
 <div class="modal-overlay" id="confirm-modal">
     <div class="slide-up-box">
         <button class="close-modal-btn" onclick="closeConfirmModal()"><i class="fa-solid fa-xmark"></i></button>
@@ -254,7 +232,6 @@
     </div>
 </div>
 
-<!-- หน้าต่างโมดอลแสดงรหัสคิวอาร์โค้ดแก่พนักงานหน้าร้าน (QR Display View) -->
 <div class="modal-overlay" id="qr-modal" style="align-items: center;">
     <div class="qr-display-box">
         <h3 style="font-size: 17px; font-weight: 600; color: #111827;" id="qr-modal-title">สแกนรหัสสิทธิ์</h3>
@@ -262,20 +239,15 @@
         <div class="qr-wrapper-zone">
             <div id="qr-canvas-render"></div>
         </div>
-        <p style="font-size: 12px; color: #6b7280; line-height: 1.4;">โปรดแสดงคิวอาร์โค้ดนี้แก่พนักงานที่เคาน์เตอร์สาขาเพื่อสแกนยืนยันสิทธิ์รับบริการ</p>
         
-        <button class="staff-trigger-btn" onclick="simulateStaffScanAction()">สำหรับพนักงาน: ยืนยันการสแกนตัดสิทธิ์</button>
-        <button class="btn-modal btn-modal-cancel" style="margin-top: 10px; width: 100%; padding: 10px;" onclick="closeQRModal()">ปิดหน้าจอ</button>
-    </div>
-</div>
+        <div class="staff-input-section">
+            <label class="staff-input-label"><i class="fa-solid fa-calculator"></i> ยอดซื้อบิลนี้เพื่อคำนวณแต้ม (บาท)</label>
+            <input type="number" id="staff-bill-amount" class="staff-amount-input" placeholder="0.00" value="0">
+            <button class="staff-trigger-btn" onclick="executeStaffScanAction()">บันทึกและตัดสิทธิ์คูปอง</button>
+        </div>
 
-<!-- Fixed Navigation Bar App Bottom -->
-<div class="footer-nav-bar">
-    <div class="nav-item"><i class="fa-regular fa-id-card"></i><span>บัตรสมาชิก</span></div>
-    <div class="nav-item active"><i class="fa-solid fa-ticket"></i><span>คูปอง</span></div>
-    <div class="nav-item"><i class="fa-regular fa-clipboard"></i><span>ประวัติ</span></div>
-    <div class="nav-item"><i class="fa-regular fa-face-smile"></i><span>คอมมูนิตี้</span></div>
-    <div class="nav-item"><i class="fa-regular fa-user"></i><span>โปรไฟล์</span></div>
+        <button class="btn-modal btn-modal-cancel" style="margin-top: 6px; width: 100%; padding: 10px; font-size: 13px;" onclick="closeQRModal()">ปิดหน้าจอ</button>
+    </div>
 </div>
 
 <script>
@@ -290,10 +262,8 @@
     var activeCategoryFilter = "all";
     var selectedCouponData = null;
 
-    // ลำดับฐานข้อมูลเลเวลยศสำหรับการเปรียบเทียบตรรกะ Array Index เช็คเงื่อนไข
     var TIER_RANKING = ["Bronze", "Silver", "Gold", "Platinum"];
 
-    // โครงสร้างวัตถุข้อมูลคูปองทั้งหมด 5 แท็บตามที่กำหนดในรูปภาพและเงื่อนไข
     var MASTER_COUPON_SCHEMAS = [
         { 
             id: "cp_discount_50thb", 
@@ -302,7 +272,7 @@
             iconColor: "#22c55e",
             title: "ส่วนลด 50 บาท", 
             desc: "ใช้ได้ทุกสาขา ไม่มีขั้นต่ำในการสั่งซื้อ", 
-            expiryStr: "หมดอายุ 14 มิ.ย. 68", 
+            expiryStr: "หมดอายุ 30 มิ.ย. 68", 
             pointsCost: 30, 
             tierReq: "Bronze",
             ruleType: "points_deduct",
@@ -341,7 +311,7 @@
             iconColor: "#b45309",
             title: "ท๊อปปิ้งฟรี 1 อย่าง", 
             desc: "เลือกเพิ่มท็อปปิ้งความอร่อยฟรีเมนูใดก็ได้ 1 อย่าง", 
-            expiryStr: "หมดอายุ 7 มิ.ย. 68", 
+            expiryStr: "หมดอายุ 30 มิ.ย. 68", 
             pointsCost: 6, 
             tierReq: "Bronze",
             ruleType: "points_with_min_spend",
@@ -354,7 +324,7 @@
             iconColor: "#eab308",
             title: "Buy 1 Get 1 Free (บิงซูถ้วยเล็ก)", 
             desc: "สิทธิ์ซื้อ 1 แถม 1 จัดรายการเฉพาะช่วงเวลาจำกัด", 
-            expiryStr: "หมดอายุ 15 มิ.ย. 68", 
+            expiryStr: "หมดอายุ 30 มิ.ย. 68", 
             pointsCost: 0, 
             tierReq: "Gold",
             ruleType: "special_days_monthly",
@@ -369,7 +339,6 @@
             var profile = await liff.getProfile();
             currentUserId = profile.userId;
 
-            // พัฒนาเป็นฟังก์ชันจำลองโปรไฟล์เพื่อรองรับการรันเทสภายนอกแอป LINE สแตนอโลน
             document.getElementById("user-avatar-img").src = profile.pictureUrl || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
 
             await loadUserDataAndRender();
@@ -391,20 +360,18 @@
                 .single();
 
             if (error || !data) {
-                alert("ไม่พบข้อมูลบัญชีสมาชิก VIP ของคุณ กรุณาลงทะเบียนผ่านหน้าบัตรหลักก่อนเข้าใช้งานระบบคูปองครับ");
+                alert("ไม่พบข้อมูลบัญชีสมาชิก VIP ของคุณ กรุณาลงทะเบียนผ่านหน้าบัตรหลักก่อนครับ");
                 return;
             }
 
             globalUserData = data;
             
-            // ประมวลผลตกแต่งอินเตอร์เฟซหลักตามข้อมูลจากฐานข้อมูลจริง
             document.getElementById("user-display-name").textContent = data.full_name || "คุณสมาชิก VIP";
             document.getElementById("user-points-val").textContent = (data.current_points || 0).toLocaleString();
             
             var currentTier = data.tier || "Bronze";
             document.getElementById("badge-tier-name").textContent = currentTier;
             
-            // ปรับเปลี่ยนไอคอนตามยศสมาชิก
             var iconMap = { "Bronze": "🥉", "Silver": "🥈", "Gold": "🥇", "Platinum": "💎" };
             document.getElementById("badge-tier-icon").textContent = iconMap[currentTier] || "🥉";
 
@@ -422,7 +389,6 @@
         buildCouponsLayout();
     }
 
-    /* เครื่องยนต์หัวใจหลักในการคำนวณวันหมดอายุ สิทธิ์ระดับยศ และระบบวนรอบแจ้งรีเฟรชคูปอง */
     function buildCouponsLayout() {
         var container = document.getElementById("coupons-root");
         container.innerHTML = "";
@@ -440,14 +406,12 @@
         var userPoints = globalUserData.current_points || 0;
         var userTierIdx = TIER_RANKING.indexOf(userTier);
 
-        // ตัวระบุค่าคีย์ประทับตราสำหรับระบบคูปองรายเดือนตามเงื่อนไข (จะเปลี่ยนค่าอัตโนมัติทุกวันที่ 1 ของเดือน)
         var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
         var availableCouponsCounter = 0;
 
         filteredCoupons.forEach(function(coupon) {
             var reqTierIdx = TIER_RANKING.indexOf(coupon.tierReq);
             
-            // ตัวประทับล็อกรหัสคูปองเฉพาะบุคคลผ่าน LocalStorage
             var singleUseKey = `used_${currentUserId}_${coupon.id}`;
             var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
 
@@ -461,10 +425,9 @@
             var isTierLocked = userTierIdx < reqTierIdx;
             var isPointsInsufficient = coupon.pointsCost > 0 && userPoints < coupon.pointsCost;
 
-            // ตรวจสอบกฎเหล็กวันประจำสัปดาห์สำหรับ Tab 5 (จันทร์=1, พุธ=3, พฤหัสบดี=4)
             var isDayLocked = false;
             if (coupon.ruleType === "special_days_monthly") {
-                var dayOfWeek = new Date().getDay();
+                var dayOfWeek = new Date().getDay(); // อาทิตย์=0, จันทร์=1, อังคาร=2, พุธ=3, พฤหัส=4, ศุกร์=5, เสาร์=6
                 if (dayOfWeek !== 1 && dayOfWeek !== 3 && dayOfWeek !== 4) {
                     isDayLocked = true;
                 }
@@ -487,7 +450,6 @@
             var cardElement = document.createElement("div");
             cardElement.className = "coupon-card";
             
-            // จัดสลักรูปแบบโครงสร้าง HTML ให้สอดคล้องกับภาพบานหน้าต่างแอป
             cardElement.innerHTML = `
                 <div class="cp-main-content">
                     <div class="cp-icon-wrap" style="color: ${coupon.iconColor};">${coupon.icon}</div>
@@ -515,7 +477,10 @@
 
     function triggerConfirmSlide(couponId) {
         var coupon = MASTER_COUPON_SCHEMAS.find(c => c.id === couponId);
-        if (!coupon) return;
+        if (!coupon) {
+            alert("ไม่พบคูปองในระบบโครงสร้างข้อมูลหลัก");
+            return;
+        }
 
         selectedCouponData = coupon;
         document.getElementById("md-illus").textContent = coupon.icon;
@@ -527,7 +492,8 @@
             warnText.textContent = `จะหัก ⭐ ${coupon.pointsCost} แต้ม จากบัตรสมาชิกของท่าน`;
             warnText.style.display = "block";
         } else {
-            warnText.style.display = "none";
+            warnText.textContent = "สิทธิ์ระดับยศฟรีประจำเดือน (ไม่มีค่าใช้จ่ายคะแนน)";
+            warnText.style.display = "block";
         }
 
         document.getElementById("confirm-modal").classList.add("show");
@@ -538,24 +504,27 @@
     }
 
     function proceedToQR() {
-        if (!selectedCouponData) return;
+        if (!selectedCouponData) {
+            alert("ไม่พบคูปองที่เลือก กรุณาลองใหม่อีกครั้ง");
+            return;
+        }
         closeConfirmModal();
 
         document.getElementById("qr-modal-title").textContent = selectedCouponData.title;
         document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${selectedCouponData.id.toUpperCase().slice(-8)}`;
+        document.getElementById("staff-bill-amount").value = "0"; // รีเซ็ตยอดเงินบิลใหม่ทุกครั้ง
         document.getElementById("qr-modal").classList.add("show");
 
         var qrTarget = document.getElementById("qr-canvas-render");
-        qrTarget.innerHTML = ""; // เคลียร์รหัสคิวอาร์โค้ดใบเดิมทิ้ง
+        qrTarget.innerHTML = ""; 
 
-        // เข้ารหัสชุด String ความปลอดภัยเพื่อส่งข้ามแพลตฟอร์มให้พนักงานหน้าร้านถอดรหัสตรวจสอบความถูกต้อง
         var compiledPayload = `FAT_MYTH_BEAR:${currentUserId}:${selectedCouponData.id}:${Date.now()}`;
 
         setTimeout(function() {
             new QRCode(qrTarget, {
                 text: compiledPayload,
-                width: 165,
-                height: 165,
+                width: 160,
+                height: 160,
                 colorDark : "#1f2937",
                 colorLight : "#ffffff",
                 correctLevel : QRCode.CorrectLevel.H
@@ -568,35 +537,55 @@
         selectedCouponData = null;
     }
 
-    /* ตรรกะฝั่งแอดมินพนักงานร้านค้าสแกนตัดสิทธิ์ร่วมกับการเซฟค่าสถานะและหักพอยท์บน Supabase DB */
-    async function simulateStaffScanAction() {
-        if (!selectedCouponData) return;
+    /* ตรรกะการประมวลผลคำนวณแต้มและอัปเดตข้อมูล Real-time ฝั่ง Staff หน้าร้าน */
+    async function executeStaffScanAction() {
+        if (!selectedCouponData || !globalUserData) {
+            alert("ข้อผิดพลาด: ข้อมูลสิทธิ์คูปองหรือโปรไฟล์ลูกค้าไม่สมบูรณ์");
+            return;
+        }
 
         var coupon = selectedCouponData;
-        var currentBalance = globalUserData.current_points || 0;
+        var currentBalance = parseInt(globalUserData.current_points) || 0;
+        var currentTotalExp = parseInt(globalUserData.total_exp) || 0;
 
-        // ดำเนินการตัดแต้มผ่าน Supabase หากคูปองนั้นระบุแต้มที่ต้องชำระ
+        // 1. ตรวจสอบเงื่อนไขแต้มสะสมของคูปองก่อนหัก
         if (coupon.pointsCost > 0) {
             if (currentBalance < coupon.pointsCost) {
-                alert("เกิดข้อผิดพลาด: คะแนนคงเหลือในระบบของสมาชิกไม่เพียงพอสำหรับการแลกรับคูปองนี้");
+                alert(`บันทึกไม่สำเร็จ: สมาชิกมีคะแนนคงเหลือ (${currentBalance} แต้ม) ไม่เพียงพอต่อเงื่อนไขคูปองนี้ที่ต้องการ ${coupon.pointsCost} แต้ม`);
                 closeQRModal();
-                return;
-            }
-
-            var updatedPointsBalance = currentBalance - coupon.pointsCost;
-
-            var { error } = await db
-                .from("profiles")
-                .update({ current_points: updatedPointsBalance })
-                .eq("line_user_id", currentUserId);
-
-            if (error) {
-                alert("ระบบเครือข่ายฐานข้อมูลขัดข้อง ไม่สามารถหักคะแนนได้ในขณะนี้");
                 return;
             }
         }
 
-        // เขียนบันทึกล็อกสถานะป้องกันการเวียนคูปองมาใช้ซ้ำแบบทันที (Single-use Validation Lock)
+        // 2. ดึงค่ายอดเงินบิลจาก Input ที่พนักงานกรอกหน้าร้านมาคำนวณแต้มที่จะเพิ่ม (100 บาท = 10 แต้ม)
+        var billAmountInput = document.getElementById("staff-bill-amount").value;
+        var billAmount = parseFloat(billAmountInput) || 0;
+        
+        // คำนวณแต้มสะสมใหม่ที่จะได้รับจากบิล (สูตร: ยอดซื้อ / 10)
+        var pointsEarnedFromBill = Math.floor(billAmount / 10);
+
+        // 3. คำนวณผลลัพธ์แต้มสุทธิ (แต้มเดิม - ค่าคูปอง + แต้มบิลใหม่) และ EXP ใหม่
+        var updatedPointsBalance = currentBalance - coupon.pointsCost + pointsEarnedFromBill;
+        var updatedTotalExp = currentTotalExp + pointsEarnedFromBill;
+
+        if (updatedPointsBalance < 0) updatedPointsBalance = 0;
+
+        // 4. อัปเดตข้อมูลยิงตรงเข้าตารางโปรไฟล์ของ Supabase (หลีกเลี่ยง RPC Schema Network เพื่อแก้ปัญหา Error)
+        var { error } = await db
+            .from("profiles")
+            .update({ 
+                current_points: updatedPointsBalance,
+                total_exp: updatedTotalExp
+            })
+            .eq("line_user_id", currentUserId);
+
+        if (error) {
+            console.error("Supabase Realtime Update Error:", error);
+            alert("บันทึกไม่สำเร็จ: เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล Cloud กรุณาตรวจสอบการตั้งค่าสิทธิ์อีกครั้ง");
+            return;
+        }
+
+        // 5. เซ็ตค่าล็อกความปลอดภัยผ่าน LocalStorage บนโทรศัพท์เครื่องลูกค้าเพื่อเปลี่ยนสถานะเป็นใช้แล้วทันที
         var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
         var singleUseKey = `used_${currentUserId}_${coupon.id}`;
         var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
@@ -607,10 +596,12 @@
             localStorage.setItem(monthlyUseKey, "TRUE");
         }
 
-        alert(`สแกนสิทธิ์สิทธิประโยชน์เรียบร้อยแล้ว บัตรได้บันทึกสถานะเป็น "ใช้สิทธิ์แล้ว" สำเร็จครับ`);
+        // แจ้งสรุปผลลัพธ์ให้พนักงานรับทราบอย่างแม่นยำ
+        alert(`🎉 ดำเนินการสำเร็จ!\nชื่อสมาชิก: ${globalUserData.full_name}\nคูปองที่ใช้: ${coupon.title}\nหักคะแนนคูปอง: -${coupon.pointsCost} แต้ม\nได้รับจากยอดซื้อ: +${pointsEarnedFromBill} แต้ม\nคะแนนสุทธิปัจจุบัน: ${updatedPointsBalance} แต้ม`);
+        
         closeQRModal();
         
-        // ดึงข้อมูลโปรไฟล์ขึ้นมาใหม่อีกครั้งเพื่ออัปเดตหน้า UI แต้มสะสมการ์ดเขียวแบบ Real-time
+        // สั่งรีเฟรชอัปเดตหน้าจอ Dashboard หลักของลูกค้าแบบ Real-time ทันที
         await loadUserDataAndRender();
     }
 
