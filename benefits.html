@@ -69,7 +69,6 @@
             box-shadow: var(--card-shadow); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease;
         }
         
-        /* Moving Reflection Light */
         .luxury-card::before {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
             background: linear-gradient(45deg, rgba(255,255,255,0) 40%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0) 60%);
@@ -110,7 +109,6 @@
         /* INTERACTIVE COMMUNITY INTERFACE */
         .community-container { background: white; border-radius: 24px; padding: 20px; margin-top: 24px; box-shadow: var(--card-shadow); }
         
-        /* Tab Bar System */
         .tab-bar { display: flex; background: #f3f4f6; border-radius: 16px; padding: 4px; margin-bottom: 20px; }
         .tab-trigger {
             flex: 1; text-align: center; padding: 12px 8px; font-size: 14px; font-weight: 600;
@@ -132,7 +130,6 @@
         }
         .post-textarea::placeholder { color: #9ca3af; }
         
-        /* Image Preview Box */
         .preview-wrapper { display: none; position: relative; margin-top: 4px; border-radius: 12px; overflow: hidden; max-height: 160px; }
         .preview-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 12px; }
@@ -164,7 +161,6 @@
         .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
         .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
         
-        /* ปุ่มลบโพสต์สไตล์มินิมอลพรีเมียม */
         .delete-post-btn {
             background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 5px 11px;
             border-radius: 8px; font-size: 11px; font-weight: 500; cursor: pointer; display: flex;
@@ -181,7 +177,6 @@
         
         .stars-row { color: #f59e0b; font-size: 12px; margin-bottom: 8px; letter-spacing: 1px; }
 
-        /* Social Counters Interface */
         .react-bar { display: flex; gap: 16px; border-top: 1px solid #f3f4f6; border-bottom: 1px solid #f3f4f6; padding: 10px 4px; margin-bottom: 10px; }
         .react-btn {
             background: transparent; border: none; color: #6b7280; font-size: 13px;
@@ -191,7 +186,6 @@
         .react-btn.btn-like.active { color: #3b82f6; font-weight: 600; }
         .react-btn.btn-heart.active { color: #ef4444; font-weight: 600; }
         
-        /* Comment Subsystem */
         .comment-section { background: #f9fafb; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         .comment-row { font-size: 12.5px; line-height: 1.4; color: #4b5563; display: flex; gap: 6px; word-break: break-word; }
         .comment-user { font-weight: 600; color: #111827; flex-shrink: 0; }
@@ -526,10 +520,10 @@
         });
     }
 
-    // 🔧 แก้ไขจุดวิกฤต: ล็อกค่าตัวแปรรูปภาพไว้ก่อนโดนคำสั่งล้างจอเคลียร์ค่าทิ้ง
+    // 🔧 อัปเกรดระบบตรวจจับและล็อกค่าเซฟรูปภาพ
     function publishNewPost() {
         var textInput = document.getElementById("post-input-text").value.trim();
-        var imageToUpload = encodedBase64Image; // ล็อกเก็บค่ารูปภาพตัวจริงไว้ที่นี่ก่อน!
+        var imageToUpload = encodedBase64Image; 
 
         if (!textInput && !imageToUpload) {
             alert("กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งโพสต์ครับ");
@@ -539,7 +533,6 @@
         var senderName = (activeCommunityTab === "review") ? lineDisplayName : currentUserName;
         var tempId = "temp_" + Date.now();
 
-        // 1. ดันเข้าสู่ Local Array เพื่อเรนเดอร์ให้เห็นบนหน้าจอทันที ไม่ต้องรอดึงข้อมูลรอบใหม่
         var newPostObject = {
             id: tempId,
             type: activeCommunityTab,
@@ -559,26 +552,31 @@
         localMemoryFeed.unshift(newPostObject);
         renderCommunityFeedUI();
 
-        // ล้างอินพุตและเคลียร์รูปบนหน้าจอทันทีเพื่อ UX ที่ดี
         document.getElementById("post-input-text").value = "";
-        clearSelectedImage(); // คำสั่งนี้จะเคลียร์ค่า encodedBase64Image ไปเป็น "" แต่ไม่กระทบ imageToUpload แล้ว
+        clearSelectedImage();
 
-        // 2. แอบทำงานบันทึกลง Supabase ด้านหลัง (Background)
+        // ดึงโค้ดขึ้นระบบคลาวด์ Supabase
         db.from("fmb_community_posts").insert([{
             type: activeCommunityTab,
             author_name: senderName,
             content_text: textInput,
-            image_payload: imageToUpload, // เปลี่ยนมาใช้ตัวแปรที่เราล็อกค่าไว้แทน มั่นใจได้รูปไม่หาย 100%
+            image_payload: imageToUpload, 
             line_user_id: currentUserId
         }])
         .select()
         .then(function(res) {
             if (res.error) {
                 console.error("Supabase Save Error:", res.error);
-                alert("โพสต์แสดงขึ้นจอแล้ว แต่อาจไม่บันทึกถาวรเนื่องจากสิทธิ์ RLS ในฐานข้อมูล กรุณาเช็คการตั้งค่าในโปรเจค Supabase ครับ");
+                alert("❌ บันทึกโพสต์ลงฐานข้อมูลล้มเหลว!\nสาเหตุ: " + res.error.message + "\n\n(หากระบบแจ้งว่าคอลัมน์ผิดพลาด ให้ตรวจเช็คความกว้างของคอลัมน์ image_payload ใน Supabase ว่าเป็น TEXT หรือยังนะครับ)");
+                fetchPostsFromSupabase(); // รีเฟรชข้อมูลกลับมาให้ตรงความจริง
                 return;
             }
-            // หากสำเร็จ นำ ID จริงจาก Database มาทับ ID ชั่วคราวเพื่อให้ปุ่มลบทำงานได้สมบูรณ์
+            if (!res.data || res.data.length === 0) {
+                alert("⚠️ ระบบปฏิเสธการเซฟถาวร! ตรวจสอบนโยบายสิทธิ์ 'INSERT' ใน Supabase Dashboard ครับ");
+                fetchPostsFromSupabase();
+                return;
+            }
+            // เชื่อมไอดีจากก้อน DB แท้
             if (res.data && res.data.length > 0) {
                 for (var i = 0; i < localMemoryFeed.length; i++) {
                     if (localMemoryFeed[i].id === tempId) {
@@ -592,25 +590,38 @@
         });
     }
 
+    // 🔧 อัปเกรดระบบสั่งลบแบบล็อกผลลัพธ์ผ่านคำสั่ง .select() เพื่อตรวจสอบสิทธิ์ RLS แท้จริง
     function deletePost(postId) {
+        if (postId.toString().startsWith("temp_")) {
+            alert("โพสต์นี้กำลังถูกนำขึ้นระบบคลาวด์ กรุณารอสักครู่แล้วกดใหม่อีกครั้งครับ");
+            return;
+        }
+
         if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) {
-            // ลบออกจากสเตตบนหน้าจอทันทีเพื่อความเร็ว
+            // ซ่อนออกจากหน้าจอก่อนเพื่อความไวของหน้าต่างแอป
             localMemoryFeed = localMemoryFeed.filter(function(post) {
                 return post.id !== postId;
             });
             renderCommunityFeedUI();
 
-            // ส่งคำสั่งไปลบถาวรในตารางฐานข้อมูล
+            // ส่งสัญญาณทำลายแถวข้อมูล และเช็คผ่านคำสั่ง .select()
             db.from("fmb_community_posts")
             .delete()
             .eq("id", postId)
+            .select()
             .then(function(res) {
                 if(res.error) {
-                    alert("ไม่สามารถลบโพสต์บนฐานข้อมูลได้สำเร็จ");
+                    alert("❌ เกิดข้อผิดพลาดในการลบจากเซิร์ฟเวอร์: " + res.error.message);
+                    fetchPostsFromSupabase();
+                } else if (!res.data || res.data.length === 0) {
+                    // หากโดนบล็อกสิทธิ์ RLS ตัวแปรส่งกลับจะว่างเปล่าแบบไร้ Error
+                    alert("⚠️ ลบข้อมูลไม่สำเร็จจริง!\nสาเหตุ: คุณยังไม่ได้เปิดนโยบายสิทธิ์ 'DELETE' ให้ตารางนี้สำหรับยศ public ใน Supabase Dashboard ครับ");
+                    fetchPostsFromSupabase(); // ดึงค่าเดิมคืนกลับเข้าหน้าจอทันที
                 }
             })
             .catch(function(err) {
                 console.error(err);
+                fetchPostsFromSupabase();
             });
         }
     }
@@ -680,10 +691,10 @@
                 feedMarkup += '    <div class="comment-row" style="color:#9ca3af; font-style:italic;">ยังไม่มีความเห็น มาร่วมพูดคุยกันเป็นคนแรกเลย</div>';
             }
 
-            feedMarkup += '    <div class="comment-input-box">';
-            feedMarkup += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
-            feedMarkup += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
-            feedMarkup += '    </div>';
+            htmlReview += '    <div class="comment-input-box">';
+            htmlReview += '      <input type="text" class="comment-input" id="input-field-' + post.id + '" placeholder="เขียนความคิดเห็นที่นี่...">';
+            htmlReview += '      <button class="comment-send-btn" onclick="submitComment(\'' + post.id + '\')">ส่ง</button>';
+            htmlReview += '    </div>';
             feedMarkup += '  </div>';
             
             feedMarkup += '</div>';
