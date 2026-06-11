@@ -44,7 +44,7 @@
         .view-content { padding: 16px; display: none; }
         .view-content.active { display: block; }
 
-        /* Post Creation Card (Persistent above Feeds) */
+        /* Post Creation Card */
         .create-post-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
         .post-input-group { display: flex; gap: 12px; align-items: flex-start; }
         .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
@@ -68,8 +68,8 @@
         .author-info { display: flex; align-items: center; gap: 10px; }
         .author-name { font-size: 14px; font-weight: 600; color: #1a202c; display: flex; align-items: center; gap: 5px; }
         
-        .delete-post-btn { color: #e53e3e; background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; transition: opacity 0.2s; }
-        .delete-post-btn:hover { opacity: 0.7; }
+        .delete-post-btn { color: #e53e3e; background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 500; padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 4px; transition: background 0.2s; }
+        .delete-post-btn:hover { background: #fff5f5; opacity: 0.9; }
 
         .feed-body { font-size: 14px; color: #2d3748; line-height: 1.5; word-break: break-word; margin-bottom: 10px; }
         .feed-attached-img { width: 100%; border-radius: 12px; margin-top: 8px; margin-bottom: 6px; object-fit: cover; max-height: 300px; }
@@ -135,7 +135,7 @@
     </div>
 
     <div id="view-community" class="view-content">
-        <div class="create-post-card">
+        <div class="create-post-card" id="community-post-card">
             <div class="post-input-group">
                 <img class="post-avatar current-user-avatar" src="" alt="Me">
                 <textarea class="post-textarea" id="community-textarea" placeholder="แบ่งปันความประทับใจ หรือเรื่องราววันนี้กับเพื่อนๆ หมี..."></textarea>
@@ -156,7 +156,7 @@
     </div>
 
     <div id="view-reviews" class="view-content">
-        <div class="create-post-card">
+        <div class="create-post-card" id="reviews-post-card">
             <div class="post-input-group">
                 <img class="post-avatar current-user-avatar" src="" alt="Me">
                 <textarea class="post-textarea" id="review-textarea" placeholder="เมนูไหนอร่อย? รีวิวความอร่อยของเมนูบิงซูที่คุณทานวันนี้เลย..."></textarea>
@@ -170,7 +170,8 @@
                     <i class="fa-solid fa-image" style="color: #4a5568; font-size:15px;"></i> แนบรูปภาพ
                     <input type="file" accept="image/*" id="review-file-input" style="display: none;" onchange="handleImageSelection(this, 'reviews')">
                 </label>
-                <button class="submit-post-btn" onclick="publishNewPost('review')">ส่งรีวิว</button> </div>
+                <button class="submit-post-btn" onclick="publishNewPost('review')">ส่งรีวิว</button>
+            </div>
         </div>
         <div id="box-reviews-feed"></div>
     </div>
@@ -190,8 +191,8 @@
     var currentDisplayName = "สมาชิกร้านหมี";
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
     var currentUserRank = "Bronze";
+    var currentUserRole = "Customer"; // เพิ่มตัวแปรสิทธิ์เริ่มต้น
     
-    // ตัวแปรเก็บรูปภาพ Base64 ของแต่ละหน้าต่าง
     var base64ImageString = { community: "", reviews: "" };
 
     async function initializeLIFF() {
@@ -203,17 +204,26 @@
             }
             var profile = await liff.getProfile();
             currentLineId = profile.userId;
-            currentDisplayName = profile.displayName || "สมาชิก VIP";
+            currentDisplayName = profile.displayName || "สมาชิก VIP"; // ดึงชื่อ LINE มาใช้งานถาวร
             if(profile.pictureUrl) currentUserAvatar = profile.pictureUrl;
             
-            // ดึงยศ
+            // ดึงยศและระดับสิทธิ์ (Role) จากระบบ Supabase
             var { data: memberData } = await db
                 .from("profiles")
-                .select("tier")
+                .select("tier, role")
                 .eq("line_user_id", currentLineId)
                 .single();
                 
-            if(memberData && memberData.tier) currentUserRank = memberData.tier;
+            if(memberData) {
+                if(memberData.tier) currentUserRank = memberData.tier;
+                if(memberData.role) currentUserRole = memberData.role;
+            }
+
+            // แยกระบบสิทธิ์ (Role-Based): ซ่อนกล่องพิมพ์หน้าข่าวโปรโมชั่นถ้าเป็น Customer
+            if(currentUserRole === "Customer") {
+                var commPostCard = document.getElementById("community-post-card");
+                if(commPostCard) commPostCard.style.display = "none";
+            }
 
             // บรรจุรูปภาพผู้ใช้ลงกล่อง
             var avatars = document.querySelectorAll(".current-user-avatar");
@@ -221,7 +231,7 @@
 
             document.getElementById("loader-screen").style.display = "none";
             
-            syncCommunityFeeds();
+            loadPostsFromSupabase();
         } catch (error) {
             console.error("LIFF Init Error:", error);
             document.getElementById("loader-screen").innerHTML = "<p style='padding:20px; text-align:center;'>เกิดข้อผิดพลาดในการโหลด กรุณาเข้าใหม่อีกครั้ง</p>";
@@ -239,7 +249,6 @@
         document.getElementById("view-" + targetTab).classList.add("active");
     }
 
-    // ฟังก์ชันย่อขนาดไฟล์ภาพและแปลงเป็น Base64 ป้องกันภาพใหญ่เกินไปบันทึกไม่ผ่าน
     function handleImageSelection(inputElement, typeKey) {
         var file = inputElement.files[0];
         if (!file) return;
@@ -264,7 +273,6 @@
                 var ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // บีบอัดเป็น JPEG 70% Quality
                 var compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
                 base64ImageString[typeKey] = compressedBase64;
 
@@ -294,7 +302,7 @@
         }
     }
 
-    // โพสต์ใหม่ส่งขึ้นระบบ (อิงจากโครงสร้างตาราง fmb_community_posts)
+    // โพสต์ใหม่ส่งขึ้นระบบเชื่อมต่อคอลัมน์ Supabase ชุดแท้ครบถ้วน
     async function publishNewPost(tabType) {
         var inputId = (tabType === 'review') ? 'review-textarea' : 'community-textarea';
         var imgKey = (tabType === 'review') ? 'reviews' : 'community';
@@ -309,30 +317,30 @@
         }
 
         var payload = {
-            type: tabType, // ระบุประเภท 'community' หรือ 'review' 
-            author_name: currentDisplayName,
+            type: tabType, 
+            author_name: currentDisplayName, // ใช้ชื่อจริงจากระบบ LINE
             content_text: textContent,
             image_payload: compressedImage,
             line_user_id: currentLineId,
-            comments_json: [] // เพิ่มฟิลด์ไว้รองรับคอมเมนต์
+            likes: 0,
+            hearts: 0,
+            comments: [] // ตั้งค่า Default คอลัมน์แท้ jsonb เป็น Array เปล่า
         };
 
-        // ใช้ตารางของแท้ที่มีในระบบ Supabase ปัจจุบันของคุณ (fmb_community_posts)
         var { error } = await db.from("fmb_community_posts").insert([payload]);
         if(error) {
             alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message);
-            console.error(error);
             return;
         }
 
         textareaElement.value = "";
         clearSelectedImage(imgKey);
         
-        syncCommunityFeeds();
+        loadPostsFromSupabase();
     }
 
-    // ดึงโพสต์และแยกประเภทยัดลง 2 Tabs พร้อมระบบจดจำสิทธิ์การกด
-    async function syncCommunityFeeds() {
+    // โพสต์อยู่ถาวร (Data Persistence): ดึงโพสต์ ยอดไลก์ และคอมเมนต์จาก Supabase ทุกครั้ง
+    async function loadPostsFromSupabase() {
         var { data: postsList, error } = await db
             .from("fmb_community_posts")
             .select("*")
@@ -353,23 +361,22 @@
         var revCount = 0;
 
         postsList.forEach(function(post) {
-            // ระบบตรวจสอบสิทธิ์ลบ: เป็นโพสต์ของตนเอง หรือเป็น Admin
+            // ระบบตรวจสอบสิทธิ์ลบโพสต์: เจ้าของโพสต์ (line_user_id ตรงกัน) หรือ Admin สูงสุด
             var isAuthorizedToDelete = (post.line_user_id === currentLineId) || (currentLineId === ADMIN_LINE_ID);
-            var deleteButtonHtml = isAuthorizedToDelete ? `<button class="delete-post-btn" onclick="erasePostRecord('${post.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
+            var deleteButtonHtml = isAuthorizedToDelete ? `<button class="delete-post-btn" onclick="erasePostRecord('${post.id}')"><i class="fa-solid fa-trash-can"></i> ลบโพสต์</button>` : '';
 
-            // ดึงสถานะถาวรจาก LocalStorage (ผูกไอดี LINE ป้องกันการสลับบัญชี)
+            // ตรวจสอบข้อมูลการล็อกเครื่องจาก LocalStorage แค่เพื่อเปลี่ยนสีปุ่มเปิดปิดความสวยงาม
             var permanentLikeKey = `perm_like_${currentLineId}_${post.id}`;
             var permanentHeartKey = `perm_heart_${currentLineId}_${post.id}`;
-
             var isLiked = localStorage.getItem(permanentLikeKey) === "YES";
             var isHearted = localStorage.getItem(permanentHeartKey) === "YES";
 
-            // สถิติยอดถูกใจเบื้องต้น (ถ้ายังไม่มีการเก็บลึกในฐานข้อมูล ให้ประยุกต์ใช้เฉพาะส่วนตัว)
-            var displayLikesCount = isLiked ? 1 : 0; 
-            var displayHeartsCount = isHearted ? 1 : 0;
+            // ดึงจำนวนนับไลก์/หัวใจตรงมาจากคอลัมน์ใน Supabase
+            var totalLikes = post.likes || 0;
+            var totalHearts = post.hearts || 0;
 
-            // จัดการข้อมูลคอมเมนต์
-            var commentList = Array.isArray(post.comments_json) ? post.comments_json : [];
+            // จัดการข้อมูลคอมเมนต์แบบดึงจากคอลัมน์แท้ "comments" ชนิด jsonb
+            var commentList = Array.isArray(post.comments) ? post.comments : [];
             var commentMarkup = "";
             commentList.forEach(function(cm) {
                 commentMarkup += `<div class="comment-item"><span class="commenter-name">${cm.user}:</span>${cm.text}</div>`;
@@ -398,10 +405,10 @@
 
                     <div class="interaction-row">
                         <button class="interact-btn ${isLiked ? 'liked-active' : ''}" onclick="togglePostVote('${post.id}', 'like')">
-                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i> ถูกใจ
+                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i> ถูกใจ (${totalLikes})
                         </button>
                         <button class="interact-btn ${isHearted ? 'heart-active' : ''}" onclick="togglePostVote('${post.id}', 'heart')">
-                            <i class="${isHearted ? 'fa-solid' : 'fa-regular'} fa-heart"></i> หัวใจ
+                            <i class="${isHearted ? 'fa-solid' : 'fa-regular'} fa-heart"></i> หัวใจ (${totalHearts})
                         </button>
                     </div>
 
@@ -415,7 +422,6 @@
                 </div>
             `;
 
-            // กระจายลง Tab ที่ถูกต้อง (อิงจากคอลัมน์ type)
             if(post.type === 'review') {
                 revBox.innerHTML += postHtml;
                 revCount++;
@@ -429,53 +435,72 @@
         if(revCount === 0) revBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
     }
 
-    // ส่งคอมเมนต์ลง Supabase (บันทึกเป็น JSONB Array ในตารางโพสต์)
+    // ส่งคอมเมนต์ลงคอลัมน์ comments (jsonb) ของ Supabase ตรงแบบ Realtime
     async function publishComment(postId) {
         var inputField = document.getElementById("com-input-" + postId);
         var textComment = inputField.value.trim();
         if(!textComment) return;
 
-        var { data: currentPost } = await db.from("fmb_community_posts").select("comments_json").eq("id", postId).single();
-        var commentArray = Array.isArray(currentPost.comments_json) ? currentPost.comments_json : [];
+        var { data: currentPost, error: fError } = await db.from("fmb_community_posts").select("comments").eq("id", postId).single();
+        if(fError) return;
         
-        commentArray.push({ user: currentDisplayName, text: textComment });
+        var commentArray = Array.isArray(currentPost.comments) ? currentPost.comments : [];
+        commentArray.push({ user: currentDisplayName, text: textComment }); // บันทึกด้วยชื่อเล่นจากไลน์
 
-        var { error } = await db.from("fmb_community_posts").update({ comments_json: commentArray }).eq("id", postId);
+        var { error } = await db.from("fmb_community_posts").update({ comments: commentArray }).eq("id", postId);
 
         if(!error) {
             inputField.value = "";
-            syncCommunityFeeds();
+            loadPostsFromSupabase();
         } else {
             alert("ไม่สามารถส่งคอมเมนต์ได้: " + error.message);
         }
     }
 
-    // กดไลค์ / หัวใจ ถาวรล็อกเครื่อง
-    function togglePostVote(postId, actionType) {
+    // กดไลก์ / หัวใจ ปรับสถานะเรียบลอยอัพเดตค่าขึ้นโครงสร้าง Supabase คอลัมน์likes, hearts
+    async function togglePostVote(postId, actionType) {
         var permanentLikeKey = `perm_like_${currentLineId}_${postId}`;
         var permanentHeartKey = `perm_heart_${currentLineId}_${postId}`;
 
+        var { data: post, error: fError } = await db.from("fmb_community_posts").select("likes, hearts").eq("id", postId).single();
+        if(fError || !post) return;
+
+        var updatePayload = {};
+
         if (actionType === "like") {
-            if (localStorage.getItem(permanentLikeKey) === "YES") localStorage.removeItem(permanentLikeKey);
-            else localStorage.setItem(permanentLikeKey, "YES");
+            if (localStorage.getItem(permanentLikeKey) === "YES") {
+                localStorage.removeItem(permanentLikeKey);
+                updatePayload.likes = Math.max(0, (post.likes || 0) - 1);
+            } else {
+                localStorage.setItem(permanentLikeKey, "YES");
+                updatePayload.likes = (post.likes || 0) + 1;
+            }
         } else if (actionType === "heart") {
-            if (localStorage.getItem(permanentHeartKey) === "YES") localStorage.removeItem(permanentHeartKey);
-            else localStorage.setItem(permanentHeartKey, "YES");
+            if (localStorage.getItem(permanentHeartKey) === "YES") {
+                localStorage.removeItem(permanentHeartKey);
+                updatePayload.hearts = Math.max(0, (post.hearts || 0) - 1);
+            } else {
+                localStorage.setItem(permanentHeartKey, "YES");
+                updatePayload.hearts = (post.hearts || 0) + 1;
+            }
         }
 
-        syncCommunityFeeds();
+        var { error } = await db.from("fmb_community_posts").update(updatePayload).eq("id", postId);
+        if(!error) {
+            loadPostsFromSupabase();
+        }
     }
 
-    // ลบโพสต์ออกจาก Supabase
+    // ลบโพสต์ตนเองออกจากระบบฐานข้อมูล Supabase
     async function erasePostRecord(postId) {
         if(!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) return;
 
         var { error } = await db.from("fmb_community_posts").delete().eq("id", postId);
 
         if(error) {
-            alert("⚠️ ไม่สามารถลบข้อมูลได้! (เกิดจาก RLS Policy ของ Supabase กรุณาอนุญาตสิทธิ์ DELETE ให้ Public บน Database ของคุณ)");
+            alert("⚠️ ไม่สามารถลบข้อมูลได้! กรุณาตรวจสอบ RLS Policy สิทธิ์การ Delete บน Supabase ของคุณ");
         } else {
-            syncCommunityFeeds();
+            loadPostsFromSupabase();
         }
     }
 
