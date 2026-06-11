@@ -140,6 +140,18 @@
         .status-tag { font-size: 10px; padding: 2px 8px; border-radius: 10px; float: right; background: #edf2f7; color: #718096; font-weight: 500; }
         .status-tag.current { background: #fffaf0; color: #dd6b20; border: 1px solid #ffe3b3; }
 
+        /* FAQ Accordion UI Styles */
+        .faq-item { border-bottom: 1px solid #f5f6f8; padding: 14px 0; cursor: pointer; }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-header { display: flex; justify-content: space-between; align-items: center; }
+        .faq-question { font-size: 14px; font-weight: 500; color: #1a1a1a; }
+        .faq-arrow { font-size: 12px; color: #a0aec0; transition: transform 0.2s ease; }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, margin-top 0.3s ease; font-size: 13px; color: #718096; line-height: 1.6; }
+        
+        /* สเตทเมื่อผู้ใช้กดเปิด FAQ */
+        .faq-item.active .faq-arrow { transform: rotate(90deg); color: #1a1a1a; }
+        .faq-item.active .faq-answer { max-height: 200px; margin-top: 8px; }
+
         /* QR Code Modal Popup */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 20px; transition: all 0.3s; }
         .modal-overlay.show { display: flex; }
@@ -240,6 +252,57 @@
             <i class="fa-solid fa-stairs" style="color: #5c6bc0;"></i> แผนผังเส้นทางลำดับเกียรติยศ
         </div>
         <div class="roadmap" id="tier-roadmap"></div>
+    </div>
+
+    <!-- ส่วนช่วยเพิ่มข้อมูลช่วยเหลือ / FAQ (อยู่ด้านล่างสุดตามภาพที่ 2) -->
+    <div class="section-box">
+        <div class="section-title">
+            <i class="fa-solid fa-question" style="color: #ff5252; font-size: 14px; width: 16px; text-align: center;"></i> ช่วยเหลือ / FAQ
+        </div>
+        <div class="faq-container">
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">สะสมแต้มยังไง?</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">ทุกๆ 25 บาท = 1 แต้ม สูงสุด 200 แต้ม/บิล แสดง QR Code ให้พนักงานสแกน</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">แต้มหมดอายุไหม?</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">แต้มมีอายุ 180 วัน นับจากวันที่ได้รับ มีการแจ้งเตือนก่อนหมด 30 วัน</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">อัพเกรดระดับยังไง?</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">Bronze 0-999 / Silver 1,000-2,999 / Gold 3,000-4,999 / Platinum 5,000+ EXP ระบบตรวจทุกเที่ยงคืน</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">แลกแต้มได้อะไรบ้าง?</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">100 แต้ม = คูปองส่วนลดเงินสด 50 บาท หมดอายุ 7 วัน ใช้ได้ทุกสาขา</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">ลืมรหัสผ่านทำไง?</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">ติดต่อพนักงานที่สาขาพร้อมบัตรประชาชน</div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-header">
+                    <span class="faq-question">ติดต่อสอบถามเพิ่มเติม</span>
+                    <i class="fa-solid fa-chevron-right faq-arrow"></i>
+                </div>
+                <div class="faq-answer">LINE: @fatmythbear / โทร: 0836010398 / เวลา 10:00-21:00 น. ทุกวัน</div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -402,6 +465,11 @@
 
     function closeQR() {
         document.getElementById("qr-modal").classList.remove("show");
+    }
+
+    // ฟังก์ชันเปิด-ปิดคำตอบสำหรับตัวเลือก FAQ Accordion
+    function toggleFaq(element) {
+        element.classList.toggle('active');
     }
 
     init();
