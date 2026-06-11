@@ -122,7 +122,7 @@
         /* Create Post Component */
         .create-post-box {
             background: #f9fafb; border-radius: 16px; padding: 14px; border: 1px dashed #e5e7eb;
-            margin-bottom: 24px; display: flex; flex-direction: column; gap: 10px;
+            margin-bottom: 24px; display: none; flex-direction: column; gap: 10px;
         }
         .input-row { display: flex; gap: 12px; align-items: flex-start; }
         .input-avatar { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; }
@@ -164,6 +164,14 @@
         .author-name { font-size: 13.5px; font-weight: 600; color: #111827; }
         .post-time { font-size: 11px; color: #9ca3af; margin-top: 1px; }
         
+        /* ปุ่มลบโพสต์ระดับพรีเมียม */
+        .delete-post-btn {
+            background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 5px 11px;
+            border-radius: 8px; font-size: 11px; font-weight: 500; cursor: pointer; display: flex;
+            align-items: center; gap: 5px; transition: all 0.2s;
+        }
+        .delete-post-btn:hover { background: #fee2e2; }
+
         .badge-type { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; background: #f0fdf4; color: var(--primary); }
         .badge-review { background: #fffbeb; color: #d97706; }
 
@@ -254,7 +262,7 @@
             </button>
         </div>
 
-        <div class="create-post-box">
+        <div class="create-post-box" id="create-post-container">
             <div class="input-row">
                 <img class="input-avatar" id="current-user-avatar-small" src="https://cdn-icons-png.flaticon.com/512/4343/4343510.png">
                 <textarea class="post-textarea" id="post-input-text" placeholder="แชร์ความรู้สึกหรือโปรโมชั่นวันนี้ของคุณที่นี่..."></textarea>
@@ -294,6 +302,7 @@
 
     var currentUserId = "MOCK_USER_ID";
     var currentUserName = "คุณ (สมาชิกทั่วไป)";
+    var lineDisplayName = "สมาชิก Fat Myth Bear"; // แก้ไขจุดที่ 2: เก็บชื่อจากโปรไฟล์ LINE แยกต่างหาก
     var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/4343/4343510.png";
     var activeCommunityTab = "promo"; 
     var encodedBase64Image = ""; 
@@ -305,10 +314,7 @@
         Platinum: { min: 5000, next: 999999, emote: "💎", title: "PLATINUM BEAR", perks: ["รับส่วนลดระดับ VIP ถาวร 10% ทุกรายการบิลสำเร็จ", "สิทธิ์สำรองโต๊ะพิเศษและสิทธิ์รับคูปองทานฟรีถ้วยใหญ่ในเดือนเกิด"] }
     };
 
-    var localMemoryFeed = [
-        { id: "p1", type: "promo", author: "Fat Myth Bear Shop", avatar: "🐻", text: "ต้อนรับฤดูกาลบิงซูมะม่วงสดฉ่ำ! 🍧 สมาชิกทุกยศเช็คอินหน้าร้านรับคะแนนสองเท่าทันทีวันสัปดาห์นี้ค่ะ!", image: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=500&q=80", likes: 12, hearts: 8, liked: false, hearted: false, comments: [{user: "แอดมิน", text: "ยินดีต้อนรับลูกค้าทุกท่านนะครับ"}, {user: "กิตติพงษ์", text: "วันนี้ไปทานมาแล้ว มะม่วงหวานฉ่ำมากครับ"}] },
-        { id: "r1", type: "review", author: "คุณ มินตรา (ลูกค้าประจำ)", avatar: "👤", text: "บิงซูเนียนนุ่มละมุนมากค่ะ ทานคู่กับท็อปปิ้งเจลลี่น้องหมีเข้ากันสุดๆ พนักงานบริการไว ยศเพิ่งปรับขึ้นวันนี้เลยประทับใจมากค่ะ 🥰", image: "", rating: 5, likes: 4, hearts: 6, liked: false, hearted: false, comments: [{user: "Fat Myth Bear Shop", text: "ขอบคุณคุณมินตรามากเลยนะคะ ยินดีต้อนรับเสมอค่ะ"}] }
-    ];
+    var localMemoryFeed = [];
 
     function init() {
         liff.init({ liffId: LIFF_ID }).then(function() {
@@ -317,6 +323,7 @@
             } else {
                 liff.getProfile().then(function(profile) {
                     currentUserId = profile.userId;
+                    lineDisplayName = profile.displayName || "สมาชิก Fat Myth Bear"; // ล็อกชื่อดิสเพลย์ไลน์
                     currentUserName = profile.displayName || "สมาชิก Fat Myth Bear";
                     currentUserAvatar = profile.pictureUrl || currentUserAvatar;
                     
@@ -345,8 +352,10 @@
                 var row = res.data[0];
                 exp = row.current_exp || 0;
                 tier = row.tier || "Bronze";
-                if(row.full_name) currentUserName = row.full_name;
-                document.getElementById("user-display-name").textContent = currentUserName;
+                // แก้ไขจุดที่ 2: ให้ส่วน Dashboard การ์ดยศ แสดงชื่อจริงของลูกค้าที่ใช้สมัคร
+                if(row.full_name) {
+                    document.getElementById("user-display-name").textContent = row.full_name;
+                }
             }
             
             renderDashboardAndCards(tier, exp);
@@ -408,12 +417,15 @@
         }
         
         container.innerHTML = htmlMarkup;
-        renderCommunityFeedUI();
+        
+        // แก้ไขจุดที่ 3: ดึงข้อมูลจากฐานข้อมูลขึ้นมาแสดงผลอย่างถาวร
+        fetchPostsFromSupabase();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
     }
 
+    // แก้ไขจุดที่ 1: สลับแท็บพร้อมทั้ง ซ่อน/แสดง กล่องเขียนโพสต์ของลูกค้าตามเงื่อนไข
     function toggleCommunityTab(targetTab) {
         activeCommunityTab = targetTab;
         document.getElementById("tab-promo-btn").classList.remove("active");
@@ -424,15 +436,19 @@
         document.getElementById("tab-" + targetTab + "-btn").classList.add("active");
         document.getElementById("panel-" + targetTab).classList.add("active");
         
-        var textPlaceholder = (targetTab === "promo") ? "แชร์ความรู้สึกหรือโปรโมชั่นวันนี้ของคุณที่นี่..." : "เขียนรีวิวความประทับใจเมนูบิงซูและบริการของคุณที่นี่...";
-        document.getElementById("post-input-text").placeholder = textPlaceholder;
+        var createPostBox = document.getElementById("create-post-container");
+        if (targetTab === "promo") {
+            createPostBox.style.display = "none"; // ปิดกล่องโพสต์สำหรับแท็บโปรโมชั่น (ลูกค้าอ่านได้อย่างเดียว)
+        } else {
+            createPostBox.style.display = "flex"; // เปิดให้ลูกค้ากดโพสต์รีวิวได้ตามปกติ
+            document.getElementById("post-input-text").placeholder = "เขียนรีวิวความประทับใจเมนูบิงซูและบริการของคุณที่นี่...";
+        }
     }
 
     function triggerMediaSelector() {
         document.getElementById("media-file-capture").click();
     }
 
-    // ฟังก์ชันใหม่: รองรับการดึงรูปภาพ บีบอัดขนาด และลดความจุเพื่อส่งเข้า Supabase ไร้รอยต่อ
     function handleImageSelection(event) {
         var file = event.target.files[0];
         if (!file) return;
@@ -441,7 +457,6 @@
         reader.onload = function(e) {
             var img = new Image();
             img.onload = function() {
-                // สร้าง Canvas เพื่อปรับย่อส่วนความกว้าง/สูงไม่ให้เกิน 800px (รักษา Aspect Ratio)
                 var canvas = document.createElement('canvas');
                 var max_size = 800; 
                 var width = img.width;
@@ -464,7 +479,6 @@
                 var ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // แปลงไฟล์เป็น JPEG และบีบอัดคุณภาพเหลือ 70% (ลดขนาด Base64 ลงเหลือหลัก KB ป้องกัน Database ปฏิเสธ Payload)
                 encodedBase64Image = canvas.toDataURL('image/jpeg', 0.7);
                 document.getElementById("image-preview-target").src = encodedBase64Image;
                 document.getElementById("image-preview-container").style.display = "block";
@@ -481,6 +495,37 @@
         document.getElementById("image-preview-target").src = "";
     }
 
+    // แก้ไขจุดที่ 3: ฟังก์ชันดึงข้อมูลโพสต์ทั้งหมดจาก Supabase มาอัปเดตบนหน้าจอแบบเรียลไทม์
+    function fetchPostsFromSupabase() {
+        db.from("fmb_community_posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .then(function(res) {
+            if (res.data) {
+                localMemoryFeed = res.data.map(function(row) {
+                    return {
+                        id: row.id,
+                        type: row.type || "review",
+                        author: row.author_name || "ลูกค้า Fat Myth Bear",
+                        avatar: "👤",
+                        text: row.content_text || "",
+                        image: row.image_payload || "",
+                        line_user_id: row.line_user_id || "", // บันทึก id เจ้าของโพสต์ไว้เช็คปุ่มลบ
+                        rating: 5,
+                        likes: 0,
+                        hearts: 0,
+                        liked: false,
+                        hearted: false,
+                        comments: []
+                    };
+                });
+                renderCommunityFeedUI();
+            }
+        }).catch(function(err) {
+            console.error("เกิดข้อผิดพลาดในการดึงข้อมูลโพสต์:", err);
+        });
+    }
+
     function publishNewPost() {
         var textInput = document.getElementById("post-input-text").value.trim();
         if (!textInput && !encodedBase64Image) {
@@ -488,38 +533,41 @@
             return;
         }
 
-        var newPostObject = {
-            id: "user_post_" + Date.now(),
-            type: activeCommunityTab,
-            author: currentUserName,
-            avatar: "👤",
-            text: textInput,
-            image: encodedBase64Image, 
-            rating: 5,
-            likes: 0,
-            hearts: 0,
-            liked: false,
-            hearted: false,
-            comments: []
-        };
+        // แก้ไขจุดที่ 2: ใช้ lineDisplayName (ชื่อไลน์) แทนชื่อนามสกุลจริงในการโพสต์ฝั่งรีวิว
+        var senderName = (activeCommunityTab === "review") ? lineDisplayName : currentUserName;
 
-        localMemoryFeed.unshift(newPostObject);
-        
-        document.getElementById("post-input-text").value = "";
-        clearSelectedImage();
-        renderCommunityFeedUI();
-        
         db.from("fmb_community_posts").insert([{
-            type: newPostObject.type,
-            author_name: newPostObject.author,
-            content_text: newPostObject.text,
-            image_payload: newPostObject.image,
+            type: activeCommunityTab,
+            author_name: senderName,
+            content_text: textInput,
+            image_payload: encodedBase64Image,
             line_user_id: currentUserId
         }]).then(function(res) {
-            console.log("บันทึกลง Supabase สำเร็จ:", res);
+            document.getElementById("post-input-text").value = "";
+            clearSelectedImage();
+            // เรียกดึงข้อมูลใหม่ทันทีหลังโพสต์เสร็จ ข้อมูลจะสดใหม่และอยู่ถาวร
+            fetchPostsFromSupabase();
         }).catch(function(err) {
-            console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล:", err);
+            alert("เกิดข้อผิดพลาดในการส่งโพสต์ กรุณาลองใหม่อีกครั้งครับ");
+            console.error(err);
         });
+    }
+
+    // แก้ไขจุดที่ 4: ฟังก์ชันจัดการส่งคำสั่งลบโพสต์ไปยัง Supabase เฉพาะเจ้าของโพสต์เท่านั้น
+    function deletePost(postId) {
+        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) {
+            db.from("fmb_community_posts")
+            .delete()
+            .eq("id", postId)
+            .then(function(res) {
+                alert("ลบโพสต์ของคุณเรียบร้อยแล้วครับ");
+                fetchPostsFromSupabase(); // ดึงฟีดข้อมูลใหม่หลังจากลบสำเร็จ
+            })
+            .catch(function(err) {
+                alert("เกิดข้อผิดพลาด ไม่สามารถลบโพสต์ได้ในขณะนี้");
+                console.error(err);
+            });
+        }
     }
 
     function renderCommunityFeedUI() {
@@ -539,14 +587,19 @@
             feedMarkup += '      <div class="author-avatar">' + post.avatar + '</div>';
             feedMarkup += '      <div>';
             feedMarkup += '        <div class="author-name">' + post.author + '</div>';
-            feedMarkup += '        <div class="post-time">เมื่อสักครู่นี้</div>';
+            feedMarkup += '        <div class="post-time">โพสต์ถาวรบนระบบ</div>';
             feedMarkup += '      </div>';
             feedMarkup += '    </div>';
             
-            if(post.type === "promo") {
-                feedMarkup += '    <span class="badge-type">ข่าวโปรโมชั่น</span>';
+            // แก้ไขจุดที่ 4: ตรวจสอบสิทธิ์ความเป็นเจ้าของโพสต์ หากตรงกันให้วาดปุ่มกดลบโพสต์
+            if (post.line_user_id === currentUserId) {
+                feedMarkup += '    <button class="delete-post-btn" onclick="deletePost(\'' + post.id + '\')"><i class="fa-solid fa-trash-can"></i> ลบ</button>';
             } else {
-                feedMarkup += '    <span class="badge-type badge-review">รีวิวลูกค้า</span>';
+                if(post.type === "promo") {
+                    feedMarkup += '    <span class="badge-type">ข่าวโปรโมชั่น</span>';
+                } else {
+                    feedMarkup += '    <span class="badge-type badge-review">รีวิวลูกค้า</span>';
+                }
             }
             
             feedMarkup += '  </div>';
@@ -627,7 +680,7 @@
         for (var i = 0; i < localMemoryFeed.length; i++) {
             if (localMemoryFeed[i].id === postId) {
                 localMemoryFeed[i].comments.push({
-                    user: currentUserName,
+                    user: lineDisplayName, // ใช้ชื่อไลน์ในการแสดงความคิดเห็น
                     text: textComment
                 });
                 break;
