@@ -18,167 +18,193 @@
             
             /* Metallic Rank Colors */
             --bronze-grad: linear-gradient(135deg, #70483c 0%, #b5826f 50%, #543126 100%);
-            --silver-grad: linear-gradient(135deg, #8a9ba8 0%, #b3c6d4 50%, #61717e 100%);
-            --gold-grad: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
-            --platinum-grad: linear-gradient(135deg, #3a6073 0%, #b7b7b7 50%, #16222a 100%);
+            --silver-grad: linear-gradient(135deg, #8a95a5 0%, #cfd8dc 50%, #606f7b 100%);
+            --gold-grad: linear-gradient(135deg, #a37a1e 0%, #ffeaa7 50%, #835c00 100%);
+            --platinum-grad: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Kanit', sans-serif; }
-        body { background-color: var(--bg-color); color: #333; padding-bottom: 30px; }
+        body { background-color: var(--bg-color); color: #2d3748; padding-bottom: 30px; }
 
-        /* Loading View */
-        #loading-screen {
-            position: fixed; inset: 0; background: #ffffff; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;
-        }
-        .spinner { width: 45px; height: 45px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Loading Overlay */
+        #loader-screen { position: fixed; inset: 0; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
+        .spinner { width: 45px; height: 45px; border: 4px solid #edf2f7; border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .container { padding: 16px; max-width: 500px; margin: 0 auto; }
+        /* App Layout */
+        .app-container { max-width: 500px; margin: 0 auto; min-height: 100vh; background: #ffffff; box-shadow: 0 0 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+
+        /* Navigation Header */
+        .top-nav { display: flex; background: white; border-bottom: 1px solid #edf2f7; position: sticky; top: 0; z-index: 100; }
+        .nav-tab { flex: 1; text-align: center; padding: 15px 0; font-size: 14px; font-weight: 500; color: #718096; cursor: pointer; position: relative; transition: all 0.2s; }
+        .nav-tab.active { color: var(--primary); font-weight: 600; }
+        .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background: var(--primary); border-radius: 3px; }
+
+        /* Views Wrapper */
+        .view-content { padding: 16px; display: none; }
+        .view-content.active { display: block; }
+
+        /* Post Creation Card (Persistent above Feeds) */
+        .create-post-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
+        .post-input-group { display: flex; gap: 12px; align-items: flex-start; }
+        .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
+        .post-textarea { flex: 1; border: none; resize: none; min-height: 60px; font-size: 14px; color: #2d3748; padding-top: 8px; }
+        .post-textarea:focus { outline: none; }
         
-        /* Top Navigation Tabs */
-        .nav-tabs { display: flex; background: white; border-radius: 12px; padding: 4px; margin-bottom: 20px; box-shadow: var(--card-shadow); }
-        .nav-tab-btn { flex: 1; padding: 10px; border: none; background: transparent; font-size: 14px; font-weight: 500; color: #718096; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
-        .nav-tab-btn.active { background: var(--primary); color: white; font-weight: 600; }
+        /* Image Preview Style */
+        .preview-image-container { position: relative; margin-top: 10px; display: none; border-radius: 12px; overflow: hidden; max-height: 200px; }
+        .preview-image-container img { width: 100%; height: 100%; object-fit: cover; }
+        .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+        .post-actions-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f7fafc; }
+        .upload-media-btn { display: flex; align-items: center; gap: 6px; color: #4a5568; font-size: 13px; cursor: pointer; transition: color 0.2s; }
+        .upload-media-btn:hover { color: var(--primary); }
+        .submit-post-btn { background: var(--primary); color: white; border: none; padding: 7px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .submit-post-btn:hover { background: var(--primary-dark); }
 
-        /* Community Feed Elements */
-        .feed-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: var(--card-shadow); border: 1px solid #edf2f7; }
-        .author-info { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .author-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
-        .author-name { font-weight: 600; font-size: 15px; color: #1a202c; }
-        .post-time { font-size: 11px; color: #a0aec0; margin-top: 1px; }
+        /* Feed Post Layout */
+        .feed-card { background: white; border: 1px solid #edf2f7; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); }
+        .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .author-info { display: flex; align-items: center; gap: 10px; }
+        .author-name { font-size: 14px; font-weight: 600; color: #1a202c; display: flex; align-items: center; gap: 5px; }
+        .rank-badge { font-size: 10px; padding: 1px 8px; border-radius: 10px; color: white; font-weight: 500; text-transform: uppercase; }
+        .rank-Bronze { background: var(--bronze-grad); }
+        .rank-Silver { background: var(--silver-grad); }
+        .rank-Gold { background: var(--gold-grad); }
+        .rank-Platinum { background: var(--platinum-grad); }
+        .post-time { font-size: 11px; color: #a0aec0; }
         
-        .badge-official { background: #e0f2fe; color: #0284c7; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
+        .delete-post-btn { color: #e53e3e; background: none; border: none; cursor: pointer; font-size: 14px; padding: 4px; transition: opacity 0.2s; }
+        .delete-post-btn:hover { opacity: 0.7; }
 
-        .post-content { font-size: 14px; color: #4a5568; line-height: 1.5; margin-bottom: 12px; white-space: pre-line; }
-        .post-media { width: 100%; border-radius: 12px; margin-bottom: 12px; display: block; object-fit: cover; max-height: 250px; background: #f7fafc; }
+        .feed-body { font-size: 14px; color: #2d3748; line-height: 1.5; word-break: break-word; margin-bottom: 10px; }
+        .feed-attached-img { width: 100%; border-radius: 12px; margin-top: 8px; margin-bottom: 6px; object-fit: cover; max-height: 300px; }
 
-        .interaction-bar { display: flex; gap: 20px; border-top: 1px solid #edf2f7; border-bottom: 1px solid #edf2f7; padding: 8px 4px; margin-bottom: 12px; }
-        .action-btn { background: none; border: none; font-size: 13px; color: #718096; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
-        .action-btn i { font-size: 16px; }
+        /* Interaction Row */
+        .interaction-row { display: flex; gap: 20px; border-top: 1px solid #f7fafc; border-bottom: 1px solid #f7fafc; padding: 8px 0; margin-bottom: 10px; }
+        .interact-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #718096; background: none; border: none; cursor: pointer; transition: transform 0.1s; }
+        .interact-btn:active { transform: scale(0.92); }
+        .interact-btn.liked-active { color: #3182ce; font-weight: 600; }
+        .interact-btn.heart-active { color: #e53e3e; font-weight: 600; }
+
+        /* Comments Subsection */
+        .comments-box { background: #f7fafc; border-radius: 12px; padding: 10px; margin-top: 8px; }
+        .comment-item { font-size: 13px; color: #4a5568; margin-bottom: 6px; line-height: 1.4; padding-bottom: 4px; border-bottom: 1px dashed #edf2f7; }
+        .comment-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .commenter-name { font-weight: 600; color: #2d3748; margin-right: 4px; }
         
-        /* Active Permanent Interaction Colors */
-        .action-btn.liked { color: #22c55e; font-weight: 600; }
-        .action-btn.hearted { color: #ef4444; font-weight: 600; }
+        .comment-input-wrap { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+        .comment-field { flex: 1; border: 1px solid #e2e8f0; background: white; border-radius: 16px; padding: 6px 12px; font-size: 13px; color: #2d3748; }
+        .comment-field:focus { outline: none; border-color: var(--primary); }
+        .send-comment-btn { background: none; border: none; color: var(--primary); font-size: 14px; cursor: pointer; padding: 0 4px; }
 
-        /* Comments List section */
-        .comments-section { background: #f8fafc; border-radius: 12px; padding: 10px; margin-top: 8px; }
-        .comment-item { font-size: 13px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #e2e8f0; }
-        .comment-item:last-child { margin-bottom: 0; padding-bottom: 0; border: none; }
-        .comment-user { font-weight: 600; color: #2d3748; }
-        .comment-text { color: #4a5568; margin-left: 4px; }
-
-        .comment-input-box { display: flex; gap: 8px; margin-top: 10px; }
-        .comment-input { flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; background: white; outline: none; }
-        .comment-submit-btn { background: #4a5568; color: white; border: none; padding: 0 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; }
-
-        /* Privilege Promo Card Elements */
-        .promo-card { background: white; border-radius: 16px; overflow: hidden; margin-bottom: 16px; box-shadow: var(--card-shadow); border: 1px solid #edf2f7; }
-        .promo-img-wrap { width: 100%; height: 160px; background: #e2e8f0; position: relative; }
-        .promo-img { width: 100%; height: 100%; object-fit: cover; }
-        .promo-tag { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); color: white; padding: 3px 10px; border-radius: 20px; font-size: 11px; backdrop-filter: blur(4px); }
-        .promo-body { padding: 16px; }
-        .promo-title { font-size: 16px; font-weight: 600; color: #1a202c; margin-bottom: 6px; }
-        .promo-desc { font-size: 13px; color: #718096; line-height: 1.4; }
+        /* Static Perk Cards */
+        .perk-card { background: white; border-radius: 16px; border: 1px solid #edf2f7; overflow: hidden; margin-bottom: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.01); }
+        .perk-banner { width: 100%; height: 140px; object-fit: cover; background: #e2e8f0; }
+        .perk-info { padding: 14px; }
+        .perk-tag { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 20px; background: #ebf8ff; color: #2b6cb0; font-weight: 500; margin-bottom: 6px; }
+        .perk-title { font-size: 15px; font-weight: 600; color: #1a202c; }
+        .perk-desc { font-size: 12px; color: #718096; margin-top: 4px; line-height: 1.4; }
     </style>
 </head>
 <body>
 
-<div id="loading-screen">
+<div id="loader-screen">
     <div class="spinner"></div>
-    <p style="color: #718096; font-size: 14px;">กำลังโหลดศูนย์รวมคอมมูนิตี้ Fat Myth Bear...</p>
+    <div style="font-size: 14px; color: #718096;">กำลังเปิดหน้าต่างคอมมูนิตี้...</div>
 </div>
 
-<div class="container">
-    <div class="nav-tabs">
-        <button class="nav-tab-btn active" onclick="switchMainTab('community', this)"><i class="fa-solid fa-users"></i> คอมมูนิตี้หมี</button>
-        <button class="nav-tab-btn" onclick="switchMainTab('promotions', this)"><i class="fa-solid fa-bullhorn"></i> ข่าวสาร & โปรโมชั่น</button>
-        <button class="nav-tab-btn" onclick="switchMainTab('reviews', this)"><i class="fa-solid fa-star" style="color: #eab308;"></i> รีวิวจากลูกค้า</button>
+<div class="app-container">
+    <nav class="top-nav">
+        <div class="nav-tab active" onclick="switchMainTab('perks')">🎁 สิทธิพิเศษ</div>
+        <div class="nav-tab" onclick="switchMainTab('community')">🐻 คอมมูนิตี้หมี</div>
+        <div class="nav-tab" onclick="switchMainTab('reviews')">⭐ รีวิวจากลูกค้า</div>
+    </nav>
+
+    <div id="view-perks" class="view-content active">
+        <div class="perk-card">
+            <img class="perk-banner" src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80" alt="Bingsu Promo">
+            <div class="perk-info">
+                <span class="perk-tag">โปรโมชั่นประจำเดือน</span>
+                <div class="perk-title">โปรโมชั่นต้อนรับหน้าฝน บิงซูสตรอว์เบอร์รี่ลด 20%</div>
+                <div class="perk-desc">สิทธิพิเศษสำหรับสมาชิกทุกระดับยศ แสดงหน้าบัตรสมาชิกใบหลัก ณ เคาน์เตอร์สาขาเพื่อรับส่วนลดได้ทันทีตลอดทั้งเดือนนี้</div>
+            </div>
+        </div>
+        <div class="perk-card">
+            <img class="perk-banner" src="https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?auto=format&fit=crop&w=600&q=80" alt="Birthday Special">
+            <div class="perk-info">
+                <span class="perk-tag" style="background:#fef3c7; color:#b45309;">สิทธิ์วันเกิด</span>
+                <div class="perk-title">Birthday Special Box ของขวัญสุดพิเศษสำหรับคุณ</div>
+                <div class="perk-desc">เมื่อมียศระดับ Gold หรือ Platinum รับชุดของขวัญเซ็ตบิงซูหมีพรีเมียมฟรีในสัปดาห์เกิดของคุณ (จำกัด 1 สิทธิ์ต่อปี)</div>
+            </div>
+        </div>
     </div>
 
-    <div id="view-community" class="view-section active">
+    <div id="view-community" class="view-content">
+        <div class="create-post-card">
+            <div class="post-input-group">
+                <img class="post-avatar current-user-avatar" src="" alt="Me">
+                <textarea class="post-textarea" id="community-textarea" placeholder="แบ่งปันความประทับใจ หรือเรื่องราววันนี้กับเพื่อนๆ หมี..."></textarea>
+            </div>
+            <div class="preview-image-container" id="comm-preview-container">
+                <img id="comm-preview-img" src="" alt="Preview">
+                <button class="remove-preview-btn" onclick="clearSelectedImage('community')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="post-actions-bar">
+                <label class="upload-media-btn">
+                    <i class="fa-solid fa-camera" style="color: #4a5568; font-size:15px;"></i> แนบรูปถ่าย / คลังภาพ
+                    <input type="file" accept="image/*" id="community-file-input" style="display: none;" onchange="handleImageSelection(this, 'community')">
+                </label>
+                <button class="submit-post-btn" onclick="publishNewPost('community')">โพสลงบอร์ด</button>
+            </div>
+        </div>
         <div id="box-community-feed"></div>
     </div>
 
-    <div id="view-promotions" class="view-section">
-        <div id="box-promotions-list"></div>
-    </div>
-
-    <div id="view-reviews" class="view-section">
-        <div id="box-reviews-list"></div>
+    <div id="view-reviews" class="view-content">
+        <div class="create-post-card">
+            <div class="post-input-group">
+                <img class="post-avatar current-user-avatar" src="" alt="Me">
+                <textarea class="post-textarea" id="review-textarea" placeholder="เมนูไหนอร่อย? รีวิวความอร่อยของเมนูบิงซูที่คุณได้ทานวันนี้เลย..."></textarea>
+            </div>
+            <div class="preview-image-container" id="rev-preview-container">
+                <img id="rev-preview-img" src="" alt="Preview">
+                <button class="remove-preview-btn" onclick="clearSelectedImage('reviews')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="post-actions-bar">
+                <label class="upload-media-btn">
+                    <i class="fa-solid fa-image" style="color: #4a5568; font-size:15px;"></i> แนบภาพถ่ายเมนูอาหาร
+                    <input type="file" accept="image/*" id="review-file-input" style="display: none;" onchange="handleImageSelection(this, 'reviews')">
+                </label>
+                <button class="submit-post-btn" onclick="publishNewPost('reviews')">ส่งรีวิว</button>
+            </div>
+        </div>
+        <div id="box-reviews-feed"></div>
     </div>
 </div>
 
 <script>
-    var LIFF_ID = "2010298031-TOsCbkzl"; 
+    // คอนฟิกูเรชันหลักเชื่อมต่อคลาวด์ระบบนิเวศ Fat Myth Bear
+    var LIFF_ID = "2010298031-TOsCbkzl";
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
+    
+    // ตั้งค่าไอดีสำหรับแอดมินสูงสุดในการลบได้ทุกโพส
+    var ADMIN_LINE_ID = "U28ba046c85cc8211db48dbe559197cbe"; 
+
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    var lineUserId = "";
-    var lineDisplayName = "สมาชิกร้านหมี";
+    // หน่วยความจำของแอปพลิเคชัน (State Cache)
+    var currentLineId = "";
+    var currentDisplayName = "สมาชิกทั่วไป";
+    var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    var currentUserRank = "Bronze";
+    
+    var base64ImageString = { community: "", reviews: "" };
+    var activeTabContext = "perks";
 
-    // โครงสร้าง Mock Data หลักของโพสต์คอมมูนิตี้
-    var localMemoryFeed = [
-        {
-            id: "post_001",
-            author: "Fat Myth Bear Official",
-            avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=120",
-            isOfficial: true,
-            timeStr: "เมื่อวานนี้ 14:20 น.",
-            content: "🎉 เปิดตัวเมนูใหม่ฉลองหน้าฝน! 'บิงซูทุเรียนหมอนทองพรีเมียม' เสิร์ฟพร้อมซอสครีมกะทิเข้มข้น และเนื้อทุเรียนเน้นๆ เต็มๆ คำ แวะมาลิ้มลองความฟินได้แล้ววันนี้ทุกสาขาครับ! 🍓🍧",
-            mediaUrl: "https://images.unsplash.com/photo-1563729784474-d77dbb933a9e?q=80&w=500",
-            likes: 42,
-            hearts: 28,
-            comments: [
-                { user: "คุณมนัสวี", text: "ไปลองมาแล้วค่ะ อร่อยฟินละลายในปากมากกก" },
-                { user: "เอกชัย สายกิน", text: "เดี๋ยวเย็นนี้เลิกงานจะพาลูกๆ ไปจัดชุดใหญ่เลยครับ" }
-            ]
-        },
-        {
-            id: "post_002",
-            author: "NongPloy_Vip",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=120",
-            isOfficial: false,
-            timeStr: "วันนี้ 10:05 น.",
-            content: "วันนี้มาใช้สิทธิ์คูปองวันเกิด ฟรีบิงซูถ้วยเล็กที่สาขาสยาม พนักงานบริการดีมากกก บิงซูนุ่มฟูเหมือนปุยเมฆ แนะนำร้านนี้เลยค่ะ รักเลยยยย 🧸✨",
-            mediaUrl: "https://images.unsplash.com/photo-1517093157656-b9ecedd1f20b?q=80&w=500",
-            likes: 18,
-            hearts: 12,
-            comments: []
-        }
-    ];
-
-    // โครงสร้าง ข่าวสารโปรโมชั่น
-    var masterPromotions = [
-        {
-            title: "โปรโมชั่นสะสมแต้มคูณสอง! (Double Points)",
-            desc: "สิทธิพิเศษสำหรับวันอังคาร-พฤหัสบดี ตลอดเดือนนี้ เมื่อสั่งซื้อเมนูบิงซูขนาด L ขึ้นไป รับแต้มสะสมระบบ VIP ทันที 2 เท่าจากยอดบิลสุทธิ",
-            imgUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=500",
-            tag: "HOT PROMO"
-        },
-        {
-            title: "ต้อนรับสมาชิกระดับ Platinum Rank ใหม่",
-            desc: "สมาชิกระดับพลาตินัมรับฟรีเมนูเครื่องดื่ม Signature Month 2 แก้วฟรีทุกเดือน พร้อมส่วนลดท้ายบิลทันที 15% ไม่มีขั้นต่ำในการเข้าใช้บริการ",
-            imgUrl: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=500",
-            tag: "VIP EXCLUSIVE"
-        }
-    ];
-
-    // โครงสร้าง ข้อมูลรีวิว
-    var masterReviews = [
-        {
-            title: "รีวิวจาก คุณกิตติศักดิ์ (ระดับ Gold)",
-            desc: "รสชาติบิงซูชาไทยเข้มข้นสะใจมากครับ ไม่หวานตัดขา ท็อปปิ้งเฉาก๊วยหนึบหนับกำลังดี บรรยากาศร้านตกแต่งน่ารัก ถ่ายรูปสวยทุกมุมเลย",
-            imgUrl: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=500",
-            tag: "⭐ 5 ดาวเต็ม"
-        }
-    ];
-
+    // เริ่มต้นระบบยืนยันสิทธิ์ LINE และประมวลข้อมูลสมาชิก
     async function initializeLIFF() {
         try {
             await liff.init({ liffId: LIFF_ID });
@@ -186,186 +212,306 @@
                 liff.login();
                 return;
             }
-            var profile = await liff.getProfile();
-            lineUserId = profile.userId;
-            lineDisplayName = profile.displayName || "สมาชิก VIP ร้านหมี";
             
-            // สั่งประมวลผลเรนเดอร์หน้าจอหลัก
-            renderCommunityFeedUI();
-            renderPromotionsAndReviews();
+            var profile = await liff.getProfile();
+            currentLineId = profile.userId;
+            currentDisplayName = profile.displayName || "LINE User";
+            if(profile.pictureUrl) currentUserAvatar = profile.pictureUrl;
+            
+            // ดึงข้อมูลยศจากตาราง profiles ของระบบหลัก
+            var { data: memberData } = await db
+                .from("profiles")
+                .select("tier")
+                .eq("line_user_id", currentLineId)
+                .single();
+                
+            if(memberData && memberData.tier) {
+                currentUserRank = memberData.tier;
+            }
 
-            document.getElementById("loading-screen").style.display = "none";
-        } catch (err) {
-            console.error("LIFF Init Error:", err);
-            document.getElementById("loading-screen").innerHTML = '<p style="color:#ef4444; padding:20px;">การยืนยันตัวตน LINE ล้มเหลว กรุณาเปิดใหม่อีกครั้ง</p>';
+            // บรรจุรูปประจำตัวเข้ากล่องเขียนโพส
+            var avatars = document.querySelectorAll(".current-user-avatar");
+            avatars.forEach(img => img.src = currentUserAvatar);
+
+            // ปลดล็อกหน้าจอแสดงผลหลักและโหลดฟีด
+            document.getElementById("loader-screen").style.display = "none";
+            
+            // เปิดระบบดึงฟีดโพสล่าสุดขึ้นแสดง
+            syncCommunityFeeds();
+            
+            // เปิดท่อดักรับการเปลี่ยนแปลงฐานข้อมูลแบบ Realtime (Supabase Realtime Stream)
+            db.channel('realtime_posts_stream')
+              .on('postgres_changes', { event: '*', filter: 'id=neq.0', table: 'community_feed', schema: 'public' }, () => {
+                  syncCommunityFeeds();
+              })
+              .subscribe();
+
+        } catch (error) {
+            console.error("LIFF Init Error:", error);
+            document.getElementById("loader-screen").innerHTML = "<p style='padding:20px; text-align:center;'>เกิดข้อผิดพลาดในการเชื่อมต่อระบบ LINEกรุณาเปิดใหม่อีกครั้ง</p>";
         }
     }
 
-    function switchMainTab(targetSection, element) {
-        var buttons = document.querySelectorAll('.nav-tab-btn');
-        buttons.forEach(b => b.classList.remove('active'));
-        element.classList.add('active');
+    // ฟังก์ชันควบคุมการสลับแท็บเมนูหลัก
+    function switchMainTab(targetTab) {
+        activeTabContext = targetTab;
+        
+        var tabs = document.querySelectorAll(".nav-tab");
+        tabs.forEach(t => t.classList.remove("active"));
+        
+        var views = document.querySelectorAll(".view-content");
+        views.forEach(v => v.classList.remove("active"));
 
-        var sections = document.querySelectorAll('.view-section');
-        sections.forEach(s => s.classList.remove('active'));
-
-        if (targetSection === 'community') document.getElementById('view-community').classList.add('active');
-        if (targetSection === 'promotions') document.getElementById('view-promotions').classList.add('active');
-        if (targetSection === 'reviews') document.getElementById('view-reviews').classList.add('active');
+        if (targetTab === 'perks') {
+            tabs[0].classList.add("active");
+            document.getElementById("view-perks").classList.add("active");
+        } else if (targetTab === 'community') {
+            tabs[1].classList.add("active");
+            document.getElementById("view-community").classList.add("active");
+        } else if (targetTab === 'reviews') {
+            tabs[2].classList.add("active");
+            document.getElementById("view-reviews").classList.add("active");
+        }
     }
 
-    // ฟังก์ชันในการเรนเดอร์คอมมูนิตี้ฟีด พร้อมระบบดึงสถานะกดถูกใจแบบถาวร
-    function renderCommunityFeedUI() {
-        var container = document.getElementById("box-community-feed");
-        container.innerHTML = "";
+    // ฟังก์ชันจัดการแปลงไฟล์ภาพถ่ายเป็นข้อความ Base64 เพื่อเตรียมนําส่งเข้าคลาวด์
+    function handleImageSelection(inputElement, typeKey) {
+        var file = inputElement.files[0];
+        if (!file) return;
 
-        localMemoryFeed.forEach(function(post) {
-            // ดึงสถานะถาวรจากเครื่องผู้ใช้รายบุคคล (ล็อกร่วมกับ LINE User ID เพื่อป้องกันบั๊กสลับบัญชี)
-            var permanentLikeKey = `perm_like_${lineUserId}_${post.id}`;
-            var permanentHeartKey = `perm_heart_${lineUserId}_${post.id}`;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            base64ImageString[typeKey] = e.target.result;
+            if(typeKey === 'community') {
+                document.getElementById("comm-preview-img").src = e.target.result;
+                document.getElementById("comm-preview-container").style.display = "block";
+            } else {
+                document.getElementById("rev-preview-img").src = e.target.result;
+                document.getElementById("rev-preview-container").style.display = "block";
+            }
+        };
+        reader.readAsDataURL(file);
+    }
 
-            var hasLiked = localStorage.getItem(permanentLikeKey) === "YES";
-            var hasHearted = localStorage.getItem(permanentHeartKey) === "YES";
+    // ยกเลิกภาพถ่ายที่เลือกไว้
+    function clearSelectedImage(typeKey) {
+        base64ImageString[typeKey] = "";
+        if(typeKey === 'community') {
+            document.getElementById("community-file-input").value = "";
+            document.getElementById("comm-preview-container").style.display = "none";
+            document.getElementById("comm-preview-img").src = "";
+        } else {
+            document.getElementById("review-file-input").value = "";
+            document.getElementById("rev-preview-container").style.display = "none";
+            document.getElementById("rev-preview-img").src = "";
+        }
+    }
 
-            // คำนวณยอดแสดงผลแบบ Real-time ผสมผสานค่าเริ่มต้นบวกกับผลต่างของการกดถาวร
-            var displayLikesCount = post.likes + (hasLiked ? 1 : 0);
-            var displayHeartsCount = post.hearts + (hasHearted ? 1 : 0);
+    // ฟังก์ชันกวาดล้างและดึงข้อมูลขึ้นเรนเดอร์ใหม่จาก Supabase
+    async function syncCommunityFeeds() {
+        var { data: postsList, error } = await db
+            .from("community_feed")
+            .select("*")
+            .order("created_at", { ascending: false });
 
-            var commentsHtml = "";
-            post.comments.forEach(function(cmt) {
-                commentsHtml += `
+        if (error) {
+            console.error("Fetch Feed Fault: ", error);
+            return;
+        }
+
+        var commBox = document.getElementById("box-community-feed");
+        var revBox = document.getElementById("box-reviews-feed");
+
+        commBox.innerHTML = "";
+        revBox.innerHTML = "";
+
+        var commCount = 0;
+        var revCount = 0;
+
+        postsList.forEach(function(post) {
+            // ความปลอดภัยและสิทธิ์ลบ: เป็นโพสตนเอง OR เป็นไอดีแอดมินสูงสุด
+            var isAuthorizedToDelete = (post.author_line_id === currentLineId) || (currentLineId === ADMIN_LINE_ID);
+            
+            var deleteButtonHtml = isAuthorizedToDelete ? 
+                `<button class="delete-post-btn" onclick="erasePostRecord('${post.id}')" title="ลบโพสนี้"><i class="fa-solid fa-trash"></i></button>` : '';
+
+            // ตรวจสอบสถานะการถูกใจของ User ปัจจุบัน
+            var likeArray = Array.isArray(post.like_users) ? post.like_users : [];
+            var heartArray = Array.isArray(post.heart_users) ? post.heart_users : [];
+            var isLiked = likeArray.includes(currentLineId);
+            var isHearted = heartArray.includes(currentLineId);
+
+            // ประกอบโครงสร้างคอมเมนต์
+            var commentList = Array.isArray(post.comments_json) ? post.comments_json : [];
+            var commentMarkup = "";
+            commentList.forEach(function(cm) {
+                commentMarkup += `
                     <div class="comment-item">
-                        <span class="comment-user">${cmt.user}:</span>
-                        <span class="comment-text">${cmt.text}</span>
+                        <span class="commenter-name">${cm.user}:</span>${cm.text}
                     </div>
                 `;
             });
 
-            var card = document.createElement("div");
-            card.className = "feed-card";
-            card.innerHTML = `
-                <div class="author-info">
-                    <img class="author-avatar" src="${post.avatar}" alt="avatar">
-                    <div>
-                        <div class="author-name">
-                            ${post.author}
-                            ${post.isOfficial ? `<span class="badge-official"><i class="fa-solid fa-circle-check"></i> ร้านค้า</span>` : ''}
+            var attachedImgMarkup = post.image_base64 ? `<img class="feed-attached-img" src="${post.image_base64}" alt="Attached">` : '';
+            var timeFormatted = new Date(post.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) + " น.";
+
+            var postHtml = `
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="author-info">
+                            <img class="post-avatar" src="${post.author_avatar || currentUserAvatar}" alt="avatar">
+                            <div>
+                                <div class="author-name">
+                                    ${post.author_name} 
+                                    <span class="rank-badge rank-${post.author_rank || 'Bronze'}">${post.author_rank || 'Bronze'}</span>
+                                </div>
+                                <div class="post-time">${timeFormatted}</div>
+                            </div>
                         </div>
-                        <div class="post-time">${post.timeStr}</div>
+                        ${deleteButtonHtml}
                     </div>
-                </div>
-
-                <div class="post-content">${post.content}</div>
-                ${post.mediaUrl ? `<img class="post-media" src="${post.mediaUrl}" alt="media">` : ''}
-
-                <div class="interaction-bar">
-                    <button class="action-btn ${hasLiked ? 'liked' : ''}" onclick="executePermanentInteraction('${post.id}', 'like')">
-                        <i class="${hasLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i> ถูกใจ (${displayLikesCount})
-                    </button>
-                    <button class="action-btn ${hasHearted ? 'hearted' : ''}" onclick="executePermanentInteraction('${post.id}', 'heart')">
-                        <i class="${hasHearted ? 'fa-solid' : 'fa-regular'} fa-heart"></i> หัวใจ (${displayHeartsCount})
-                    </button>
-                </div>
-
-                <div class="comments-section">
-                    <div id="comments-box-${post.id}">
-                        ${commentsHtml || '<p style="font-size:11px; color:#a0aec0; text-align:center; padding:4px 0;">เขียนคอมเมนต์คนแรกของโพสต์นี้เลย...</p>'}
+                    
+                    <div class="feed-body">
+                        ${post.message_text}
+                        ${attachedImgMarkup}
                     </div>
-                    <div class="comment-input-box">
-                        <input type="text" id="input-${post.id}" class="comment-input" placeholder="พิมพ์ข้อความตอบกลับที่นี่...">
-                        <button class="comment-submit-btn" onclick="executeSubmitComment('${post.id}')">ส่ง</button>
+
+                    <div class="interaction-row">
+                        <button class="interact-btn ${isLiked ? 'liked-active' : ''}" onclick="togglePostVote('${post.id}', 'like')">
+                            <i class="${isLiked ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i> ถูกใจ (${likeArray.length})
+                        </button>
+                        <button class="interact-btn ${isHearted ? 'heart-active' : ''}" onclick="togglePostVote('${post.id}', 'heart')">
+                            <i class="${isHearted ? 'fa-solid' : 'fa-regular'} fa-heart"></i> หัวใจ (${heartArray.length})
+                        </button>
+                    </div>
+
+                    <div class="comments-box">
+                        <div id="comment-list-${post.id}">${commentMarkup}</div>
+                        <div class="comment-input-wrap">
+                            <input type="text" class="comment-field" id="com-input-${post.id}" placeholder="เขียนคอมเมนต์ตอบกลับ...">
+                            <button class="send-comment-btn" onclick="publishComment('${post.id}')"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
                     </div>
                 </div>
             `;
-            container.appendChild(card);
+
+            if(post.post_type === 'reviews') {
+                revBox.innerHTML += postHtml;
+                revCount++;
+            } else {
+                commBox.innerHTML += postHtml;
+                commCount++;
+            }
         });
+
+        // หากไม่มีโพสเลยให้ใส่ข้อความแจ้งเตือนความว่างเปล่าไว้
+        if(commCount === 0) commBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีความเคลื่อนไหวในคอมมูนิตี้หมี</p>';
+        if(revCount === 0) revBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีการรีวิวจากลูกค้าในขณะนี้</p>';
     }
 
-    // ฟังก์ชันระดับสูงจัดเก็บการปฏิสัมพันธ์โพสต์แบบถาวร (100% ไม่หายเมื่อออก LINE)
-    function executePermanentInteraction(postId, actionType) {
-        if (!lineUserId) return;
+    // ฟังก์ชันสร้างและบันทึกโพสลง Cloud Storage (Supabase)
+    async function publishNewPost(typeKey) {
+        var textareaElement = document.getElementById(typeKey + "-textarea");
+        var textContent = textareaElement.value.trim();
+        
+        if(!textContent && !base64ImageString[typeKey]) {
+            alert("กรุณากรอกข้อความบรรยายหรือเลือกรูปภาพก่อนกดส่งโพสครับ");
+            return;
+        }
 
-        var permanentLikeKey = `perm_like_${lineUserId}_${postId}`;
-        var permanentHeartKey = `perm_heart_${lineUserId}_${postId}`;
+        var payload = {
+            author_line_id: currentLineId,
+            author_name: currentDisplayName,
+            author_avatar: currentUserAvatar,
+            author_rank: currentUserRank,
+            message_text: textContent,
+            image_base64: base64ImageString[typeKey] || null,
+            post_type: typeKey, // บันทึกประเภทให้ตรงกับ Tab: 'community' หรือ 'reviews'
+            like_users: [],
+            heart_users: [],
+            comments_json: []
+        };
+
+        var { error } = await db.from("community_feed").insert([payload]);
+        if(error) {
+            alert("ไม่สามารถบันทึกโพสได้ในขณะนี้เนื่องจากปัญหาทางระบบเน็ตเวิร์ก");
+            console.error(error);
+            return;
+        }
+
+        // เคลียร์ค่าคืนฟอร์มฟีดให้พร้อมใช้งานใหม่
+        textareaElement.value = "";
+        clearSelectedImage(typeKey);
+        syncCommunityFeeds();
+    }
+
+    // ฟังก์ชันคอมเมนต์ใต้โพส
+    async function publishComment(postId) {
+        var inputField = document.getElementById("com-input-" + postId);
+        var textComment = inputField.value.trim();
+        if(!textComment) return;
+
+        // ดึงข้อมูลโพสนั้นมาอัปเดตแบบอะตอมมิก
+        var { data: currentPost } = await db.from("community_feed").select("comments_json").eq("id", postId).single();
+        var commentArray = Array.isArray(currentPost.comments_json) ? currentPost.comments_json : [];
+        
+        commentArray.push({
+            user: currentDisplayName,
+            text: textComment,
+            timestamp: new Date().toISOString()
+        });
+
+        var { error } = await db
+            .from("community_feed")
+            .update({ comments_json: commentArray })
+            .eq("id", postId);
+
+        if(!error) {
+            inputField.value = "";
+            syncCommunityFeeds();
+        }
+    }
+
+    // ฟังก์ชันกดยอมรับ/สลับไลค์และหัวใจแบบคงทนถาวรผูกไอดี LINE
+    async function togglePostVote(postId, actionType) {
+        var { data: post, error } = await db.from("community_feed").select("like_users, heart_users").eq("id", postId).single();
+        if (error || !post) return;
+
+        var likes = Array.isArray(post.like_users) ? post.like_users : [];
+        var hearts = Array.isArray(post.heart_users) ? post.heart_users : [];
 
         if (actionType === "like") {
-            var isCurrentlyLiked = localStorage.getItem(permanentLikeKey) === "YES";
-            if (isCurrentlyLiked) {
-                localStorage.removeItem(permanentLikeKey); // ถอนไลค์ออกถาวร
-            } else {
-                localStorage.setItem(permanentLikeKey, "YES"); // บันทึกไลค์ลงเครื่องถาวร
-            }
+            var idx = likes.indexOf(currentLineId);
+            if (idx > -1) { likes.splice(idx, 1); } else { likes.push(currentLineId); }
         } else if (actionType === "heart") {
-            var isCurrentlyHearted = localStorage.getItem(permanentHeartKey) === "YES";
-            if (isCurrentlyHearted) {
-                localStorage.removeItem(permanentHeartKey); // ถอนหัวใจออกถาวร
-            } else {
-                localStorage.setItem(permanentHeartKey, "YES"); // บันทึกหัวใจลงเครื่องถาวร
-            }
+            var idx = hearts.indexOf(currentLineId);
+            if (idx > -1) { hearts.splice(idx, 1); } else { hearts.push(currentLineId); }
         }
 
-        // รีเรนเดอร์ UI ทันที ยอดตัวเลขจะผูกติดกับ Local Storage ตัวนี้อย่างปลอดภัยแม่นยำ
-        renderCommunityFeedUI();
+        await db.from("community_feed")
+            .update({ like_users: likes, heart_users: hearts })
+            .eq("id", postId);
+
+        syncCommunityFeeds();
     }
 
-    // ฟังก์ชันส่งข้อความแสดงความคิดเห็นคอมเมนต์
-    function executeSubmitComment(postId) {
-        var inputElement = document.getElementById("input-" + postId);
-        var txt = inputElement.value.trim();
-        if (!txt) return;
+    // ฟังก์ชันลบโพสออกจากระบบ (สิทธิ์ผู้สร้างโพส หรือ สิทธิ์แอดมินสูงสุด)
+    async function erasePostRecord(postId) {
+        if(!confirm("คุณต้องการลบโพสข้อความเนื้อหานี้ออกใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนคืนได้")) return;
 
-        var post = localMemoryFeed.find(p => p.id === postId);
-        if (post) {
-            post.comments.push({
-                user: lineDisplayName,
-                text: txt
-            });
+        var { error } = await db
+            .from("community_feed")
+            .delete()
+            .eq("id", postId);
+
+        if(error) {
+            alert("ไม่สามารถทำรายการลบได้ในขณะนี้");
+        } else {
+            syncCommunityFeeds();
         }
-
-        inputElement.value = "";
-        renderCommunityFeedUI();
     }
 
-    // ฟังก์ชันเรนเดอร์ส่วนโปรโมชั่นและรีวิว
-    function renderPromotionsAndReviews() {
-        var promoBox = document.getElementById("box-promotions-list");
-        var reviewBox = document.getElementById("box-reviews-list");
-
-        promoBox.innerHTML = "";
-        reviewBox.innerHTML = "";
-
-        masterPromotions.forEach(function(p) {
-            promoBox.innerHTML += `
-                <div class="promo-card">
-                    <div class="promo-img-wrap">
-                        <img class="promo-img" src="${p.imgUrl}" alt="promo">
-                        <div class="promo-tag">${p.tag}</div>
-                    </div>
-                    <div class="promo-body">
-                        <div class="promo-title">${p.title}</div>
-                        <div class="promo-desc">${p.desc}</div>
-                    </div>
-                </div>
-            `;
-        });
-
-        masterReviews.forEach(function(r) {
-            reviewBox.innerHTML += `
-                <div class="promo-card">
-                    <div class="promo-img-wrap">
-                        <img class="promo-img" src="${r.imgUrl}" alt="review">
-                        <div class="promo-tag" style="background:#eab308; color:#1a202c;">${r.tag}</div>
-                    </div>
-                    <div class="promo-body">
-                        <div class="promo-title">${r.title}</div>
-                        <div class="promo-desc">${r.desc}</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    // เรียกทำงานระบบเมื่อหน้าจอพร้อม
+    // รันกระบวนการทันทีเมื่อสคริปต์โหลดเสร็จสิ้น
     initializeLIFF();
 </script>
 </body>
