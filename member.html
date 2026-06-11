@@ -254,7 +254,7 @@
         <div class="roadmap" id="tier-roadmap"></div>
     </div>
 
-    <!-- ส่วนช่วยเพิ่มข้อมูลช่วยเหลือ / FAQ (อยู่ด้านล่างสุดตามภาพที่ 2) -->
+    <!-- ส่วนช่วยเพิ่มข้อมูลช่วยเหลือ / FAQ -->
     <div class="section-box">
         <div class="section-title">
             <i class="fa-solid fa-question" style="color: #ff5252; font-size: 14px; width: 16px; text-align: center;"></i> ช่วยเหลือ / FAQ
@@ -279,7 +279,7 @@
                     <span class="faq-question">อัพเกรดระดับยังไง?</span>
                     <i class="fa-solid fa-chevron-right faq-arrow"></i>
                 </div>
-                <div class="faq-answer">Bronze 0-999 / Silver 1,000-2,999 / Gold 3,000-4,999 / Platinum 5,000+ EXP ระบบตรวจทุกเที่ยงคืน</div>
+                <div class="faq-answer">Bronze 1-149 / Silver 150-299 / Gold 300-449 / Platinum 450+ EXP ระบบตรวจทุกเที่ยงคืน</div>
             </div>
             <div class="faq-item" onclick="toggleFaq(this)">
                 <div class="faq-header">
@@ -323,11 +323,12 @@
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // ปรับปรุงเกณฑ์ EXP ใหม่ตามโจทย์
     var TIER_DATA = [
-        { id: 'Bronze', name: 'Bronze', min: 0, max: 999, icon: '🥉', perks: ['ส่วนลดพิเศษ 10% ในช่วงสัปดาห์เกิด'] },
-        { id: 'Silver', name: 'Silver', min: 1000, max: 2999, icon: '🥈', perks: ['รับส่วนลดทันที 3% ทุกบิลอาหาร', 'รับสิทธิ์แลกเครื่องดื่มฟรี 1 แก้วต่อเดือน'] },
-        { id: 'Gold', name: 'Gold', min: 3000, max: 4999, icon: '🥇', perks: ['รับส่วนลดทันที 5% ทุกบิลอาหาร', 'รับคูปองบิงซูฟรีเซ็ตพรีเมียมประจำไตรมาส', 'สิทธิ์เข้าร่วมกิจกรรมลุ้นของรางวัล Exclusive'] },
-        { id: 'Platinum', name: 'Platinum', min: 5000, max: 99999, icon: '💎', perks: ['รับส่วนลดพรีเมียมสูงสุด 10% ทุกบิลอาหาร', 'รับสิทธิ์ทดลองชิมเมนูบิงซูใหม่ก่อนใคร (Early Access)', 'เซ็ตของขวัญวันเกิดพิเศษจาก Fat Myth Bear Bear'] }
+        { id: 'Bronze', name: 'Bronze', min: 0, max: 149, icon: '🥉', perks: ['ส่วนลดพิเศษ 10% ในช่วงสัปดาห์เกิด'] },
+        { id: 'Silver', name: 'Silver', min: 150, max: 299, icon: '🥈', perks: ['รับส่วนลดทันที 3% ทุกบิลอาหาร', 'รับสิทธิ์แลกเครื่องดื่มฟรี 1 แก้วต่อเดือน'] },
+        { id: 'Gold', name: 'Gold', min: 300, max: 449, icon: '🥇', perks: ['รับส่วนลดทันที 5% ทุกบิลอาหาร', 'รับคูปองบิงซูฟรีเซ็ตพรีเมียมประจำไตรมาส', 'สิทธิ์เข้าร่วมกิจกรรมลุ้นของรางวัล Exclusive'] },
+        { id: 'Platinum', name: 'Platinum', min: 450, max: 999999, icon: '💎', perks: ['รับส่วนลดพรีเมียมสูงสุด 10% ทุกบิลอาหาร', 'รับสิทธิ์ทดลองชิมเมนูบิงซูใหม่ก่อนใคร (Early Access)', 'เซ็ตของขวัญวันเกิดพิเศษจาก Fat Myth Bear Bear'] }
     ];
 
     async function init() {
@@ -439,7 +440,7 @@
                     <div class="roadmap-info">
                         ${isActive ? '<span class="status-tag current">ระดับปัจจุบันของคุณ</span>' : (isPassed ? '<span class="status-tag">ปลดล็อกแล้ว</span>' : '')}
                         <div class="roadmap-tier-name" style="color: ${isActive ? '#1a1a1a' : '#718096'}; font-weight: ${isActive ? '600' : '400'}">${t.name} ${t.icon}</div>
-                        <div class="roadmap-range">${t.min.toLocaleString()} - ${t.max.toLocaleString()} EXP</div>
+                        <div class="roadmap-range">${t.max >= 999999 ? t.min.toLocaleString() + '+' : t.min.toLocaleString() + ' - ' + t.max.toLocaleString()} EXP</div>
                     </div>
                 </div>
             `;
