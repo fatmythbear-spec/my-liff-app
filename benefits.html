@@ -526,10 +526,12 @@
         });
     }
 
-    // แก้ไขจุดวิกฤต: เพิ่มระบบ Optimistic Update โพสต์ขึ้นหน้าจอทันทีไม่มีหายแน่นอน!
+    // 🔧 แก้ไขจุดวิกฤต: ล็อกค่าตัวแปรรูปภาพไว้ก่อนโดนคำสั่งล้างจอเคลียร์ค่าทิ้ง
     function publishNewPost() {
         var textInput = document.getElementById("post-input-text").value.trim();
-        if (!textInput && !encodedBase64Image) {
+        var imageToUpload = encodedBase64Image; // ล็อกเก็บค่ารูปภาพตัวจริงไว้ที่นี่ก่อน!
+
+        if (!textInput && !imageToUpload) {
             alert("กรุณากรอกข้อความหรือเลือกรูปภาพก่อนส่งโพสต์ครับ");
             return;
         }
@@ -544,7 +546,7 @@
             author: senderName,
             avatar: "👤",
             text: textInput,
-            image: encodedBase64Image, 
+            image: imageToUpload, 
             line_user_id: currentUserId,
             rating: 5,
             likes: 0,
@@ -557,16 +559,16 @@
         localMemoryFeed.unshift(newPostObject);
         renderCommunityFeedUI();
 
-        // ล้างอินพุตทันที
+        // ล้างอินพุตและเคลียร์รูปบนหน้าจอทันทีเพื่อ UX ที่ดี
         document.getElementById("post-input-text").value = "";
-        clearSelectedImage();
+        clearSelectedImage(); // คำสั่งนี้จะเคลียร์ค่า encodedBase64Image ไปเป็น "" แต่ไม่กระทบ imageToUpload แล้ว
 
         // 2. แอบทำงานบันทึกลง Supabase ด้านหลัง (Background)
         db.from("fmb_community_posts").insert([{
             type: activeCommunityTab,
             author_name: senderName,
             content_text: textInput,
-            image_payload: encodedBase64Image,
+            image_payload: imageToUpload, // เปลี่ยนมาใช้ตัวแปรที่เราล็อกค่าไว้แทน มั่นใจได้รูปไม่หาย 100%
             line_user_id: currentUserId
         }])
         .select()
