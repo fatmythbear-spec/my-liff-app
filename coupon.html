@@ -115,6 +115,7 @@
         }
         .cp-use-btn.locked { background: #cbd5e1 !important; color: #94a3b8 !important; cursor: not-allowed; }
         .cp-use-btn.used { background: #e2e8f0 !important; color: #cbd5e1 !important; cursor: not-allowed; }
+        .cp-use-btn.view-qr { background: #3b82f6 !important; color: white !important; }
 
         .empty-box { text-align: center; padding: 50px 20px; color: #a0aec0; font-size: 14px; width: 100%; }
         .empty-box i { font-size: 40px; margin-bottom: 10px; display: block; opacity: 0.4; }
@@ -273,6 +274,7 @@
             title: "ส่วนลด 50 บาท", 
             desc: "ใช้ได้ทุกสาขา ไม่มีขั้นต่ำในการสั่งซื้อ", 
             expiryStr: "หมดอายุ 30 มิ.ย. 68", 
+            expiryDate: "2025-06-30",
             pointsCost: 30, 
             tierReq: "Bronze",
             ruleType: "points_deduct",
@@ -286,6 +288,7 @@
             title: "ฟรี Bingsu ถ้วยเล็ก", 
             desc: "สิทธิพิเศษรายเดือนสำหรับสมาชิกระดับ Gold ขึ้นไป", 
             expiryStr: "หมดอายุ 30 มิ.ย. 68", 
+            expiryDate: "2025-06-30",
             pointsCost: 0, 
             tierReq: "Gold",
             ruleType: "monthly_refresh",
@@ -299,6 +302,7 @@
             title: "ฟรี Bingsu ถ้วยใหญ่เซ็ตใดก็ได้", 
             desc: "เอกสิทธิ์ของรางวัลพิเศษสุดสำหรับระดับ Platinum เท่านั้น", 
             expiryStr: "หมดอายุ 30 มิ.ย. 68", 
+            expiryDate: "2025-06-30",
             pointsCost: 0, 
             tierReq: "Platinum",
             ruleType: "monthly_refresh",
@@ -312,6 +316,7 @@
             title: "ท๊อปปิ้งฟรี 1 อย่าง", 
             desc: "เลือกเพิ่มท็อปปิ้งความอร่อยฟรีเมนูใดก็ได้ 1 อย่าง", 
             expiryStr: "หมดอายุ 30 มิ.ย. 68", 
+            expiryDate: "2025-06-30",
             pointsCost: 6, 
             tierReq: "Bronze",
             ruleType: "points_with_min_spend",
@@ -325,12 +330,23 @@
             title: "Buy 1 Get 1 Free (บิงซูถ้วยเล็ก)", 
             desc: "สิทธิ์ซื้อ 1 แถม 1 จัดรายการเฉพาะช่วงเวลาจำกัด", 
             expiryStr: "หมดอายุ 30 มิ.ย. 68", 
+            expiryDate: "2025-06-30",
             pointsCost: 0, 
             tierReq: "Gold",
             ruleType: "special_days_monthly",
             ruleDesc: "ใช้ได้เฉพาะวัน จันทร์, พุธ, พฤหัสบดี เท่านั้น (รีเฟรชทุกวันที่ 1 ของเดือน)"
         }
     ];
+
+    // ฟังก์ชันช่วยเช็ควันหมดอายุของคูปองหลัก
+    function isCouponExpired(coupon) {
+        if (!coupon.expiryDate) return false;
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        var exp = new Date(coupon.expiryDate);
+        exp.setHours(0,0,0,0);
+        return today > exp;
+    }
 
     async function init() {
         try {
@@ -415,12 +431,27 @@
             var singleUseKey = `used_${currentUserId}_${coupon.id}`;
             var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
 
+            var singleClaimKey = `claimed_${currentUserId}_${coupon.id}`;
+            var monthlyClaimKey = `claimed_${currentUserId}_${coupon.id}_${currentMonthToken}`;
+
+            // 1. เช็คสถานะการถูกใช้จริงหน้าร้าน (Used)
             var isAlreadyUsed = false;
             if (coupon.ruleType === 'points_deduct' || coupon.ruleType === 'points_with_min_spend') {
                 if (localStorage.getItem(singleUseKey)) isAlreadyUsed = true;
             } else {
                 if (localStorage.getItem(monthlyUseKey)) isAlreadyUsed = true;
             }
+
+            // 2. เช็คสถานะการกดแลกรับไว้ก่อนล่วงหน้า (Claimed)
+            var isAlreadyClaimed = false;
+            if (coupon.ruleType === 'points_deduct' || coupon.ruleType === 'points_with_min_spend') {
+                if (localStorage.getItem(singleClaimKey)) isAlreadyClaimed = true;
+            } else {
+                if (localStorage.getItem(monthlyClaimKey)) isAlreadyClaimed = true;
+            }
+
+            // 3. เช็ควันหมดอายุ
+            var isExpired = isCouponExpired(coupon);
 
             var isTierLocked = userTierIdx < reqTierIdx;
             var isPointsInsufficient = coupon.pointsCost > 0 && userPoints < coupon.pointsCost;
@@ -436,6 +467,12 @@
             var actionBtnHtml = "";
             if (isAlreadyUsed) {
                 actionBtnHtml = `<button class="cp-use-btn used" disabled>ใช้แล้ว</button>`;
+            } else if (isExpired) {
+                actionBtnHtml = `<button class="cp-use-btn locked" disabled>หมดอายุ</button>`;
+            } else if (isAlreadyClaimed) {
+                // เคสที่แลกไว้ก่อนหน้าแล้ว และคูปองยังไม่หมดอายุ -> ให้กดเรียกแสดง QR Code เดิมขึ้นมาใหม่ได้
+                availableCouponsCounter++;
+                actionBtnHtml = `<button class="cp-use-btn view-qr" onclick="showExistingQR('${coupon.id}')">ดู QR Code</button>`;
             } else if (isTierLocked) {
                 actionBtnHtml = `<button class="cp-use-btn locked" disabled>ยศไม่ถึง</button>`;
             } else if (isPointsInsufficient) {
@@ -503,7 +540,7 @@
         document.getElementById("confirm-modal").classList.remove("show");
     }
 
-    /* ตรรกะแบบ Real-time: กดปุ่มยืนยันแล้วตัดแต้มในคลาวด์และบันทึกสิทธิ์ทันที */
+    /* ตรรกะแบบ Real-time: กดปุ่มยืนยันแลกรับสิทธิ์และตัดแต้มบนเซิร์ฟเวอร์คลาวด์ */
     async function proceedToQR() {
         if (!selectedCouponData || !globalUserData) {
             alert("ไม่พบข้อมูลคูปองที่เลือก กรุณาลองใหม่อีกครั้ง");
@@ -513,7 +550,6 @@
         var coupon = selectedCouponData;
         var currentBalance = parseInt(globalUserData.current_points) || 0;
 
-        // ป้องกันความปลอดภัย: เช็คแต้มอีกครั้งหน้าเบสก่อนหักเงินจริง
         if (coupon.pointsCost > 0 && currentBalance < coupon.pointsCost) {
             alert(`ขออภัย: แต้มคงเหลือของคุณ (${currentBalance} pts) ไม่เพียงพอต่อการแลกคูปองนี้`);
             closeConfirmModal();
@@ -522,15 +558,13 @@
 
         closeConfirmModal();
         
-        // แสดงหน้าจอ Loading บันทึกข้อมูลลง Cloud ป้องกันลูกค้ากดย้ำซ้ำซ้อน
         document.getElementById("loading").style.display = "flex";
         document.getElementById("app").style.display = "none";
 
-        // คำนวณแต้มใหม่หลังหักค่าคูปองออกทันที
         var updatedPointsBalance = currentBalance - coupon.pointsCost;
         if (updatedPointsBalance < 0) updatedPointsBalance = 0;
 
-        // 1. ส่งคำสั่งเขียนอัปเดตลงฐานข้อมูล Supabase แบบเรียลไทม์
+        // 1. ส่งคำสั่งเขียนอัปเดตแต้มลงฐานข้อมูล Supabase แบบเรียลไทม์
         var { error } = await db
             .from("profiles")
             .update({ current_points: updatedPointsBalance })
@@ -544,15 +578,17 @@
             return;
         }
 
-        // 2. ล็อกสถานะความปลอดภัยใน LocalStorage เพื่อเปลี่ยนการแสดงผลเป็น "ใช้แล้ว"
+        // 2. สร้าง Payload รหัส QR Code ตัวเดิมเพื่อบันทึกเก็บล็อกเอาไว้ใช้ซ้ำได้จนกว่า Staff จะสแกน
+        var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
+
         var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
-        var singleUseKey = `used_${currentUserId}_${coupon.id}`;
-        var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
+        var singleClaimKey = `claimed_${currentUserId}_${coupon.id}`;
+        var monthlyClaimKey = `claimed_${currentUserId}_${coupon.id}_${currentMonthToken}`;
 
         if (coupon.ruleType === 'points_deduct' || coupon.ruleType === 'points_with_min_spend') {
-            localStorage.setItem(singleUseKey, "TRUE");
+            localStorage.setItem(singleClaimKey, compiledPayload);
         } else {
-            localStorage.setItem(monthlyUseKey, "TRUE");
+            localStorage.setItem(monthlyClaimKey, compiledPayload);
         }
 
         // 3. สั่งโหลดดึงคะแนนที่เพิ่งตัดสำเร็จมาโชว์บน Dashboard เขียวทันใจ
@@ -570,10 +606,55 @@
         var qrTarget = document.getElementById("qr-canvas-render");
         qrTarget.innerHTML = ""; 
 
-        var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
-
         new QRCode(qrTarget, {
             text: compiledPayload,
+            width: 160,
+            height: 160,
+            colorDark : "#1f2937",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    }
+
+    // ฟังก์ชันเพิ่มเติม: สำหรับดึงข้อมูลรหัสสิทธิ์สากลอันเดิมขึ้นมาแสดงอีกครั้งเมื่อเปิดปิดใหม่
+    function showExistingQR(couponId) {
+        var coupon = MASTER_COUPON_SCHEMAS.find(c => c.id === couponId);
+        if (!coupon) return;
+
+        if (isCouponExpired(coupon)) {
+            alert("ขออภัย: คูปองนี้หมดอายุระยะเวลาจัดรายการแล้ว ไม่สามารถดู QR Code ได้");
+            buildCouponsLayout();
+            return;
+        }
+
+        selectedCouponData = coupon;
+
+        var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
+        var singleClaimKey = `claimed_${currentUserId}_${coupon.id}`;
+        var monthlyClaimKey = `claimed_${currentUserId}_${coupon.id}_${currentMonthToken}`;
+
+        var storedPayload = "";
+        if (coupon.ruleType === 'points_deduct' || coupon.ruleType === 'points_with_min_spend') {
+            storedPayload = localStorage.getItem(singleClaimKey);
+        } else {
+            storedPayload = localStorage.getItem(monthlyClaimKey);
+        }
+
+        if (!storedPayload) {
+            alert("ไม่พบประวัติการแลกรับสิทธิ์ของคูปองใบนี้ในฐานข้อมูลเครื่องของคุณ");
+            return;
+        }
+
+        document.getElementById("qr-modal-title").textContent = coupon.title;
+        document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
+        document.getElementById("staff-bill-amount").value = "0"; 
+        document.getElementById("qr-modal").classList.add("show");
+
+        var qrTarget = document.getElementById("qr-canvas-render");
+        qrTarget.innerHTML = ""; 
+
+        new QRCode(qrTarget, {
+            text: storedPayload,
             width: 160,
             height: 160,
             colorDark : "#1f2937",
@@ -587,11 +668,25 @@
         selectedCouponData = null;
     }
 
-    /* ตรรกะพนักงานหน้าร้าน: สะสมแต้มเพิ่มให้ลูกค้าจากยอดบิลสุทธิ (25 บาท = 1 แต้ม) */
+    /* ตรรกะพนักงานหน้าร้าน: ดำเนินการสแกนเช็คบิล สะสมแต้มเพิ่ม และตัดสิทธิ์คูปองใบนั้นถาวรทันที */
     async function executeStaffScanAction() {
         if (!globalUserData) {
             alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้ากลุ่มนี้ในระบบ");
             return;
+        }
+
+        // มาร์คสถานะความปลอดภัยคูปองชิ้นนี้เปลี่ยนจาก Claimed เป็น Used ทันทีเพื่อบันทึกปิดงานถาวร
+        if (selectedCouponData) {
+            var coupon = selectedCouponData;
+            var currentMonthToken = `${new Date().getFullYear()}_${new Date().getMonth() + 1}`;
+            var singleUseKey = `used_${currentUserId}_${coupon.id}`;
+            var monthlyUseKey = `used_${currentUserId}_${coupon.id}_${currentMonthToken}`;
+
+            if (coupon.ruleType === 'points_deduct' || coupon.ruleType === 'points_with_min_spend') {
+                localStorage.setItem(singleUseKey, "TRUE");
+            } else {
+                localStorage.setItem(monthlyUseKey, "TRUE");
+            }
         }
 
         var billAmountInput = document.getElementById("staff-bill-amount").value;
@@ -600,13 +695,12 @@
         if (billAmount <= 0) {
             alert("บันทึกสิทธิ์คูปองเรียบร้อยแล้ว (ไม่มีการสะสมแต้มเพิ่มจากยอดบิล)");
             closeQRModal();
+            await loadUserDataAndRender();
             return;
         }
         
-        // สูตรคำนวณแต้มสะสมใหม่: ยอดซื้อหารด้วย 25
         var pointsEarnedFromBill = Math.floor(billAmount / 25);
 
-        // ดึงสถานะแต้มล่าสุดในเซิร์ฟเวอร์มาป้องกันปัญหาแต้มทับซ้อน (Concurrency Protection)
         var { data: freshProfile } = await db
             .from("profiles")
             .select("current_points, total_exp")
@@ -619,7 +713,6 @@
         var finalPoints = currentBalance + pointsEarnedFromBill;
         var finalExp = currentTotalExp + pointsEarnedFromBill;
 
-        // บันทึกคะแนนสะสมใหม่กลับไปที่ Supabase
         var { error } = await db
             .from("profiles")
             .update({ 
