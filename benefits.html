@@ -186,7 +186,7 @@
 
     var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // รูปโปรไฟล์หมีสำรองกรณีโหลดไม่ติด (Inline SVG มั่นคง 100% ไม่ดึงจากภายนอก)
+    // รูปสำรองแบบ Inline SVG ปลอดภัย 100% ไม่มีวันพัง
     window.DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='%23e2e8f0'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23a0aec0'/></svg>";
 
     var currentLineId = "MOCK_ID";
@@ -207,6 +207,8 @@
             var profile = await liff.getProfile();
             currentLineId = profile.userId;
             currentDisplayName = profile.displayName || "สมาชิก VIP"; 
+            
+            // ดึงรูปโปรไฟล์ผู้ใช้งานจาก LINE ของแท้
             if(profile.pictureUrl) {
                 currentUserAvatar = profile.pictureUrl;
             }
@@ -310,10 +312,11 @@
             return;
         }
 
+        // เพิ่มการบันทึก author_avatar ส่งไปยังฐานข้อมูล Supabase ด้วย
         var payload = {
             type: tabType, 
-            author_name: currentDisplayName, 
-            author_avatar: currentUserAvatar, // บันทึกลิงก์รูปโปรไฟล์จริงขณะโพสต์ลงฐานข้อมูลทันที
+            author_name: currentDisplayName,
+            author_avatar: currentUserAvatar, // ตัวบันทึกรูปลงฐานข้อมูล
             content_text: textContent,
             image_payload: compressedImage,
             line_user_id: currentLineId,
@@ -324,7 +327,7 @@
 
         var { error } = await db.from("fmb_community_posts").insert([payload]);
         if(error) {
-            alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message);
+            alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message + "\n\n⚠️ แจ้งผู้ดูแลระบบ: ตรวจสอบว่ามีคอลัมน์ 'author_avatar' ในฐานข้อมูลแล้วหรือยัง?");
             return;
         }
 
@@ -373,7 +376,7 @@
 
             var attachedImgMarkup = post.image_payload ? `<img class="feed-attached-img" src="${post.image_payload}" alt="Attached">` : '';
             
-            // ดึงรูปโปรไฟล์จากฟิลด์ บอร์ดจะจำประวัติรูปภาพ ณ ตอนโพสต์ไว้ถาวรอย่างสมบูรณ์
+            // ดึงรูปจริงที่บันทึกไว้ใน DB หากไม่มีให้ใช้ Default Avatar ป้องกันการเป็นรูปสีเทา
             var displayAvatar = post.author_avatar || window.DEFAULT_AVATAR;
 
             var postHtml = `
