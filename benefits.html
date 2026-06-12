@@ -115,7 +115,6 @@
         <div class="nav-tab" onclick="switchMainTab('reviews')">⭐ รีวิวจากลูกค้า</div>
     </nav>
 
-    <!-- TAB 1: สิทธิพิเศษ -->
     <div id="view-perks" class="view-content active">
         <div class="perk-card">
             <img class="perk-banner" src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80" alt="Bingsu Promo">
@@ -135,11 +134,10 @@
         </div>
     </div>
 
-    <!-- TAB 2: คอมมูนิตี้หมี -->
     <div id="view-community" class="view-content">
         <div class="create-post-card" id="community-post-card">
             <div class="post-input-group">
-                <img class="post-avatar current-user-avatar" src="" alt="Me">
+                <img class="post-avatar current-user-avatar" src="" alt="Me" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
                 <textarea class="post-textarea" id="community-textarea" placeholder="แบ่งปันความประทับใจ หรือเรื่องราววันนี้กับเพื่อนๆ หมี..."></textarea>
             </div>
             <div class="preview-image-container" id="comm-preview-container">
@@ -157,11 +155,10 @@
         <div id="box-community-feed"></div>
     </div>
 
-    <!-- TAB 3: รีวิวจากลูกค้า -->
     <div id="view-reviews" class="view-content">
         <div class="create-post-card" id="reviews-post-card">
             <div class="post-input-group">
-                <img class="post-avatar current-user-avatar" src="" alt="Me">
+                <img class="post-avatar current-user-avatar" src="" alt="Me" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
                 <textarea class="post-textarea" id="review-textarea" placeholder="เมนูไหนอร่อย? รีวิวความอร่อยของเมนูบิงซูที่คุณทานวันนี้เลย..."></textarea>
             </div>
             <div class="preview-image-container" id="rev-preview-container">
@@ -189,9 +186,12 @@
 
     var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // รูปโปรไฟล์หมีสำรองกรณีโหลดไม่ติด (Inline SVG มั่นคง 100% ไม่ดึงจากภายนอก)
+    window.DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='%23e2e8f0'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23a0aec0'/></svg>";
+
     var currentLineId = "MOCK_ID";
     var currentDisplayName = "สมาชิกร้านหมี";
-    var currentUserAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    var currentUserAvatar = window.DEFAULT_AVATAR;
     var currentUserRank = "Bronze";
     var currentUserRole = "Customer";
     
@@ -207,7 +207,9 @@
             var profile = await liff.getProfile();
             currentLineId = profile.userId;
             currentDisplayName = profile.displayName || "สมาชิก VIP"; 
-            if(profile.pictureUrl) currentUserAvatar = profile.pictureUrl;
+            if(profile.pictureUrl) {
+                currentUserAvatar = profile.pictureUrl;
+            }
             
             var { data: memberData } = await db
                 .from("profiles")
@@ -311,7 +313,7 @@
         var payload = {
             type: tabType, 
             author_name: currentDisplayName, 
-            author_avatar: currentUserAvatar, // บันทึกรูปโปรไฟล์จริงลงเซิร์ฟเวอร์
+            author_avatar: currentUserAvatar, // บันทึกลิงก์รูปโปรไฟล์จริงขณะโพสต์ลงฐานข้อมูลทันที
             content_text: textContent,
             image_payload: compressedImage,
             line_user_id: currentLineId,
@@ -370,13 +372,15 @@
             });
 
             var attachedImgMarkup = post.image_payload ? `<img class="feed-attached-img" src="${post.image_payload}" alt="Attached">` : '';
-            var displayAvatar = post.author_avatar || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            
+            // ดึงรูปโปรไฟล์จากฟิลด์ บอร์ดจะจำประวัติรูปภาพ ณ ตอนโพสต์ไว้ถาวรอย่างสมบูรณ์
+            var displayAvatar = post.author_avatar || window.DEFAULT_AVATAR;
 
             var postHtml = `
                 <div class="feed-card">
                     <div class="feed-header">
                         <div class="author-info">
-                            <img class="post-avatar" src="${displayAvatar}" alt="avatar">
+                            <img class="post-avatar" src="${displayAvatar}" alt="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
                             <div>
                                 <div class="author-name">
                                     ${post.author_name}
@@ -449,7 +453,6 @@
             var permanentLikeKey = `perm_like_${currentLineId}_${postId}`;
             var permanentHeartKey = `perm_heart_${currentLineId}_${postId}`;
 
-            // 1. ดึงข้อมูลจำนวนโหวตล่าสุดจากฐานข้อมูลก่อนเพื่อความแม่นยำ
             var { data: post, error: fetchError } = await db
                 .from("fmb_community_posts")
                 .select("likes, hearts")
@@ -463,7 +466,6 @@
 
             var updatePayload = {};
 
-            // 2. คำนวณค่าเพิ่ม-ลดแบบ Realtime
             if (actionType === "like") {
                 if (localStorage.getItem(permanentLikeKey) === "YES") {
                     localStorage.removeItem(permanentLikeKey);
@@ -482,7 +484,6 @@
                 }
             }
 
-            // 3. ส่งคำสั่งบันทึกการแก้ไขกลับไปยังเซิร์ฟเวอร์
             var { error: updateError } = await db
                 .from("fmb_community_posts")
                 .update(updatePayload)
@@ -490,10 +491,8 @@
 
             if (updateError) {
                 console.error("Supabase Update Fault:", updateError);
-                // ดักจับแจ้งเตือนหากเกิดจากสิทธิ์เขียนข้อมูลใน RLS 
                 alert("⚠️ ไม่สามารถบันทึกยอดโหวตได้!\nสาเหตุ: " + updateError.message + "\n\n(แนะนำให้ไปตรวจสอบสิทธิ์ 'UPDATE' ในตาราง fmb_community_posts บนเว็บ Supabase ครับ)");
             } else {
-                // 4. โหลดหน้าฟีดใหม่ทันทีเพื่ออัปเดตตัวเลขบนหน้าจอ
                 loadPostsFromSupabase();
             }
         } catch (err) {
