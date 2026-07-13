@@ -263,7 +263,6 @@
     var activeCategoryFilter = "all";
     var selectedCouponData = null;
     
-    // ตัวแปรเพิ่มสำหรับบันทึกประวัติการแลกจากฐานข้อมูลคลาวด์
     var globalClaims = [];
     var userClaims = [];
     var activeClaimObj = null;
@@ -271,6 +270,36 @@
     var TIER_RANKING = ["Bronze", "Silver", "Gold", "Platinum"];
 
     var MASTER_COUPON_SCHEMAS = [
+        { 
+            id: "cp_discount_bingsu_lg_2nd", 
+            tab: "discount", 
+            icon: "🍧", 
+            iconColor: "#22c55e",
+            title: "รับส่วนลด 25% เมื่อซื้อบิงซูไซส์ใหญ่ถ้วยที่ 2", 
+            desc: "รับส่วนลดพิเศษทันทีสำหรับบิงซูไซส์ใหญ่ถ้วยที่ 2 ภายในบิลเดียวกัน", 
+            expiryStr: "รีเซ็ททุกวันหลัง 05:00 น.", 
+            expiryDate: "2026-12-31",
+            pointsCost: 0, 
+            tierReq: "Bronze",
+            ruleType: "daily_quota",
+            dailyQuota: 30,
+            ruleDesc: "จำกัด 30 สิทธิ์ต่อวัน (ระบบลงคิวแบบสิทธิ์กองกลางวันต่อวัน)"
+        },
+        { 
+            id: "cp_discount_bingsu_set_lg_2nd", 
+            tab: "discount", 
+            icon: "🍧", 
+            iconColor: "#22c55e",
+            title: "รับส่วนลด 25% เมื่อซื้อบิงซูเซ็ทไซส์ใหญ่ถ้วยที่ 2", 
+            desc: "รับส่วนลดพิเศษทันทีสำหรับบิงซูเซ็ทไซส์ใหญ่ถ้วยที่ 2 ภายในบิลเดียวกัน", 
+            expiryStr: "รีเซ็ททุกวันหลัง 05:00 น.", 
+            expiryDate: "2026-12-31",
+            pointsCost: 0, 
+            tierReq: "Bronze",
+            ruleType: "daily_quota",
+            dailyQuota: 30,
+            ruleDesc: "จำกัด 30 สิทธิ์ต่อวัน (ระบบลงคิวแบบสิทธิ์กองกลางวันต่อวัน)"
+        },
         { 
             id: "cp_discount_50thb", 
             tab: "discount", 
@@ -343,12 +372,19 @@
         }
     ];
 
+    // ฟังก์ชันช่วยแก้ปัญหา iOS / LINE WebKit มองห้วงเวลาจาก Supabase Space-separated เป็น Invalid Date
+    function safeParseDate(dateInput) {
+        if (!dateInput) return new Date();
+        if (dateInput instanceof Date) return dateInput;
+        var str = dateInput.toString().replace(' ', 'T');
+        return new Date(str);
+    }
+
     // ฟังก์ชันคำนวณคาบวันแบบตัดยอด 05.00 น.
     function getCycleRange() {
         var now = new Date();
         var start = new Date(now);
         start.setHours(5, 0, 0, 0);
-        // หากตอนนี้ยังไม่ถึงตี 5 ให้ถือว่ายังเป็นรอบของเมื่อวาน
         if (now < start) {
             start.setDate(start.getDate() - 1);
         }
@@ -409,7 +445,7 @@
             var iconMap = { "Bronze": "🥉", "Silver": "🥈", "Gold": "🥇", "Platinum": "💎" };
             document.getElementById("badge-tier-icon").textContent = iconMap[currentTier] || "🥉";
 
-            // 1. ดึงข้อมูลกองกลางเพื่อตรวจสอบโควตา 30 ใบของวันปัจจุบัน (นับจากหลัง 05:00 น.)
+            // 1. ดึงข้อมูลกองกลางเพื่อตรวจสอบโควตาของวันปัจจุบัน (นับจากหลัง 05:00 น.)
             var cycle = getCycleRange();
             var { data: gClaims } = await db
                 .from("fmb_coupon_claims")
@@ -471,12 +507,12 @@
 
             // ตรวจเช็คสถานะว่าเคยสแกนใช้ไปแล้วหรือยังในรอบวันปัจจุบัน
             var isAlreadyUsed = couponUserClaims.some(function(c) { 
-                return c.status === 'used' && new Date(c.created_at) >= currentCycle.start; 
+                return c.status === 'used' && safeParseDate(c.created_at) >= currentCycle.start; 
             });
 
             // ตรวจเช็คว่ามีสิทธิ์คูปองที่กดรับไว้แล้วและอายุยังไม่เกิน 24 ชม. หรือไม่
             var activeClaim = couponUserClaims.find(function(c) {
-                return c.status === 'claimed' && (new Date() - new Date(c.created_at) <= 24 * 60 * 60 * 1000);
+                return c.status === 'claimed' && (new Date() - safeParseDate(c.created_at) <= 24 * 60 * 60 * 1000);
             });
 
             var isExpired = isCouponExpired(coupon);
@@ -500,8 +536,8 @@
                 // หากแลกสิทธิ์ไว้ก่อนหน้าและยังไม่เกิน 24 ชม. -> สามารถกดเปิดเรียกดูคิวอาร์โค้ดอันเดิมได้เสมอ แม้จะกดปิดหน้าจอไป
                 availableCouponsCounter++;
                 actionBtnHtml = `<button class="cp-use-btn view-qr" onclick="showExistingQR('${coupon.id}')">ดู QR Code</button>`;
-            } else if (globalCount >= 30) {
-                // หากโควตากองกลางหมดครบ 30 ใบในวันนั้นแล้ว
+            } else if (coupon.dailyQuota && globalCount >= coupon.dailyQuota) {
+                // ตรวจสอบโควตาเฉพาะคูปองที่มีข้อจำกัดโควตารายวันแบบสิทธิ์กองกลาง
                 actionBtnHtml = `<button class="cp-use-btn locked" disabled>หมดแล้ววันนี้</button>`;
             } else if (isTierLocked) {
                 actionBtnHtml = `<button class="cp-use-btn locked" disabled>ยศไม่ถึง</button>`;
@@ -559,7 +595,7 @@
             warnText.textContent = `จะหัก ⭐ ${coupon.pointsCost} แต้ม จากบัตรสมาชิกของท่านทันที`;
             warnText.style.display = "block";
         } else {
-            warnText.textContent = "สิทธิ์ระดับยศฟรีประจำเดือน (ไม่มีค่าใช้จ่ายคะแนน)";
+            warnText.textContent = "สิทธิ์โปรโมชั่นฟรีประจำวัน (ไม่มีค่าใช้จ่ายคะแนน)";
             warnText.style.display = "block";
         }
 
@@ -570,7 +606,7 @@
         document.getElementById("confirm-modal").classList.remove("show");
     }
 
-    /* ตรรกะแบบ Real-time: กดปุ่มยืนยันแลกรับสิทธิ์และตัดแต้มบนเซิร์ฟเวอร์คลาวด์ */
+    /* กดปุ่มยืนยันแลกรับสิทธิ์และตัดแต้มบนเซิร์ฟเวอร์คลาวด์ */
     async function proceedToQR() {
         if (!selectedCouponData || !globalUserData) {
             alert("ไม่พบข้อมูลคูปองที่เลือก กรุณาลองใหม่อีกครั้ง");
@@ -586,7 +622,7 @@
             return;
         }
 
-        // ตรวจสอบโควตาซ้ำอีกครั้งในเสี้ยววินาทีสุดท้ายป้องกันการกดชนกัน (Race Condition)
+        // ตรวจสอบโควตากองกลางแบบวินาทีต่อวินาทีก่อนยืนยัน (Race Condition Prevention)
         var cycle = getCycleRange();
         var { data: checkClaims } = await db
             .from("fmb_coupon_claims")
@@ -594,7 +630,7 @@
             .eq("coupon_id", coupon.id)
             .gte("created_at", cycle.start.toISOString());
 
-        if (checkClaims && checkClaims.length >= 30) {
+        if (coupon.dailyQuota && checkClaims && checkClaims.length >= coupon.dailyQuota) {
             alert("ขออภัย: คูปองนี้ถูกลูกค้าท่านอื่นกดแลกครบ 30 ใบของวันนี้เต็มเรียบร้อยแล้วครับ");
             closeConfirmModal();
             await loadUserDataAndRender();
@@ -609,7 +645,7 @@
         var updatedPointsBalance = currentBalance - coupon.pointsCost;
         if (updatedPointsBalance < 0) updatedPointsBalance = 0;
 
-        // 1. ส่งคำสั่งเขียนอัปเดตแต้มลงฐานข้อมูล Supabase แบบเรียลไทม์
+        // 1. อัปเดตคะแนนลง Supabase
         var { error } = await db
             .from("profiles")
             .update({ current_points: updatedPointsBalance })
@@ -623,7 +659,7 @@
             return;
         }
 
-        // 2. บันทึกประวัติการเคลมและสิทธิ์ลงตารางฐานข้อมูลกองกลาง
+        // 2. บันทึกประวัติการเคลมสถานะ 'claimed'
         var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
         
         var { data: newClaim, error: claimErr } = await db
@@ -644,7 +680,7 @@
             activeClaimObj = newClaim;
         }
 
-        // 3. สั่งโหลดดึงคะแนนที่เพิ่งตัดสำเร็จมาโชว์บน Dashboard
+        // 3. โหลดข้อมูลใหม่เพื่อให้อินเตอร์เฟสอัปเดตปุ่มเป็น "ดู QR Code" มารองรับทันที
         await loadUserDataAndRender();
 
         document.getElementById("loading").style.display = "none";
@@ -669,7 +705,7 @@
         });
     }
 
-    // ฟังก์ชันสำหรับเรียกแสดง QR Code เดิมขึ้นมาแสดงใหม่ตราบใดที่สิทธิ์ยังไม่เกิน 24 ชม.
+    // เรียกแสดงผล QR Code สิทธิ์เดิมที่เคยกดค้างไว้ (และอายุยังไม่เกิน 24 ชั่วโมง)
     function showExistingQR(couponId) {
         var coupon = MASTER_COUPON_SCHEMAS.find(c => c.id === couponId);
         if (!coupon) return;
@@ -682,9 +718,9 @@
 
         selectedCouponData = coupon;
 
-        // ค้นหาตั๋วใบเดิมจากอาเรย์ข้อมูลผู้ใช้
+        // ค้นหาตั๋วใบเดิมที่อายุไม่เกิน 24 ชม.
         var activeClaim = userClaims.find(function(c) {
-            return c.coupon_id === couponId && c.status === 'claimed' && (new Date() - new Date(c.created_at) <= 24 * 60 * 60 * 1000);
+            return c.coupon_id === couponId && c.status === 'claimed' && (new Date() - safeParseDate(c.created_at) <= 24 * 60 * 60 * 1000);
         });
 
         if (!activeClaim) {
@@ -713,13 +749,15 @@
         });
     }
 
-    function closeQRModal() {
+    async function closeQRModal() {
         document.getElementById("qr-modal").classList.remove("show");
         selectedCouponData = null;
         activeClaimObj = null;
+        // รีเฟรชฐานข้อมูลหลังปิดหน้าต่างเซฟสิทธิ์เพื่อให้ UI ล่าสุด Sync ตลอดเวลา 100%
+        await loadUserDataAndRender();
     }
 
-    /* ตรรกะพนักงานหน้าร้าน: ดำเนินการสแกนเช็คบิล สะสมแต้มเพิ่ม และตัดสิทธิ์คูปองใบนั้นถาวรทันที */
+    /* พนักงานหน้าร้าน (Staff Scan): ตัดสิทธิ์คูปองแบบถาวรและบันทึกคะแนนสะสมเพิ่มจากยอดบิล */
     async function executeStaffScanAction() {
         if (!globalUserData) {
             alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้ากลุ่มนี้ในระบบ");
@@ -734,7 +772,7 @@
         document.getElementById("loading").style.display = "flex";
         document.getElementById("qr-modal").classList.remove("show");
 
-        // 1. อัปเดตตาราง fmb_coupon_claims ให้สิทธิ์ใบนี้เปลี่ยนสถานะเป็น 'used' ทันทีเพื่อล็อกไม่ให้ใช้ซ้ำได้อีก
+        // 1. สั่ง Update ปิดสถานะคูปองให้เป็น 'used' ทันทีบนฐานข้อมูลหลัก
         var { error: claimUpdateErr } = await db
             .from("fmb_coupon_claims")
             .update({ status: 'used' })
@@ -752,7 +790,7 @@
         var billAmount = parseFloat(billAmountInput) || 0;
         
         if (billAmount <= 0) {
-            alert("บันทึกสิทธิ์คูปองเรียบร้อยแล้ว (ไม่มีการสะสมแต้มเพิ่มจากยอดบิล)");
+            alert("🎉 ดำเนินการตัดสิทธิ์คูปองหน้าร้านเรียบร้อยแล้ว! (ไม่มีการสะสมแต้มเพิ่มจากยอดบิล)");
             activeClaimObj = null;
             selectedCouponData = null;
             await loadUserDataAndRender();
