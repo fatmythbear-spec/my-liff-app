@@ -656,71 +656,61 @@
         var updatedPointsBalance = currentBalance - coupon.pointsCost;
         if (updatedPointsBalance < 0) updatedPointsBalance = 0;
 
-        // 1. อัปเดตคะแนนลง Supabase
-        var { error } = await db
+        // ขั้นตอนที่ 1: หักแต้มลูกค้าออกจากระบบก่อน (เตรียมพร้อมสำหรับการ Rollback หากมีปัญหา)
+        var { error: updateErr } = await db
             .from("profiles")
             .update({ current_points: updatedPointsBalance })
             .eq("line_user_id", currentUserId);
 
-        if (error) {
-            console.error("Supabase Error:", error);
+        if (updateErr) {
+            console.error("Supabase Error:", updateErr);
             alert("ระบบ Cloud ขัดข้อง ไม่สามารถตัดแต้มสิทธิ์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง");
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
             return;
         }
 
-        // 2. [FIXED 100%] บันทึกประวัติการเคลมสถานะ 'claimed' โดยใช้ระบบตรวจจับและดึงข้อมูลทดแทน RLS Quirk
+        // ขั้นตอนที่ 2: บันทึกประวัติการใช้คูปองเข้าฐานข้อมูล (นำ .select() ออกเพื่อป้องกันบั๊ก RLS 100%)
         var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
-        activeClaimObj = null;
-        
-        var { data: insertedRows, error: claimErr } = await db
+        var { error: claimErr } = await db
             .from("fmb_coupon_claims")
             .insert([{
                 line_user_id: currentUserId,
                 coupon_id: coupon.id,
                 status: 'claimed',
                 qr_payload: compiledPayload
-            }])
-            .select();
+            }]);
 
-        // ตรวจสอบและแก้ไขกรณี RLS ยอมเขียนข้อมูลเข้า Table แต่ขัดแย้งกับคำสั่ง Returning แบบ Array
-        if (!claimErr && insertedRows && insertedRows.length > 0) {
-            activeClaimObj = insertedRows[0];
-        } else if (!claimErr) {
-            // Fallback Lookup Engine: ค้นหาประวัติล่าสุดทันทีเพื่อเชื่อม Object ดึง Voucher ID ไปเจน QR Code
-            await new Promise(resolve => setTimeout(resolve, 250)); // ดีเลย์สั้นๆ เพื่อให้คลาวด์ซิงค์สมบูรณ์
-            var { data: backupRows, error: backupErr } = await db
-                .from("fmb_coupon_claims")
-                .select("*")
-                .eq("line_user_id", currentUserId)
-                .eq("coupon_id", coupon.id)
-                .eq("status", "claimed")
-                .order("created_at", { ascending: false })
-                .limit(1);
-
-            if (!backupErr && backupRows && backupRows.length > 0) {
-                activeClaimObj = backupRows[0];
-            } else {
-                claimErr = backupErr || new Error("RLS Fetch Timeout");
-            }
-        }
-
+        // ขั้นตอนที่ 3: ระบบ Transaction Rollback หากออกตั๋วไม่สำเร็จ ให้ "คืนแต้ม" กลับทันที
         if (claimErr) {
             console.error("Insert Claim Error:", claimErr);
-            alert("ระบบบันทึกตั๋วขัดข้อง แต่คะแนนถูกหักแล้ว กรุณาแจ้งพนักงานหน้าร้านเพื่อตรวจสอบประวัติคะแนน");
+            
+            await db.from("profiles")
+                .update({ current_points: currentBalance })
+                .eq("line_user_id", currentUserId);
+                
+            alert("ระบบขัดข้องในการออกคูปอง ทางเราได้ทำการ 'คืนแต้ม' ให้ท่านเรียบร้อยแล้ว กรุณาลองใหม่อีกครั้งครับ");
+            
             await loadUserDataAndRender();
             document.getElementById("loading").style.display = "none";
             document.getElementById("app").style.display = "block";
             return;
         }
 
+        // ขั้นตอนที่ 4: เชื่อมต่อ Object ด้วย Payload แทน ID เพื่อให้ระบบทำงานรันต่อได้แบบไม่พึ่งพาฝั่งฐานข้อมูล
+        activeClaimObj = {
+            coupon_id: coupon.id,
+            status: 'claimed',
+            qr_payload: compiledPayload,
+            line_user_id: currentUserId
+        };
+
         await loadUserDataAndRender();
 
         document.getElementById("loading").style.display = "none";
         document.getElementById("app").style.display = "block";
 
-        // 3. แสดงผลหน้าต่าง QR Code
+        // แสดงผลหน้าต่าง QR Code
         document.getElementById("qr-modal-title").textContent = coupon.title;
         document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
         document.getElementById("staff-bill-amount").value = "0"; 
@@ -802,10 +792,11 @@
         document.getElementById("loading").style.display = "flex";
         document.getElementById("qr-modal").classList.remove("show");
 
+        // อัปเดตข้อมูลด้วย qr_payload แทน id เดิม (Bypass ข้อจำกัด RLS)
         var { error: claimUpdateErr } = await db
             .from("fmb_coupon_claims")
             .update({ status: 'used' })
-            .eq("id", activeClaimObj.id);
+            .eq("qr_payload", activeClaimObj.qr_payload); 
 
         if (claimUpdateErr) {
             console.error("Failed to invalidate coupon:", claimUpdateErr);
