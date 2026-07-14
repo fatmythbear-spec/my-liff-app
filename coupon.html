@@ -17,6 +17,7 @@
         #loading {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh; gap: 12px; color: #718096; background: #ffffff;
+            position: fixed; inset: 0; z-index: 9999;
         }
         .spinner {
             width: 40px; height: 40px; border: 4px solid #e2e8f0;
@@ -152,7 +153,7 @@
         .btn-modal-confirm { background: #ec4899; color: white; }
 
         /* QR CODE DISPLAY SCREEN */
-        .qr-display-box { background: white; border-radius: 24px; padding: 26px; text-align: center; width: 90%; max-width: 325px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: zoomIn 0.25s ease; }
+        .qr-display-box { background: white; border-radius: 24px; padding: 26px; text-align: center; width: 90%; max-width: 325px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: zoomIn 0.25s ease; position: relative; }
         @keyframes zoomIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .qr-wrapper-zone { background: #f8fafc; padding: 14px; border-radius: 16px; margin: 16px 0; display: flex; justify-content: center; border: 1px dashed #cbd5e1; }
         
@@ -169,7 +170,7 @@
 
 <div id="loading">
     <div class="spinner"></div>
-    <p>กำลังประมวลผลข้อมูลระบบความปลอดภัยแบบ Real-time...</p>
+    <p>กำลังประมวลผลข้อมูล...</p>
 </div>
 
 <div id="app">
@@ -642,7 +643,7 @@
             .gte("created_at", cycle.start.toISOString());
 
         if (coupon.dailyQuota && checkClaims && checkClaims.length >= coupon.dailyQuota) {
-            alert("ขออภัย: คูปองนี้ถูกลูกค้าท่านอื่นกดแลกครบ 30 ใบของวันนี้เต็มเรียบร้อยแล้วครับ");
+            alert("ขออภัย: คูปองนี้ถูกลูกค้าท่านอื่นกดแลกครบสิทธิ์ของวันนี้เต็มเรียบร้อยแล้วครับ");
             closeConfirmModal();
             await loadUserDataAndRender();
             return;
@@ -650,8 +651,8 @@
 
         closeConfirmModal();
         
+        // Show loading fullscreen
         document.getElementById("loading").style.display = "flex";
-        document.getElementById("app").style.display = "none";
 
         var updatedPointsBalance = currentBalance - coupon.pointsCost;
         if (updatedPointsBalance < 0) updatedPointsBalance = 0;
@@ -663,14 +664,14 @@
             .eq("line_user_id", currentUserId);
 
         if (updateErr) {
-            console.error("Supabase Error:", updateErr);
+            console.error("Supabase Error (Points Deduction):", updateErr);
             alert("ระบบ Cloud ขัดข้อง ไม่สามารถตัดแต้มสิทธิ์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง");
             document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
             return;
         }
 
-        // ขั้นตอนที่ 2: บันทึกประวัติการใช้คูปองเข้าฐานข้อมูล (นำ .select() ออกเพื่อป้องกันบั๊ก RLS 100%)
+        // ขั้นตอนที่ 2: บันทึกประวัติการใช้คูปองเข้าฐานข้อมูลด้วย qr_payload
+        // (นำ .select() ออกเพื่อป้องกันบั๊ก RLS ตามที่คุณออกแบบไว้)
         var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
         var { error: claimErr } = await db
             .from("fmb_coupon_claims")
@@ -683,21 +684,21 @@
 
         // ขั้นตอนที่ 3: ระบบ Transaction Rollback หากออกตั๋วไม่สำเร็จ ให้ "คืนแต้ม" กลับทันที
         if (claimErr) {
-            console.error("Insert Claim Error:", claimErr);
+            console.error("Insert Claim Error (Supabase RLS Blocked):", claimErr);
             
+            // Rollback คืนแต้มให้ลูกค้า
             await db.from("profiles")
                 .update({ current_points: currentBalance })
                 .eq("line_user_id", currentUserId);
                 
-            alert("ระบบขัดข้องในการออกคูปอง ทางเราได้ทำการ 'คืนแต้ม' ให้ท่านเรียบร้อยแล้ว กรุณาลองใหม่อีกครั้งครับ");
+            alert("ระบบขัดข้องในการออกคูปอง (โปรดตรวจสอบการตั้งค่า RLS บน Supabase) ทางเราได้ทำการ 'คืนแต้ม' ให้ท่านเรียบร้อยแล้ว");
             
-            await loadUserDataAndRender();
+            await loadUserDataAndRender(); // โหลดข้อมูลใหม่ให้แต้มเด้งกลับมา
             document.getElementById("loading").style.display = "none";
-            document.getElementById("app").style.display = "block";
             return;
         }
 
-        // ขั้นตอนที่ 4: เชื่อมต่อ Object ด้วย Payload แทน ID เพื่อให้ระบบทำงานรันต่อได้แบบไม่พึ่งพาฝั่งฐานข้อมูล
+        // ขั้นตอนที่ 4: เชื่อมต่อ Object ด้วย Payload แทน ID เพื่อให้ระบบทำงานรันต่อได้แบบไม่พึ่งพา ID
         activeClaimObj = {
             coupon_id: coupon.id,
             status: 'claimed',
@@ -705,12 +706,9 @@
             line_user_id: currentUserId
         };
 
-        await loadUserDataAndRender();
-
+        // แสดงผลหน้าต่าง QR Code (ไม่ต้อง await โหลดข้อมูลใหม่ตรงนี้ เพื่อให้หน้าต่าง QR เด้งขึ้นมาทันที)
         document.getElementById("loading").style.display = "none";
-        document.getElementById("app").style.display = "block";
-
-        // แสดงผลหน้าต่าง QR Code
+        
         document.getElementById("qr-modal-title").textContent = coupon.title;
         document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
         document.getElementById("staff-bill-amount").value = "0"; 
@@ -727,6 +725,9 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
+        
+        // อัปเดต UI เบื้องหลังเงียบๆ
+        loadUserDataAndRender();
     }
 
     function showExistingQR(couponId) {
@@ -745,8 +746,8 @@
             return c.coupon_id === couponId && c.status === 'claimed' && (new Date() - safeParseDate(c.created_at) <= 24 * 60 * 60 * 1000);
         });
 
-        if (!activeClaim) {
-            alert("ไม่พบประวัติการแลกรับสิทธิ์ หรือตั๋วของท่านหมดอายุเกิน 24 ชม. แล้ว");
+        if (!activeClaim || !activeClaim.qr_payload) {
+            alert("ไม่พบประวัติการแลกรับสิทธิ์ หรือข้อมูล Payload สูญหาย");
             loadUserDataAndRender();
             return;
         }
@@ -775,32 +776,33 @@
         document.getElementById("qr-modal").classList.remove("show");
         selectedCouponData = null;
         activeClaimObj = null;
+        // โหลดข้อมูลล่าสุดเพื่อให้ปุ่มอัปเดตสถานะ
         await loadUserDataAndRender();
     }
 
     async function executeStaffScanAction() {
         if (!globalUserData) {
-            alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้ากลุ่มนี้ในระบบ");
+            alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้า");
             return;
         }
 
-        if (!activeClaimObj) {
-            alert("ไม่พบข้อมูลสิทธิ์คูปองที่กำลังใช้งาน กรุณาลองเปิด QR Code ใหม่อีกครั้ง");
+        if (!activeClaimObj || !activeClaimObj.qr_payload) {
+            alert("ไม่พบข้อมูลสิทธิ์คูปอง (QR Payload) ที่กำลังใช้งาน กรุณาลองเปิด QR Code ใหม่อีกครั้ง");
             return;
         }
 
         document.getElementById("loading").style.display = "flex";
         document.getElementById("qr-modal").classList.remove("show");
 
-        // อัปเดตข้อมูลด้วย qr_payload แทน id เดิม (Bypass ข้อจำกัด RLS)
+        // อัปเดตข้อมูลด้วย qr_payload 100% (ปราศจากการใช้ ID)
         var { error: claimUpdateErr } = await db
             .from("fmb_coupon_claims")
             .update({ status: 'used' })
             .eq("qr_payload", activeClaimObj.qr_payload); 
 
         if (claimUpdateErr) {
-            console.error("Failed to invalidate coupon:", claimUpdateErr);
-            alert("เกิดข้อผิดพลาดในการตัดสิทธิ์คูปองบนระบบ Cloud กรุณาลองใหม่อีกครั้ง");
+            console.error("Failed to invalidate coupon (Update Blocked):", claimUpdateErr);
+            alert("เกิดข้อผิดพลาดในการตัดสิทธิ์คูปองบนระบบ Cloud (เช็คตั้งค่า RLS) กรุณาลองใหม่อีกครั้ง");
             document.getElementById("loading").style.display = "none";
             document.getElementById("qr-modal").classList.add("show");
             return;
@@ -832,7 +834,7 @@
         var finalPoints = currentBalance + pointsEarnedFromBill;
         var finalExp = currentTotalExp + pointsEarnedFromBill;
 
-        var { error } = await db
+        var { error: pointErr } = await db
             .from("profiles")
             .update({ 
                 current_points: finalPoints,
@@ -840,8 +842,8 @@
             })
             .eq("line_user_id", currentUserId);
 
-        if (error) {
-            alert("เกิดข้อผิดพลาดในการบันทึกเพิ่มคะแนนบิลลงคลาวด์ แต่คูปองถูกใช้สิทธิ์ไปแล้วเรียบร้อย");
+        if (pointErr) {
+            alert("คูปองถูกใช้สิทธิ์ไปแล้ว แต่เกิดข้อผิดพลาดในการบันทึกเพิ่มคะแนนบิลลงคลาวด์");
         } else {
             alert(`🎉 ดำเนินการสำเร็จ!\nชื่อสมาชิก: ${globalUserData.full_name}\nได้รับแต้มสะสมจากยอดซื้อบิล (25 บ. = 1 แต้ม): +${pointsEarnedFromBill} แต้ม\nคะแนนสุทธิปัจจุบันคงเหลือ: ${finalPoints} แต้ม`);
         }
