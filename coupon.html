@@ -278,28 +278,13 @@
             iconColor: "#22c55e",
             title: "รับส่วนลด 25% เมื่อซื้อบิงซูไซส์ใหญ่ถ้วยที่ 2", 
             desc: "รับส่วนลดพิเศษทันทีสำหรับบิงซูไซส์ใหญ่ถ้วยที่ 2 ภายในบิลเดียวกัน", 
-            expiryStr: "หมดอายุ 31 ธ.ค. 69 (รีเซ็ททุกวันหลัง 05:00 น.)", 
+            expiryStr: "หมดอายุ 31 ธ.ค. 69 (แลกได้เฉพาะ พุธ - พฤหัส)", 
             expiryDate: "2026-12-31",
             pointsCost: 0, 
             tierReq: "Bronze",
-            ruleType: "daily_quota",
-            dailyQuota: 30,
-            ruleDesc: "จำกัด 30 สิทธิ์ต่อวัน (รีเซ็ทสิทธิ์ทุกวันหลังเวลา 05:00 น.)"
-        },
-        { 
-            id: "cp_discount_bingsu_set_lg_2nd", 
-            tab: "discount", 
-            icon: "🍧", 
-            iconColor: "#22c55e",
-            title: "รับส่วนลด 25% เมื่อซื้อบิงซูเซ็ทไซส์ใหญ่ถ้วยที่ 2", 
-            desc: "รับส่วนลดพิเศษทันทีสำหรับบิงซูเซ็ทไซส์ใหญ่ถ้วยที่ 2 ภายในบิลเดียวกัน", 
-            expiryStr: "หมดอายุ 31 ธ.ค. 69 (รีเซ็ททุกวันหลัง 05:00 น.)", 
-            expiryDate: "2026-12-31",
-            pointsCost: 0, 
-            tierReq: "Bronze",
-            ruleType: "daily_quota",
-            dailyQuota: 30,
-            ruleDesc: "จำกัด 30 สิทธิ์ต่อวัน (รีเซ็ทสิทธิ์ทุกวันหลังเวลา 05:00 น.)"
+            ruleType: "bingsu_special",
+            dailyQuota: 20,
+            ruleDesc: "จำกัด 20 สิทธิ์ต่อวัน กดรับและใช้ได้เฉพาะวันพุธและวันพฤหัสบดี (รีเซ็ททุกวันอังคาร, พุธ, พฤหัสบดี หลังเวลา 05:00 น.)"
         },
         { 
             id: "cp_discount_50thb", 
@@ -400,6 +385,21 @@
                 start.setMonth(start.getMonth() - 1);
             }
             return start;
+        } else if (ruleType === "bingsu_special") {
+            // ระบบย้อนหารอบการ Reset ล่าสุด (อังคาร, พุธ, พฤหัส หลังเวลา 05:00 น.)
+            var check = new Date(now);
+            check.setHours(5, 0, 0, 0);
+            if (now < check) {
+                check.setDate(check.getDate() - 1);
+            }
+            while (true) {
+                var day = check.getDay(); // 2=อังคาร, 3=พุธ, 4=พฤหัส
+                if (day === 2 || day === 3 || day === 4) {
+                    return check;
+                }
+                check.setDate(check.getDate() - 1);
+                check.setHours(5, 0, 0, 0);
+            }
         } else {
             var start = new Date(now);
             start.setHours(5, 0, 0, 0);
@@ -535,10 +535,17 @@
             var isTierLocked = userTierIdx < reqTierIdx;
             var isPointsInsufficient = coupon.pointsCost > 0 && userPoints < coupon.pointsCost;
 
+            // ตรวจสอบเงื่อนไขล็อกวัน (Business Day ที่ตัดรอบเวลา 05:00 น.)
             var isDayLocked = false;
+            var bizDayOfWeek = currentCycle.start.getDay(); 
+
             if (coupon.ruleType === "special_days_monthly") {
-                var dayOfWeek = new Date().getDay();
-                if (dayOfWeek !== 1 && dayOfWeek !== 3 && dayOfWeek !== 4) {
+                if (bizDayOfWeek !== 1 && bizDayOfWeek !== 3 && bizDayOfWeek !== 4) {
+                    isDayLocked = true;
+                }
+            } else if (coupon.ruleType === "bingsu_special") {
+                // ล็อกให้กดได้เฉพาะวันพุธ (3) และ วันพฤหัสบดี (4) เท่านั้น
+                if (bizDayOfWeek !== 3 && bizDayOfWeek !== 4) {
                     isDayLocked = true;
                 }
             }
@@ -629,13 +636,22 @@
         var coupon = selectedCouponData;
         var currentBalance = parseInt(globalUserData.current_points) || 0;
 
+        var cycle = getCycleRange();
+        var bizDayOfWeek = cycle.start.getDay();
+
+        // ตรวจสอบความปลอดภัยฝั่ง Client เพิ่มเติมเพื่อป้องกันการบายพาสทางเทคนิค
+        if (coupon.ruleType === "bingsu_special" && bizDayOfWeek !== 3 && bizDayOfWeek !== 4) {
+            alert("ขออภัย: คูปองนี้กำหนดให้กดรับและใช้สิทธิ์ได้เฉพาะวันพุธและวันพฤหัสบดีเท่านั้นครับ");
+            closeConfirmModal();
+            return;
+        }
+
         if (coupon.pointsCost > 0 && currentBalance < coupon.pointsCost) {
             alert(`ขออภัย: แต้มคงเหลือของคุณ (${currentBalance} pts) ไม่เพียงพอต่อการแลกคูปองนี้`);
             closeConfirmModal();
             return;
         }
 
-        var cycle = getCycleRange();
         var { data: checkClaims } = await db
             .from("fmb_coupon_claims")
             .select("id")
@@ -651,13 +667,12 @@
 
         closeConfirmModal();
         
-        // Show loading fullscreen
         document.getElementById("loading").style.display = "flex";
 
         var updatedPointsBalance = currentBalance - coupon.pointsCost;
         if (updatedPointsBalance < 0) updatedPointsBalance = 0;
 
-        // ขั้นตอนที่ 1: หักแต้มลูกค้าออกจากระบบก่อน (เตรียมพร้อมสำหรับการ Rollback หากมีปัญหา)
+        // หักแต้ม
         var { error: updateErr } = await db
             .from("profiles")
             .update({ current_points: updatedPointsBalance })
@@ -670,8 +685,7 @@
             return;
         }
 
-        // ขั้นตอนที่ 2: บันทึกประวัติการใช้คูปองเข้าฐานข้อมูลด้วย qr_payload
-        // (นำ .select() ออกเพื่อป้องกันบั๊ก RLS ตามที่คุณออกแบบไว้)
+        // บันทึกประวัติ
         var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
         var { error: claimErr } = await db
             .from("fmb_coupon_claims")
@@ -682,23 +696,19 @@
                 qr_payload: compiledPayload
             }]);
 
-        // ขั้นตอนที่ 3: ระบบ Transaction Rollback หากออกตั๋วไม่สำเร็จ ให้ "คืนแต้ม" กลับทันที
+        // Transaction Rollback หากออกตั๋วไม่สำเร็จ
         if (claimErr) {
-            console.error("Insert Claim Error (Supabase RLS Blocked):", claimErr);
-            
-            // Rollback คืนแต้มให้ลูกค้า
+            console.error("Insert Claim Error:", claimErr);
             await db.from("profiles")
                 .update({ current_points: currentBalance })
                 .eq("line_user_id", currentUserId);
                 
-            alert("ระบบขัดข้องในการออกคูปอง (โปรดตรวจสอบการตั้งค่า RLS บน Supabase) ทางเราได้ทำการ 'คืนแต้ม' ให้ท่านเรียบร้อยแล้ว");
-            
-            await loadUserDataAndRender(); // โหลดข้อมูลใหม่ให้แต้มเด้งกลับมา
+            alert("ระบบขัดข้องในการออกคูปอง ทางเราได้ทำการคืนแต้มให้ท่านเรียบร้อยแล้ว");
+            await loadUserDataAndRender(); 
             document.getElementById("loading").style.display = "none";
             return;
         }
 
-        // ขั้นตอนที่ 4: เชื่อมต่อ Object ด้วย Payload แทน ID เพื่อให้ระบบทำงานรันต่อได้แบบไม่พึ่งพา ID
         activeClaimObj = {
             coupon_id: coupon.id,
             status: 'claimed',
@@ -706,7 +716,6 @@
             line_user_id: currentUserId
         };
 
-        // แสดงผลหน้าต่าง QR Code (ไม่ต้อง await โหลดข้อมูลใหม่ตรงนี้ เพื่อให้หน้าต่าง QR เด้งขึ้นมาทันที)
         document.getElementById("loading").style.display = "none";
         
         document.getElementById("qr-modal-title").textContent = coupon.title;
@@ -726,7 +735,6 @@
             correctLevel : QRCode.CorrectLevel.H
         });
         
-        // อัปเดต UI เบื้องหลังเงียบๆ
         loadUserDataAndRender();
     }
 
@@ -776,7 +784,6 @@
         document.getElementById("qr-modal").classList.remove("show");
         selectedCouponData = null;
         activeClaimObj = null;
-        // โหลดข้อมูลล่าสุดเพื่อให้ปุ่มอัปเดตสถานะ
         await loadUserDataAndRender();
     }
 
@@ -794,15 +801,14 @@
         document.getElementById("loading").style.display = "flex";
         document.getElementById("qr-modal").classList.remove("show");
 
-        // อัปเดตข้อมูลด้วย qr_payload 100% (ปราศจากการใช้ ID)
         var { error: claimUpdateErr } = await db
             .from("fmb_coupon_claims")
             .update({ status: 'used' })
             .eq("qr_payload", activeClaimObj.qr_payload); 
 
         if (claimUpdateErr) {
-            console.error("Failed to invalidate coupon (Update Blocked):", claimUpdateErr);
-            alert("เกิดข้อผิดพลาดในการตัดสิทธิ์คูปองบนระบบ Cloud (เช็คตั้งค่า RLS) กรุณาลองใหม่อีกครั้ง");
+            console.error("Failed to invalidate coupon:", claimUpdateErr);
+            alert("เกิดข้อผิดพลาดในการตัดสิทธิ์คูปองบนระบบ Cloud กรุณาลองใหม่อีกครั้ง");
             document.getElementById("loading").style.display = "none";
             document.getElementById("qr-modal").classList.add("show");
             return;
