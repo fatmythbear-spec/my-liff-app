@@ -444,6 +444,19 @@
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    async function fmbApi(action, input) {
+        var token = liff.getAccessToken();
+        if (!token) throw new Error("LINE_LOGIN_REQUIRED");
+        var response = await fetch(SUPABASE_URL + "/functions/v1/line-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "x-line-access-token": token },
+            body: JSON.stringify({ action: action, input: input || {} })
+        });
+        var payload = await response.json();
+        if (!response.ok || payload.error) throw new Error(payload.error || "API_ERROR");
+        return payload.data;
+    }
+
     var allMembers       = [];
     var deleteTargetId   = "";
     var selectedMemberId = "";
@@ -488,16 +501,7 @@
             var profile = await liff.getProfile();
             currentAdminId = profile.userId;
 
-            var { data, error } = await db
-                .from("profiles")
-                .select("role, full_name")
-                .eq("line_user_id", profile.userId)
-                .single();
-
-            if (error) {
-                showLoadError("⚠️ ดึงข้อมูลไม่ได้: " + error.message);
-                return;
-            }
+            var data = await fmbApi("get_my_profile");
             if (!data || data.role !== "Admin") {
                 showLoadError("⛔ เฉพาะ Admin เท่านั้น (role: " + (data ? data.role : "ไม่พบ") + ")");
                 return;
@@ -535,16 +539,7 @@
     async function loadMembers() {
         try {
             // แก้ไขจุดนี้: นำคำสั่ง .order("created_at") ออกเนื่องจากไม่มีคอลัมน์นี้ใน Table profiles
-            var { data, error } = await db
-                .from("profiles")
-                .select("*");
-
-            if (error) {
-                showError("โหลดข้อมูลไม่สำเร็จ: " + error.message);
-                document.getElementById("members-table").innerHTML =
-                    '<tr><td colspan="8" class="empty">โหลดไม่สำเร็จ — ' + error.message + '</td></tr>';
-                return;
-            }
+            var data = await fmbApi("admin_members");
 
             allMembers = data || [];
             updateStats();
@@ -617,9 +612,7 @@
 
     async function updateRole(lineUserId, newRole) {
         try {
-            var { error } = await db.from("profiles")
-                .update({ role: newRole }).eq("line_user_id", lineUserId);
-            if (error) throw error;
+            await fmbApi("admin_update_role", { line_user_id: lineUserId, role: newRole });
             showSuccess("✅ อัปเดตบทบาทสำเร็จ");
             await loadMembers();
         } catch (err) { showError("อัปเดตไม่สำเร็จ: " + err.message); }
@@ -636,9 +629,7 @@
     }
     async function confirmDelete() {
         try {
-            var { error } = await db.from("profiles")
-                .delete().eq("line_user_id", deleteTargetId);
-            if (error) throw error;
+            await fmbApi("admin_delete_member", { line_user_id: deleteTargetId });
             showSuccess("✅ ลบสมาชิกสำเร็จ");
             closeModal();
             await loadMembers();
@@ -647,9 +638,7 @@
 
     async function viewHistory(lineUserId) {
         try {
-            var { data } = await db.from("point_transactions")
-                .select("*").eq("line_user_id", lineUserId)
-                .order("created_at", { ascending: false }).limit(10);
+            var data = (await fmbApi("staff_member_history", { line_user_id: lineUserId }) || []).slice(0, 10);
             if (!data || data.length === 0) { alert("ไม่มีประวัติแต้ม"); return; }
             var txt = "📋 ประวัติแต้ม (10 ล่าสุด):\n\n";
             data.forEach(function(tx,i) {
@@ -724,12 +713,11 @@
                 return;
             }
 
-            var { data: coupon, error: couponError } = await db.from("fmb_coupon_claims")
-                .select("*").eq("qr_payload", qrData).single();
-            if (coupon && !couponError) {
+            var lookup = await fmbApi("coupon_lookup", { qr_payload: qrData });
+            var coupon = lookup.claim;
+            if (coupon) {
                 var expired = !coupon.created_at || (Date.now() - new Date(coupon.created_at).getTime()) > 24 * 60 * 60 * 1000;
-                var { data: owner } = await db.from("profiles")
-                    .select("full_name").eq("line_user_id", coupon.line_user_id).single();
+                var owner = lookup.owner;
 
                 document.getElementById("result-name").textContent = COUPON_CATALOG[coupon.coupon_id] || coupon.coupon_id;
                 document.getElementById("result-info").innerHTML =
@@ -775,11 +763,7 @@
         button.disabled = true;
         button.textContent = "กำลังยืนยัน...";
         try {
-            var { data, error } = await db.rpc("fmb_redeem_coupon", {
-                p_staff_line_user_id: currentAdminId,
-                p_qr_payload: scannedCoupon.qr_payload
-            });
-            if (error) throw error;
+            var data = await fmbApi("redeem_coupon", { qr_payload: scannedCoupon.qr_payload });
             if (!data || data.status !== "used") {
                 throw new Error("คูปองหมดอายุหรือไม่อยู่ในสถานะที่ใช้ได้");
             }
@@ -827,13 +811,7 @@
         if (!confirm("เพิ่ม " + amount + " แต้มให้ " + m.full_name + " ?")) return;
 
         try {
-            var { error: adjustErr } = await db.rpc("fmb_admin_adjust_points", {
-                p_admin_line_user_id: currentAdminId,
-                p_customer_line_user_id: m.line_user_id,
-                p_points: amount,
-                p_description: "Admin เพิ่มแต้ม"
-            });
-            if (adjustErr) throw adjustErr;
+            await fmbApi("admin_adjust_points", { customer_line_user_id: m.line_user_id, points: amount, description: "Admin เพิ่มแต้ม" });
 
             showSuccess("✅ เพิ่ม " + amount + " แต้มให้ " + m.full_name + " สำเร็จ");
             document.getElementById("add-points-result").style.display = "none";
@@ -853,10 +831,9 @@
     // ===== ANALYTICS =====
     async function loadAnalytics() {
         try {
-            var { data: tx, error: txError } = await db.from("point_transactions").select("points,type");
-            var { data: coupons, error: couponError } = await db.from("fmb_coupon_claims").select("status");
-            if (txError) throw txError;
-            if (couponError) throw couponError;
+            var analytics = await fmbApi("admin_analytics");
+            var tx = analytics.transactions;
+            var coupons = analytics.coupons;
 
             var earned     = (tx||[]).filter(function(t){ return t.type==="earn"; })
                              .reduce(function(s,t){ return s+(t.points||0); }, 0);
@@ -898,9 +875,7 @@
 
     async function setAdmin(lineUserId) {
         try {
-            var { error } = await db.from("profiles")
-                .update({ role: "Admin" }).eq("line_user_id", lineUserId);
-            if (error) throw error;
+            await fmbApi("admin_update_role", { line_user_id: lineUserId, role: "Admin" });
             showSuccess("✅ ตั้งเป็น Admin สำเร็จ");
             await loadMembers();
             searchAdminMembers();

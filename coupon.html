@@ -257,6 +257,19 @@
     var { createClient } = supabase;
     var db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    async function fmbApi(action, input) {
+        var token = liff.getAccessToken();
+        if (!token) throw new Error("LINE_LOGIN_REQUIRED");
+        var response = await fetch(SUPABASE_URL + "/functions/v1/line-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "x-line-access-token": token },
+            body: JSON.stringify({ action: action, input: input || {} })
+        });
+        var payload = await response.json();
+        if (!response.ok || payload.error) throw new Error(payload.error || "API_ERROR");
+        return payload.data;
+    }
+
     var currentUserId = "";
     var globalUserData = null;
     var activeCategoryFilter = "all";
@@ -438,13 +451,9 @@
 
     async function loadUserDataAndRender() {
         try {
-            var { data, error } = await db
-                .from("profiles")
-                .select("*")
-                .eq("line_user_id", currentUserId)
-                .single();
+            var data = await fmbApi("get_my_profile");
 
-            if (error || !data) {
+            if (!data) {
                 alert("ไม่พบข้อมูลบัญชีสมาชิก VIP ของคุณ กรุณาลงทะเบียนผ่านหน้าบัตรหลักก่อนครับ");
                 return;
             }
@@ -461,21 +470,14 @@
             document.getElementById("badge-tier-icon").textContent = iconMap[currentTier] || "🥉";
 
             var cycle = getCycleRange();
-            var { data: gClaims } = await db
-                .from("fmb_coupon_claims")
-                .select("coupon_id, created_at")
-                .gte("created_at", cycle.start.toISOString());
+            var gClaims = await fmbApi("coupon_quota", { coupon_id: "cp_discount_bingsu_lg_2nd", since: cycle.start.toISOString() });
             globalClaims = gClaims || [];
 
             var now = new Date();
             var monthlyLimit = new Date(now.getFullYear(), now.getMonth() - 1, 1, 5, 0, 0, 0);
             
-            var { data: uClaims } = await db
-                .from("fmb_coupon_claims")
-                .select("*")
-                .eq("line_user_id", currentUserId)
-                .gte("created_at", monthlyLimit.toISOString());
-            userClaims = uClaims || [];
+            var uClaims = await fmbApi("my_coupon_claims");
+            userClaims = (uClaims || []).filter(function(c) { return safeParseDate(c.created_at) >= monthlyLimit; });
 
             buildCouponsLayout();
         } catch (e) {
@@ -650,11 +652,7 @@
             return;
         }
 
-        var { data: checkClaims } = await db
-            .from("fmb_coupon_claims")
-            .select("id")
-            .eq("coupon_id", coupon.id)
-            .gte("created_at", cycle.start.toISOString());
+        var checkClaims = await fmbApi("coupon_quota", { coupon_id: coupon.id, since: cycle.start.toISOString() });
 
         if (coupon.dailyQuota && checkClaims && checkClaims.length >= coupon.dailyQuota) {
             alert("ขออภัย: คูปองนี้ถูกลูกค้าท่านอื่นกดแลกครบสิทธิ์ของวันนี้เต็มเรียบร้อยแล้วครับ");
@@ -667,15 +665,10 @@
         
         document.getElementById("loading").style.display = "flex";
 
-        var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
-        var { data: claimResult, error: claimErr } = await db.rpc("fmb_claim_coupon", {
-            p_line_user_id: currentUserId,
-            p_coupon_id: coupon.id,
-            p_points_cost: coupon.pointsCost,
-            p_qr_payload: compiledPayload
-        });
-
-        if (claimErr) {
+        var claimResult;
+        try {
+            claimResult = await fmbApi("claim_coupon", { coupon_id: coupon.id, points_cost: coupon.pointsCost });
+        } catch (claimErr) {
             console.error("Claim Coupon Error:", claimErr);
             alert("ออกคูปองไม่สำเร็จ: " + claimErr.message);
             document.getElementById("loading").style.display = "none";

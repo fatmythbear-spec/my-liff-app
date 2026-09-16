@@ -56,6 +56,7 @@
         .preview-image-container { position: relative; margin-top: 10px; display: none; border-radius: 12px; overflow: hidden; max-height: 200px; }
         .preview-image-container img { width: 100%; height: 100%; object-fit: cover; }
         .remove-preview-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .edit-preview-btn { position: absolute; top: 8px; left: 8px; background: rgba(6,199,85,.9); color: white; border: none; border-radius: 16px; height: 28px; padding: 0 10px; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 11px; }
 
         .post-actions-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f7fafc; }
         .upload-media-btn { display: flex; align-items: center; gap: 6px; color: #4a5568; font-size: 13px; cursor: pointer; transition: color 0.2s; }
@@ -103,6 +104,40 @@
         .perk-tag { display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 20px; background: #ebf8ff; color: #2b6cb0; font-weight: 500; margin-bottom: 6px; }
         .perk-title { font-size: 15px; font-weight: 600; color: #1a202c; }
         .perk-desc { font-size: 12px; color: #718096; margin-top: 4px; line-height: 1.4; }
+
+        /* Mobile photo editor */
+        .photo-editor-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(15,23,42,.92); display: none; flex-direction: column; }
+        .photo-editor-overlay.show { display: flex; }
+        .editor-header { min-height: 54px; padding: 10px 14px; color: white; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #111827; }
+        .editor-title { font-size: 16px; font-weight: 600; }
+        .editor-header-btn { border: none; border-radius: 18px; padding: 7px 13px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .editor-cancel { background: #374151; color: white; }
+        .editor-apply { background: var(--primary); color: white; }
+        .editor-workspace { flex: 1; min-height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 8px; }
+        #photo-editor-canvas { display: block; max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.4); touch-action: none; background: #111; }
+        .editor-panel { background: white; max-height: 48vh; overflow-y: auto; padding: 10px 12px 18px; border-radius: 18px 18px 0 0; }
+        .editor-section { margin-bottom: 11px; }
+        .editor-section-title { font-size: 12px; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
+        .filter-strip, .sticker-strip, .editor-action-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 3px; scrollbar-width: none; }
+        .filter-strip::-webkit-scrollbar, .sticker-strip::-webkit-scrollbar { display: none; }
+        .filter-btn { flex: 0 0 auto; border: 1px solid #dbe2ea; background: #f8fafc; color: #374151; border-radius: 14px; padding: 6px 10px; font-size: 11px; cursor: pointer; }
+        .filter-btn.active { border-color: var(--primary); background: #ecfdf3; color: #07823a; font-weight: 600; }
+        .editor-sliders { display: grid; grid-template-columns: 68px 1fr 36px; gap: 5px 8px; align-items: center; }
+        .editor-sliders label, .editor-value { font-size: 11px; color: #596273; }
+        .editor-sliders input[type="range"] { width: 100%; accent-color: var(--primary); }
+        .editor-add-row { display: grid; grid-template-columns: 1fr 38px auto; gap: 7px; }
+        .editor-text-input { min-width: 0; border: 1px solid #dbe2ea; border-radius: 10px; padding: 7px 9px; font-size: 12px; }
+        .editor-color { width: 38px; height: 34px; border: 1px solid #dbe2ea; border-radius: 9px; padding: 2px; background: white; }
+        .editor-small-btn { flex: 0 0 auto; border: 1px solid #dbe2ea; background: #f8fafc; color: #374151; border-radius: 10px; padding: 7px 10px; font-size: 12px; cursor: pointer; }
+        .editor-small-btn.danger { color: #dc2626; background: #fff5f5; }
+        .sticker-btn { flex: 0 0 auto; width: 42px; height: 38px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; font-size: 22px; cursor: pointer; }
+        .editor-selection-row { display: grid; grid-template-columns: 42px 1fr 42px 1fr auto; gap: 5px; align-items: center; }
+        .editor-selection-row label { font-size: 11px; color: #596273; }
+        .editor-selection-row input[type="range"] { min-width: 0; width: 100%; accent-color: var(--primary); }
+        .editor-help { font-size: 10px; color: #8791a2; margin-top: 4px; }
+        @media (min-width: 700px) {
+            .photo-editor-overlay { left: 50%; transform: translateX(-50%); max-width: 620px; }
+        }
     </style>
 </head>
 <body>
@@ -147,6 +182,7 @@
             </div>
             <div class="preview-image-container" id="comm-preview-container">
                 <img id="comm-preview-img" src="" alt="Preview">
+                <button class="edit-preview-btn" onclick="reopenPhotoEditor('community')"><i class="fa-solid fa-wand-magic-sparkles"></i> แต่งต่อ</button>
                 <button class="remove-preview-btn" onclick="clearSelectedImage('community')"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="post-actions-bar">
@@ -171,6 +207,7 @@
             </div>
             <div class="preview-image-container" id="store-preview-container">
                 <img id="store-preview-img" src="" alt="Preview">
+                <button class="edit-preview-btn" onclick="reopenPhotoEditor('store')"><i class="fa-solid fa-wand-magic-sparkles"></i> แต่งต่อ</button>
                 <button class="remove-preview-btn" onclick="clearSelectedImage('store')"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="post-actions-bar">
@@ -192,6 +229,7 @@
             </div>
             <div class="preview-image-container" id="rev-preview-container">
                 <img id="rev-preview-img" src="" alt="Preview">
+                <button class="edit-preview-btn" onclick="reopenPhotoEditor('reviews')"><i class="fa-solid fa-wand-magic-sparkles"></i> แต่งต่อ</button>
                 <button class="remove-preview-btn" onclick="clearSelectedImage('reviews')"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="post-actions-bar">
@@ -206,12 +244,96 @@
     </div>
 </div>
 
+<div class="photo-editor-overlay" id="photo-editor-overlay" role="dialog" aria-modal="true" aria-label="ตกแต่งรูปภาพ">
+    <div class="editor-header">
+        <button class="editor-header-btn editor-cancel" onclick="cancelPhotoEditor()">ยกเลิก</button>
+        <div class="editor-title">✨ ตกแต่งรูปภาพ</div>
+        <button class="editor-header-btn editor-apply" id="editor-apply-btn" onclick="applyPhotoEditor()">ใช้รูปนี้</button>
+    </div>
+    <div class="editor-workspace" id="editor-workspace">
+        <canvas id="photo-editor-canvas"></canvas>
+    </div>
+    <div class="editor-panel">
+        <div class="editor-section">
+            <div class="editor-section-title">ฟิลเตอร์</div>
+            <div class="filter-strip" id="editor-filter-strip">
+                <button class="filter-btn active" data-filter="original" onclick="setEditorFilter('original', this)">ต้นฉบับ</button>
+                <button class="filter-btn" data-filter="bright" onclick="setEditorFilter('bright', this)">สว่าง</button>
+                <button class="filter-btn" data-filter="vivid" onclick="setEditorFilter('vivid', this)">สดใส</button>
+                <button class="filter-btn" data-filter="warm" onclick="setEditorFilter('warm', this)">โทนอุ่น</button>
+                <button class="filter-btn" data-filter="cool" onclick="setEditorFilter('cool', this)">โทนเย็น</button>
+                <button class="filter-btn" data-filter="pastel" onclick="setEditorFilter('pastel', this)">พาสเทล</button>
+                <button class="filter-btn" data-filter="vintage" onclick="setEditorFilter('vintage', this)">วินเทจ</button>
+                <button class="filter-btn" data-filter="mono" onclick="setEditorFilter('mono', this)">ขาวดำ</button>
+            </div>
+        </div>
+        <div class="editor-section">
+            <div class="editor-section-title">ปรับโทนภาพ</div>
+            <div class="editor-sliders">
+                <label for="editor-brightness">ความสว่าง</label><input id="editor-brightness" type="range" min="60" max="150" value="100" onpointerdown="saveEditorHistory()" oninput="updateEditorAdjustment('brightness', this.value)"><span class="editor-value" id="editor-brightness-value">100</span>
+                <label for="editor-contrast">คอนทราสต์</label><input id="editor-contrast" type="range" min="60" max="150" value="100" onpointerdown="saveEditorHistory()" oninput="updateEditorAdjustment('contrast', this.value)"><span class="editor-value" id="editor-contrast-value">100</span>
+                <label for="editor-saturation">ความสดสี</label><input id="editor-saturation" type="range" min="0" max="180" value="100" onpointerdown="saveEditorHistory()" oninput="updateEditorAdjustment('saturation', this.value)"><span class="editor-value" id="editor-saturation-value">100</span>
+            </div>
+        </div>
+        <div class="editor-section">
+            <div class="editor-section-title">เพิ่มข้อความ</div>
+            <div class="editor-add-row">
+                <input class="editor-text-input" id="editor-text-input" maxlength="60" placeholder="พิมพ์ข้อความบนรูป">
+                <input class="editor-color" id="editor-text-color" type="color" value="#ffffff" aria-label="สีข้อความ">
+                <button class="editor-small-btn" onclick="addEditorText()">เพิ่ม</button>
+            </div>
+        </div>
+        <div class="editor-section">
+            <div class="editor-section-title">สติ๊กเกอร์และอีโมจิ</div>
+            <div class="sticker-strip">
+                <button class="sticker-btn" onclick="addEditorSticker('🐻')">🐻</button>
+                <button class="sticker-btn" onclick="addEditorSticker('🍧')">🍧</button>
+                <button class="sticker-btn" onclick="addEditorSticker('✨')">✨</button>
+                <button class="sticker-btn" onclick="addEditorSticker('❤️')">❤️</button>
+                <button class="sticker-btn" onclick="addEditorSticker('😋')">😋</button>
+                <button class="sticker-btn" onclick="addEditorSticker('🎉')">🎉</button>
+                <button class="sticker-btn" onclick="addEditorSticker('👑')">👑</button>
+                <button class="editor-small-btn" onclick="addEditorSticker('FAT MYTH BEAR')">FMB</button>
+                <button class="editor-small-btn" onclick="addEditorSticker('อร่อยมาก!')">อร่อย!</button>
+            </div>
+        </div>
+        <div class="editor-section">
+            <div class="editor-section-title">วัตถุที่เลือก</div>
+            <div class="editor-selection-row">
+                <label for="editor-object-size">ขนาด</label><input id="editor-object-size" type="range" min="20" max="180" value="64" onpointerdown="saveEditorHistory()" oninput="updateSelectedObject('size', this.value)">
+                <label for="editor-object-rotation">หมุน</label><input id="editor-object-rotation" type="range" min="-180" max="180" value="0" onpointerdown="saveEditorHistory()" oninput="updateSelectedObject('rotation', this.value)">
+                <button class="editor-small-btn danger" onclick="deleteSelectedEditorObject()">ลบ</button>
+            </div>
+            <div class="editor-help">แตะข้อความหรือสติ๊กเกอร์บนรูปแล้วลากเพื่อย้ายตำแหน่ง</div>
+        </div>
+        <div class="editor-action-row">
+            <button class="editor-small-btn" onclick="undoPhotoEditor()"><i class="fa-solid fa-rotate-left"></i> Undo</button>
+            <button class="editor-small-btn" onclick="resetPhotoEditor()"><i class="fa-solid fa-arrow-rotate-right"></i> รีเซ็ต</button>
+            <button class="editor-small-btn" onclick="rotatePhotoEditor()"><i class="fa-solid fa-rotate"></i> หมุนภาพ 90°</button>
+            <button class="editor-small-btn" onclick="flipPhotoEditor()"><i class="fa-solid fa-arrows-left-right"></i> พลิกภาพ</button>
+        </div>
+    </div>
+</div>
+
 <script>
     var LIFF_ID = "2010298031-TOsCbkzl";
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
     
     var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function fmbApi(action, input) {
+        var token = liff.getAccessToken();
+        if (!token) throw new Error("LINE_LOGIN_REQUIRED");
+        var response = await fetch(SUPABASE_URL + "/functions/v1/line-webhook", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "x-line-access-token": token },
+            body: JSON.stringify({ action: action, input: input || {} })
+        });
+        var payload = await response.json();
+        if (!response.ok || payload.error) throw new Error(payload.error || "API_ERROR");
+        return payload.data;
+    }
 
     // รูปสำรองแบบ Inline SVG ปลอดภัย 100% ไม่มีวันพัง
     window.DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='%23e2e8f0'/><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z' fill='%23a0aec0'/></svg>";
@@ -224,6 +346,20 @@
     
     var base64ImageString = { community: "", reviews: "", store: "" };
     var myReactionKeys = new Set();
+    var editorImage = null;
+    var editorTypeKey = "";
+    var editorBaseWidth = 0;
+    var editorBaseHeight = 0;
+    var editorRotation = 0;
+    var editorFlip = false;
+    var editorFilter = "original";
+    var editorBrightness = 100;
+    var editorContrast = 100;
+    var editorSaturation = 100;
+    var editorObjects = [];
+    var editorSelectedIndex = -1;
+    var editorHistory = [];
+    var editorDrag = null;
 
     async function initializeLIFF() {
         try {
@@ -241,11 +377,7 @@
                 currentUserAvatar = profile.pictureUrl;
             }
             
-            var { data: memberData } = await db
-                .from("profiles")
-                .select("tier, role, full_name")
-                .eq("line_user_id", currentLineId)
-                .single();
+            var memberData = await fmbApi("get_my_profile");
                 
             if(memberData) {
                 if(memberData.tier) currentUserRank = memberData.tier;
@@ -303,35 +435,7 @@
         reader.onload = function(e) {
             var img = new Image();
             img.onload = function() {
-                var canvas = document.createElement('canvas');
-                var max_size = 800;
-                var width = img.width;
-                var height = img.height;
-
-                if (width > height) {
-                    if (width > max_size) { height *= max_size / width; width = max_size; }
-                } else {
-                    if (height > max_size) { width *= max_size / height; height = max_size; }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                var compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                base64ImageString[typeKey] = compressedBase64;
-
-                if(typeKey === 'community') {
-                    document.getElementById("comm-preview-img").src = compressedBase64;
-                    document.getElementById("comm-preview-container").style.display = "block";
-                } else if(typeKey === 'reviews') {
-                    document.getElementById("rev-preview-img").src = compressedBase64;
-                    document.getElementById("rev-preview-container").style.display = "block";
-                } else {
-                    document.getElementById("store-preview-img").src = compressedBase64;
-                    document.getElementById("store-preview-container").style.display = "block";
-                }
+                openPhotoEditor(img, typeKey);
             };
             img.onerror = function() {
                 alert("ไม่สามารถอ่านรูปนี้ได้ กรุณาถ่ายหรือเลือกรูปใหม่");
@@ -343,6 +447,415 @@
             alert("อ่านไฟล์รูปไม่สำเร็จ กรุณาลองใหม่");
         };
         reader.readAsDataURL(file);
+    }
+
+    function openPhotoEditor(img, typeKey) {
+        editorImage = img;
+        editorTypeKey = typeKey;
+        var scale = Math.min(1, 1000 / Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height));
+        editorBaseWidth = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+        editorBaseHeight = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+        editorRotation = 0;
+        editorFlip = false;
+        editorFilter = "original";
+        editorBrightness = 100;
+        editorContrast = 100;
+        editorSaturation = 100;
+        editorObjects = [];
+        editorSelectedIndex = -1;
+        editorHistory = [];
+        setEditorCanvasDimensions();
+        syncEditorControls();
+        bindEditorCanvasEvents();
+        renderPhotoEditor();
+        document.getElementById("photo-editor-overlay").classList.add("show");
+        document.body.style.overflow = "hidden";
+    }
+
+    function reopenPhotoEditor(typeKey) {
+        var imageData = base64ImageString[typeKey];
+        if (!imageData) return;
+        var img = new Image();
+        img.onload = function() { openPhotoEditor(img, typeKey); };
+        img.onerror = function() { alert("ไม่สามารถเปิดรูปเพื่อแต่งต่อได้"); };
+        img.src = imageData;
+    }
+
+    function setEditorCanvasDimensions() {
+        var canvas = document.getElementById("photo-editor-canvas");
+        var isSideways = editorRotation % 180 !== 0;
+        canvas.width = isSideways ? editorBaseHeight : editorBaseWidth;
+        canvas.height = isSideways ? editorBaseWidth : editorBaseHeight;
+    }
+
+    function getEditorPresetFilter() {
+        return {
+            original: "",
+            bright: "brightness(1.12)",
+            vivid: "saturate(1.38) contrast(1.08)",
+            warm: "sepia(.2) saturate(1.2) hue-rotate(-8deg)",
+            cool: "saturate(1.08) hue-rotate(14deg)",
+            pastel: "brightness(1.08) saturate(.82) contrast(.9)",
+            vintage: "sepia(.45) saturate(.9) contrast(.92)",
+            mono: "grayscale(1) contrast(1.08)"
+        }[editorFilter] || "";
+    }
+
+    function renderPhotoEditor() {
+        var canvas = document.getElementById("photo-editor-canvas");
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(editorFlip ? -1 : 1, 1);
+        ctx.rotate(editorRotation * Math.PI / 180);
+        ctx.filter = [
+            getEditorPresetFilter(),
+            "brightness(" + editorBrightness + "%)",
+            "contrast(" + editorContrast + "%)",
+            "saturate(" + editorSaturation + "%)"
+        ].filter(Boolean).join(" ");
+        ctx.drawImage(editorImage, -editorBaseWidth / 2, -editorBaseHeight / 2, editorBaseWidth, editorBaseHeight);
+        ctx.restore();
+        ctx.filter = "none";
+
+        editorObjects.forEach(function(obj, index) {
+            drawEditorObject(ctx, obj, index === editorSelectedIndex);
+        });
+    }
+
+    function editorObjectMetrics(ctx, obj) {
+        ctx.save();
+        ctx.font = (obj.kind === "text" ? "600 " : "400 ") + obj.size + "px Kanit, Arial, sans-serif";
+        var width = Math.max(obj.size, ctx.measureText(obj.value).width);
+        ctx.restore();
+        return { width: width, height: obj.size * 1.25 };
+    }
+
+    function drawEditorObject(ctx, obj, isSelected) {
+        var metrics = editorObjectMetrics(ctx, obj);
+        ctx.save();
+        ctx.translate(obj.x, obj.y);
+        ctx.rotate(obj.rotation * Math.PI / 180);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = (obj.kind === "text" ? "600 " : "400 ") + obj.size + "px Kanit, Arial, sans-serif";
+        if (obj.kind === "text") {
+            ctx.lineJoin = "round";
+            ctx.lineWidth = Math.max(3, obj.size / 11);
+            ctx.strokeStyle = "rgba(0,0,0,.55)";
+            ctx.strokeText(obj.value, 0, 0);
+            ctx.fillStyle = obj.color || "#ffffff";
+            ctx.fillText(obj.value, 0, 0);
+        } else {
+            ctx.shadowColor = "rgba(0,0,0,.28)";
+            ctx.shadowBlur = Math.max(2, obj.size / 16);
+            ctx.fillText(obj.value, 0, 0);
+        }
+        if (isSelected) {
+            ctx.shadowColor = "transparent";
+            ctx.setLineDash([8, 6]);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#06c755";
+            ctx.strokeRect(-metrics.width / 2 - 8, -metrics.height / 2 - 6, metrics.width + 16, metrics.height + 12);
+        }
+        ctx.restore();
+    }
+
+    function bindEditorCanvasEvents() {
+        var canvas = document.getElementById("photo-editor-canvas");
+        if (canvas.dataset.editorBound === "yes") return;
+        canvas.dataset.editorBound = "yes";
+        canvas.addEventListener("pointerdown", startEditorDrag);
+        canvas.addEventListener("pointermove", moveEditorDrag);
+        canvas.addEventListener("pointerup", endEditorDrag);
+        canvas.addEventListener("pointercancel", endEditorDrag);
+    }
+
+    function editorPointerPosition(event) {
+        var canvas = document.getElementById("photo-editor-canvas");
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * canvas.width / rect.width,
+            y: (event.clientY - rect.top) * canvas.height / rect.height
+        };
+    }
+
+    function findEditorObjectAt(point) {
+        var canvas = document.getElementById("photo-editor-canvas");
+        var ctx = canvas.getContext("2d");
+        for (var i = editorObjects.length - 1; i >= 0; i--) {
+            var obj = editorObjects[i];
+            var metrics = editorObjectMetrics(ctx, obj);
+            var angle = -obj.rotation * Math.PI / 180;
+            var dx = point.x - obj.x;
+            var dy = point.y - obj.y;
+            var localX = dx * Math.cos(angle) - dy * Math.sin(angle);
+            var localY = dx * Math.sin(angle) + dy * Math.cos(angle);
+            if (Math.abs(localX) <= metrics.width / 2 + 14 && Math.abs(localY) <= metrics.height / 2 + 14) return i;
+        }
+        return -1;
+    }
+
+    function startEditorDrag(event) {
+        var point = editorPointerPosition(event);
+        var index = findEditorObjectAt(point);
+        editorSelectedIndex = index;
+        if (index >= 0) {
+            saveEditorHistory();
+            var obj = editorObjects[index];
+            editorDrag = { pointerId: event.pointerId, offsetX: point.x - obj.x, offsetY: point.y - obj.y };
+            event.currentTarget.setPointerCapture(event.pointerId);
+        } else {
+            editorDrag = null;
+        }
+        syncSelectedObjectControls();
+        renderPhotoEditor();
+    }
+
+    function moveEditorDrag(event) {
+        if (!editorDrag || editorDrag.pointerId !== event.pointerId || editorSelectedIndex < 0) return;
+        var point = editorPointerPosition(event);
+        var canvas = document.getElementById("photo-editor-canvas");
+        var obj = editorObjects[editorSelectedIndex];
+        obj.x = Math.max(0, Math.min(canvas.width, point.x - editorDrag.offsetX));
+        obj.y = Math.max(0, Math.min(canvas.height, point.y - editorDrag.offsetY));
+        renderPhotoEditor();
+    }
+
+    function endEditorDrag(event) {
+        if (editorDrag && editorDrag.pointerId === event.pointerId) editorDrag = null;
+    }
+
+    function editorSnapshot() {
+        return {
+            rotation: editorRotation,
+            flip: editorFlip,
+            filter: editorFilter,
+            brightness: editorBrightness,
+            contrast: editorContrast,
+            saturation: editorSaturation,
+            objects: JSON.parse(JSON.stringify(editorObjects)),
+            selected: editorSelectedIndex
+        };
+    }
+
+    function saveEditorHistory() {
+        if (!editorImage) return;
+        var snapshot = editorSnapshot();
+        var encoded = JSON.stringify(snapshot);
+        if (editorHistory.length && editorHistory[editorHistory.length - 1].encoded === encoded) return;
+        editorHistory.push({ encoded: encoded, state: snapshot });
+        if (editorHistory.length > 20) editorHistory.shift();
+    }
+
+    function restoreEditorSnapshot(snapshot) {
+        editorRotation = snapshot.rotation;
+        editorFlip = snapshot.flip;
+        editorFilter = snapshot.filter;
+        editorBrightness = snapshot.brightness;
+        editorContrast = snapshot.contrast;
+        editorSaturation = snapshot.saturation;
+        editorObjects = JSON.parse(JSON.stringify(snapshot.objects));
+        editorSelectedIndex = snapshot.selected;
+        setEditorCanvasDimensions();
+        syncEditorControls();
+        renderPhotoEditor();
+    }
+
+    function undoPhotoEditor() {
+        if (!editorHistory.length) return;
+        var previous = editorHistory.pop();
+        restoreEditorSnapshot(previous.state);
+    }
+
+    function resetPhotoEditor() {
+        saveEditorHistory();
+        editorRotation = 0;
+        editorFlip = false;
+        editorFilter = "original";
+        editorBrightness = 100;
+        editorContrast = 100;
+        editorSaturation = 100;
+        editorObjects = [];
+        editorSelectedIndex = -1;
+        setEditorCanvasDimensions();
+        syncEditorControls();
+        renderPhotoEditor();
+    }
+
+    function setEditorFilter(filterName, button) {
+        saveEditorHistory();
+        editorFilter = filterName;
+        document.querySelectorAll("#editor-filter-strip .filter-btn").forEach(function(btn) { btn.classList.remove("active"); });
+        var activeButton = button || document.querySelector('#editor-filter-strip .filter-btn[data-filter="' + filterName + '"]');
+        if (activeButton) activeButton.classList.add("active");
+        renderPhotoEditor();
+    }
+
+    function updateEditorAdjustment(kind, value) {
+        var numericValue = parseInt(value, 10);
+        if (kind === "brightness") editorBrightness = numericValue;
+        if (kind === "contrast") editorContrast = numericValue;
+        if (kind === "saturation") editorSaturation = numericValue;
+        document.getElementById("editor-" + kind + "-value").textContent = numericValue;
+        renderPhotoEditor();
+    }
+
+    function addEditorText() {
+        var input = document.getElementById("editor-text-input");
+        var textValue = input.value.trim();
+        if (!textValue) return;
+        saveEditorHistory();
+        var canvas = document.getElementById("photo-editor-canvas");
+        editorObjects.push({ kind: "text", value: textValue, color: document.getElementById("editor-text-color").value, x: canvas.width / 2, y: canvas.height / 2, size: Math.max(34, Math.round(canvas.width * .075)), rotation: 0 });
+        editorSelectedIndex = editorObjects.length - 1;
+        input.value = "";
+        syncSelectedObjectControls();
+        renderPhotoEditor();
+    }
+
+    function addEditorSticker(value) {
+        saveEditorHistory();
+        var canvas = document.getElementById("photo-editor-canvas");
+        var isLabel = value === "FAT MYTH BEAR" || value === "อร่อยมาก!";
+        editorObjects.push({ kind: isLabel ? "text" : "sticker", value: value, color: "#ffffff", x: canvas.width / 2, y: canvas.height / 2, size: Math.max(42, Math.round(canvas.width * .09)), rotation: 0 });
+        editorSelectedIndex = editorObjects.length - 1;
+        syncSelectedObjectControls();
+        renderPhotoEditor();
+    }
+
+    function syncSelectedObjectControls() {
+        if (editorSelectedIndex < 0 || !editorObjects[editorSelectedIndex]) return;
+        var obj = editorObjects[editorSelectedIndex];
+        document.getElementById("editor-object-size").value = Math.min(180, Math.max(20, obj.size));
+        document.getElementById("editor-object-rotation").value = obj.rotation;
+    }
+
+    function updateSelectedObject(property, value) {
+        if (editorSelectedIndex < 0 || !editorObjects[editorSelectedIndex]) return;
+        editorObjects[editorSelectedIndex][property] = parseInt(value, 10);
+        renderPhotoEditor();
+    }
+
+    function deleteSelectedEditorObject() {
+        if (editorSelectedIndex < 0) return;
+        saveEditorHistory();
+        editorObjects.splice(editorSelectedIndex, 1);
+        editorSelectedIndex = -1;
+        renderPhotoEditor();
+    }
+
+    function rotatePhotoEditor() {
+        saveEditorHistory();
+        var canvas = document.getElementById("photo-editor-canvas");
+        var oldWidth = canvas.width;
+        var oldHeight = canvas.height;
+        editorObjects.forEach(function(obj) {
+            var oldX = obj.x;
+            obj.x = oldHeight - obj.y;
+            obj.y = oldX;
+            obj.rotation = (obj.rotation + 90) % 360;
+        });
+        editorRotation = (editorRotation + 90) % 360;
+        setEditorCanvasDimensions();
+        syncSelectedObjectControls();
+        renderPhotoEditor();
+    }
+
+    function flipPhotoEditor() {
+        saveEditorHistory();
+        var canvas = document.getElementById("photo-editor-canvas");
+        editorObjects.forEach(function(obj) {
+            obj.x = canvas.width - obj.x;
+            obj.rotation = -obj.rotation;
+        });
+        editorFlip = !editorFlip;
+        syncSelectedObjectControls();
+        renderPhotoEditor();
+    }
+
+    function syncEditorControls() {
+        document.getElementById("editor-brightness").value = editorBrightness;
+        document.getElementById("editor-contrast").value = editorContrast;
+        document.getElementById("editor-saturation").value = editorSaturation;
+        document.getElementById("editor-brightness-value").textContent = editorBrightness;
+        document.getElementById("editor-contrast-value").textContent = editorContrast;
+        document.getElementById("editor-saturation-value").textContent = editorSaturation;
+        document.querySelectorAll("#editor-filter-strip .filter-btn").forEach(function(btn) {
+            btn.classList.toggle("active", btn.dataset.filter === editorFilter);
+        });
+        syncSelectedObjectControls();
+    }
+
+    function setImagePreview(typeKey, imageData) {
+        var map = {
+            community: ["comm-preview-img", "comm-preview-container"],
+            reviews: ["rev-preview-img", "rev-preview-container"],
+            store: ["store-preview-img", "store-preview-container"]
+        }[typeKey];
+        if (!map) return;
+        document.getElementById(map[0]).src = imageData;
+        document.getElementById(map[1]).style.display = "block";
+    }
+
+    function exportEditorImage(canvas) {
+        var quality = .86;
+        var result = canvas.toDataURL("image/jpeg", quality);
+        while (result.length > 1900000 && quality > .52) {
+            quality -= .08;
+            result = canvas.toDataURL("image/jpeg", quality);
+        }
+        var workingCanvas = canvas;
+        while (result.length > 1900000 && workingCanvas.width > 600) {
+            var smaller = document.createElement("canvas");
+            smaller.width = Math.round(workingCanvas.width * .82);
+            smaller.height = Math.round(workingCanvas.height * .82);
+            smaller.getContext("2d").drawImage(workingCanvas, 0, 0, smaller.width, smaller.height);
+            workingCanvas = smaller;
+            result = workingCanvas.toDataURL("image/jpeg", .68);
+        }
+        return result;
+    }
+
+    function applyPhotoEditor() {
+        if (!editorImage || !editorTypeKey) return;
+        var button = document.getElementById("editor-apply-btn");
+        button.disabled = true;
+        button.textContent = "กำลังบันทึก...";
+        editorSelectedIndex = -1;
+        renderPhotoEditor();
+        try {
+            var finalImage = exportEditorImage(document.getElementById("photo-editor-canvas"));
+            base64ImageString[editorTypeKey] = finalImage;
+            setImagePreview(editorTypeKey, finalImage);
+            var inputId = editorTypeKey === "community" ? "community-file-input" : (editorTypeKey === "reviews" ? "review-file-input" : "store-file-input");
+            document.getElementById(inputId).value = "";
+            closePhotoEditor();
+        } catch (error) {
+            alert("บันทึกรูปที่ตกแต่งไม่สำเร็จ กรุณาลองใหม่");
+        } finally {
+            button.disabled = false;
+            button.textContent = "ใช้รูปนี้";
+        }
+    }
+
+    function cancelPhotoEditor() {
+        if (editorTypeKey) {
+            var inputId = editorTypeKey === "community" ? "community-file-input" : (editorTypeKey === "reviews" ? "review-file-input" : "store-file-input");
+            document.getElementById(inputId).value = "";
+        }
+        closePhotoEditor();
+    }
+
+    function closePhotoEditor() {
+        document.getElementById("photo-editor-overlay").classList.remove("show");
+        document.body.style.overflow = "";
+        editorImage = null;
+        editorTypeKey = "";
+        editorObjects = [];
+        editorHistory = [];
+        editorDrag = null;
     }
 
     function escapeHtml(value) {
@@ -402,14 +915,7 @@
         submitButton.disabled = true;
         submitButton.textContent = "กำลังโพสต์...";
         try {
-            var { error } = await db.rpc("fmb_publish_community_post", {
-                p_line_user_id: currentLineId,
-                p_post_type: tabType,
-                p_content_text: textContent,
-                p_image_payload: compressedImage,
-                p_author_avatar: currentUserAvatar
-            });
-            if(error) throw error;
+            await fmbApi("publish_post", { post_type: tabType, content_text: textContent, image_payload: compressedImage });
             textareaElement.value = "";
             clearSelectedImage(config.imgKey);
             await loadPostsFromSupabase();
@@ -422,27 +928,16 @@
     }
 
     async function loadPostsFromSupabase() {
-        var { data: reactionRows, error: reactionError } = await db.rpc("fmb_get_my_community_reactions", {
-            p_line_user_id: currentLineId
-        });
-        if (reactionError) {
-            console.error("Fetch reaction state fault:", reactionError);
-            myReactionKeys = new Set();
-        } else {
-            myReactionKeys = new Set((reactionRows || []).map(function(row) {
-                return row.post_id + ":" + row.reaction;
-            }));
-        }
-
-        var { data: postsList, error } = await db
-            .from("fmb_community_posts")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-        if (error) {
+        var feed;
+        try {
+            feed = await fmbApi("community_feed");
+        } catch (error) {
             console.error("Fetch Feed Fault: ", error);
             return;
         }
+        var reactionRows = feed.reactions || [];
+        var postsList = feed.posts || [];
+        myReactionKeys = new Set(reactionRows.map(function(row) { return row.post_id + ":" + row.reaction; }));
 
         var commBox = document.getElementById("box-community-feed");
         var revBox = document.getElementById("box-reviews-feed");
@@ -542,17 +1037,11 @@
         var textComment = inputField.value.trim();
         if(!textComment) return;
 
-        var { error } = await db.rpc("fmb_add_community_comment", {
-            p_post_id: postId,
-            p_line_user_id: currentLineId,
-            p_user_name: currentDisplayName,
-            p_comment_text: textComment
-        });
-
-        if(!error) {
+        try {
+            await fmbApi("add_comment", { post_id: postId, comment_text: textComment });
             inputField.value = "";
             loadPostsFromSupabase();
-        } else {
+        } catch (error) {
             alert("ไม่สามารถส่งคอมเมนต์ได้: " + error.message);
         }
     }
@@ -566,21 +1055,11 @@
 
     async function togglePostVote(postId, actionType) {
         try {
-            var { data: voteResult, error: updateError } = await db.rpc("fmb_toggle_community_reaction", {
-                p_post_id: postId,
-                p_line_user_id: currentLineId,
-                p_reaction: actionType
-            });
-
-            if (updateError) {
-                console.error("Supabase Update Fault:", updateError);
-                alert("⚠️ ไม่สามารถบันทึกยอดโหวตได้: " + updateError.message);
-            } else {
-                var reactionKey = postId + ":" + actionType;
-                if (voteResult.active) myReactionKeys.add(reactionKey);
-                else myReactionKeys.delete(reactionKey);
-                await loadPostsFromSupabase();
-            }
+            var voteResult = await fmbApi("toggle_reaction", { post_id: postId, reaction: actionType });
+            var reactionKey = postId + ":" + actionType;
+            if (voteResult.active) myReactionKeys.add(reactionKey);
+            else myReactionKeys.delete(reactionKey);
+            await loadPostsFromSupabase();
         } catch (err) {
             console.error("System crash on vote:", err);
         }
@@ -589,15 +1068,11 @@
     async function erasePostRecord(postId) {
         if(!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) return;
 
-        var { error } = await db.rpc("fmb_delete_community_post", {
-            p_post_id: postId,
-            p_line_user_id: currentLineId
-        });
-
-        if(error) {
-            alert("⚠️ ไม่สามารถลบข้อมูลได้! กรุณาตรวจสอบ RLS Policy สิทธิ์การ Delete บน Supabase ของคุณ");
-        } else {
+        try {
+            await fmbApi("delete_post", { post_id: postId });
             loadPostsFromSupabase();
+        } catch (error) {
+            alert("⚠️ ไม่สามารถลบข้อมูลได้: " + error.message);
         }
     }
 
