@@ -195,6 +195,14 @@
             document.getElementById("error-msg").textContent = "กรุณากรอกข้อมูลให้ครบ";
             return;
         }
+        if (fullName.length > 100) {
+            document.getElementById("error-msg").textContent = "ชื่อยาวเกินกำหนด";
+            return;
+        }
+        if (!/^0[0-9]{8,9}$/.test(tel)) {
+            document.getElementById("error-msg").textContent = "กรุณากรอกเบอร์โทรศัพท์ 9-10 หลัก ขึ้นต้นด้วย 0";
+            return;
+        }
 
         document.getElementById("register-btn").disabled = true;
         document.getElementById("register-btn").textContent = "กำลังสมัคร...";

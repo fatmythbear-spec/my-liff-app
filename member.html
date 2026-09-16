@@ -354,6 +354,23 @@
                 return;
             }
 
+            var { data: transactions, error: transactionError } = await db
+                .from("point_transactions")
+                .select("amount_spent, created_at")
+                .eq("line_user_id", profile.userId)
+                .eq("type", "earn")
+                .order("created_at", { ascending: true });
+            if (!transactionError) {
+                var purchaseTransactions = (transactions || []).filter(function(tx) {
+                    return Number(tx.amount_spent || 0) > 0;
+                });
+                data.total_spending = purchaseTransactions.reduce(function(sum, tx) {
+                    return sum + Number(tx.amount_spent || 0);
+                }, 0);
+                data.order_count = purchaseTransactions.length;
+                data.member_since = transactions && transactions.length ? transactions[0].created_at : null;
+            }
+
             setGreetingTime();
             renderDashboard(data);
             
@@ -397,8 +414,8 @@
         document.getElementById("stat-spend").textContent = (data.total_spending || 0).toLocaleString();
         document.getElementById("stat-visit").textContent = data.order_count || 0;
         
-        if(data.created_at) {
-            const d = new Date(data.created_at);
+        if(data.member_since) {
+            const d = new Date(data.member_since);
             const months = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
             document.getElementById("stat-date").textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
         } else {

@@ -110,9 +110,9 @@
 
 <div class="app-container">
     <nav class="top-nav">
-        <div class="nav-tab active" onclick="switchMainTab('perks')">🎁 สิทธิพิเศษ</div>
-        <div class="nav-tab" onclick="switchMainTab('community')">🐻 คอมมูนิตี้หมี</div>
-        <div class="nav-tab" onclick="switchMainTab('reviews')">⭐ รีวิวจากลูกค้า</div>
+        <div class="nav-tab active" onclick="switchMainTab('perks', this)">🎁 สิทธิพิเศษ</div>
+        <div class="nav-tab" onclick="switchMainTab('community', this)">🐻 คอมมูนิตี้หมี</div>
+        <div class="nav-tab" onclick="switchMainTab('reviews', this)">⭐ รีวิวจากลูกค้า</div>
     </nav>
 
     <div id="view-perks" class="view-content active">
@@ -147,7 +147,7 @@
             <div class="post-actions-bar">
                 <label class="upload-media-btn">
                     <i class="fa-solid fa-camera" style="color: #4a5568; font-size:15px;"></i> แนบรูปถ่าย
-                    <input type="file" accept="image/*" id="community-file-input" style="display: none;" onchange="handleImageSelection(this, 'community')">
+                    <input type="file" accept="image/*" capture="environment" id="community-file-input" style="display: none;" onchange="handleImageSelection(this, 'community')">
                 </label>
                 <button class="submit-post-btn" onclick="publishNewPost('community')">โพสต์ลงบอร์ด</button>
             </div>
@@ -168,7 +168,7 @@
             <div class="post-actions-bar">
                 <label class="upload-media-btn">
                     <i class="fa-solid fa-image" style="color: #4a5568; font-size:15px;"></i> แนบรูปภาพ
-                    <input type="file" accept="image/*" id="review-file-input" style="display: none;" onchange="handleImageSelection(this, 'reviews')">
+                     <input type="file" accept="image/*" capture="environment" id="review-file-input" style="display: none;" onchange="handleImageSelection(this, 'reviews')">
                 </label>
                 <button class="submit-post-btn" onclick="publishNewPost('review')">ส่งรีวิว</button>
             </div>
@@ -235,10 +235,10 @@
         }
     }
 
-    function switchMainTab(targetTab) {
+    function switchMainTab(targetTab, clickedTab) {
         var tabs = document.querySelectorAll(".nav-tab");
         tabs.forEach(t => t.classList.remove("active"));
-        event.currentTarget.classList.add("active");
+        clickedTab.classList.add("active");
         
         var views = document.querySelectorAll(".view-content");
         views.forEach(v => v.classList.remove("active"));
@@ -249,6 +249,16 @@
     function handleImageSelection(inputElement, typeKey) {
         var file = inputElement.files[0];
         if (!file) return;
+        if (!file.type.startsWith("image/")) {
+            alert("กรุณาเลือกไฟล์รูปภาพเท่านั้น");
+            inputElement.value = "";
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            alert("รูปมีขนาดใหญ่เกิน 10 MB กรุณาเลือกรูปใหม่");
+            inputElement.value = "";
+            return;
+        }
 
         var reader = new FileReader();
         reader.onload = function(e) {
@@ -281,9 +291,31 @@
                     document.getElementById("rev-preview-container").style.display = "block";
                 }
             };
+            img.onerror = function() {
+                alert("ไม่สามารถอ่านรูปนี้ได้ กรุณาถ่ายหรือเลือกรูปใหม่");
+                inputElement.value = "";
+            };
             img.src = e.target.result;
         };
+        reader.onerror = function() {
+            alert("อ่านไฟล์รูปไม่สำเร็จ กรุณาลองใหม่");
+        };
         reader.readAsDataURL(file);
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function safeImageSource(value, fallback) {
+        var source = String(value || "");
+        if (source.startsWith("data:image/") || source.startsWith("https://")) return source;
+        return fallback || "";
     }
 
     function clearSelectedImage(typeKey) {
@@ -325,15 +357,23 @@
             comments: [] 
         };
 
+        var submitButton = document.querySelector(tabType === 'review' ? '#reviews-post-card .submit-post-btn' : '#community-post-card .submit-post-btn');
+        submitButton.disabled = true;
+        submitButton.textContent = "กำลังโพสต์...";
+
         var { error } = await db.from("fmb_community_posts").insert([payload]);
         if(error) {
-            alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message + "\n\n⚠️ แจ้งผู้ดูแลระบบ: ตรวจสอบว่ามีคอลัมน์ 'author_avatar' ในฐานข้อมูลแล้วหรือยัง?");
+            alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message);
+            submitButton.disabled = false;
+            submitButton.textContent = tabType === 'review' ? "ส่งรีวิว" : "โพสต์ลงบอร์ด";
             return;
         }
 
         textareaElement.value = "";
         clearSelectedImage(imgKey);
-        loadPostsFromSupabase();
+        await loadPostsFromSupabase();
+        submitButton.disabled = false;
+        submitButton.textContent = tabType === 'review' ? "ส่งรีวิว" : "โพสต์ลงบอร์ด";
     }
 
     async function loadPostsFromSupabase() {
@@ -371,13 +411,14 @@
             var commentList = Array.isArray(post.comments) ? post.comments : [];
             var commentMarkup = "";
             commentList.forEach(function(cm) {
-                commentMarkup += `<div class="comment-item"><span class="commenter-name">${cm.user}:</span>${cm.text}</div>`;
+                commentMarkup += `<div class="comment-item"><span class="commenter-name">${escapeHtml(cm.user)}:</span>${escapeHtml(cm.text)}</div>`;
             });
 
-            var attachedImgMarkup = post.image_payload ? `<img class="feed-attached-img" src="${post.image_payload}" alt="Attached">` : '';
+            var safePostImage = safeImageSource(post.image_payload, "");
+            var attachedImgMarkup = safePostImage ? `<img class="feed-attached-img" src="${safePostImage}" alt="Attached">` : '';
             
             // ดึงรูปจริงที่บันทึกไว้ใน DB หากไม่มีให้ใช้ Default Avatar ป้องกันการเป็นรูปสีเทา
-            var displayAvatar = post.author_avatar || window.DEFAULT_AVATAR;
+            var displayAvatar = safeImageSource(post.author_avatar, window.DEFAULT_AVATAR);
 
             var postHtml = `
                 <div class="feed-card">
@@ -386,7 +427,7 @@
                             <img class="post-avatar" src="${displayAvatar}" alt="avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
                             <div>
                                 <div class="author-name">
-                                    ${post.author_name}
+                                    ${escapeHtml(post.author_name)}
                                 </div>
                             </div>
                         </div>
@@ -394,7 +435,7 @@
                     </div>
                     
                     <div class="feed-body">
-                        ${post.content_text}
+                        ${escapeHtml(post.content_text).replace(/\n/g, "<br>")}
                         ${attachedImgMarkup}
                     </div>
 
@@ -435,13 +476,12 @@
         var textComment = inputField.value.trim();
         if(!textComment) return;
 
-        var { data: currentPost, error: fError } = await db.from("fmb_community_posts").select("comments").eq("id", postId).single();
-        if(fError) return;
-        
-        var commentArray = Array.isArray(currentPost.comments) ? currentPost.comments : [];
-        commentArray.push({ user: currentDisplayName, text: textComment }); 
-
-        var { error } = await db.from("fmb_community_posts").update({ comments: commentArray }).eq("id", postId);
+        var { error } = await db.rpc("fmb_add_community_comment", {
+            p_post_id: postId,
+            p_line_user_id: currentLineId,
+            p_user_name: currentDisplayName,
+            p_comment_text: textComment
+        });
 
         if(!error) {
             inputField.value = "";
@@ -456,46 +496,19 @@
             var permanentLikeKey = `perm_like_${currentLineId}_${postId}`;
             var permanentHeartKey = `perm_heart_${currentLineId}_${postId}`;
 
-            var { data: post, error: fetchError } = await db
-                .from("fmb_community_posts")
-                .select("likes, hearts")
-                .eq("id", postId)
-                .single();
-
-            if (fetchError || !post) {
-                console.error("Fetch vote error:", fetchError);
-                return;
-            }
-
-            var updatePayload = {};
-
-            if (actionType === "like") {
-                if (localStorage.getItem(permanentLikeKey) === "YES") {
-                    localStorage.removeItem(permanentLikeKey);
-                    updatePayload.likes = Math.max(0, (post.likes || 0) - 1);
-                } else {
-                    localStorage.setItem(permanentLikeKey, "YES");
-                    updatePayload.likes = (post.likes || 0) + 1;
-                }
-            } else if (actionType === "heart") {
-                if (localStorage.getItem(permanentHeartKey) === "YES") {
-                    localStorage.removeItem(permanentHeartKey);
-                    updatePayload.hearts = Math.max(0, (post.hearts || 0) - 1);
-                } else {
-                    localStorage.setItem(permanentHeartKey, "YES");
-                    updatePayload.hearts = (post.hearts || 0) + 1;
-                }
-            }
-
-            var { error: updateError } = await db
-                .from("fmb_community_posts")
-                .update(updatePayload)
-                .eq("id", postId);
+            var { data: voteResult, error: updateError } = await db.rpc("fmb_toggle_community_reaction", {
+                p_post_id: postId,
+                p_line_user_id: currentLineId,
+                p_reaction: actionType
+            });
 
             if (updateError) {
                 console.error("Supabase Update Fault:", updateError);
-                alert("⚠️ ไม่สามารถบันทึกยอดโหวตได้!\nสาเหตุ: " + updateError.message + "\n\n(แนะนำให้ไปตรวจสอบสิทธิ์ 'UPDATE' ในตาราง fmb_community_posts บนเว็บ Supabase ครับ)");
+                alert("⚠️ ไม่สามารถบันทึกยอดโหวตได้: " + updateError.message);
             } else {
+                var activeKey = actionType === "like" ? permanentLikeKey : permanentHeartKey;
+                if (voteResult.active) localStorage.setItem(activeKey, "YES");
+                else localStorage.removeItem(activeKey);
                 loadPostsFromSupabase();
             }
         } catch (err) {

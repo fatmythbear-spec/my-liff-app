@@ -304,6 +304,14 @@
             <div class="result-box" id="scan-result">
                 <div class="result-name" id="result-name">-</div>
                 <div class="result-info" id="result-info"></div>
+                <button class="btn-full" id="admin-redeem-coupon-btn"
+                    style="display:none;margin-top:12px;" onclick="confirmScannedCoupon()">
+                    ✅ ยืนยันใช้คูปอง
+                </button>
+                <button class="btn-full" id="admin-add-points-btn"
+                    style="display:none;margin-top:12px;" onclick="openAddPointsForScannedMember()">
+                    ➕ เพิ่มแต้มให้สมาชิกนี้
+                </button>
             </div>
             <p class="message msg-error" id="scanner-error" style="margin-top:12px;"></p>
         </div>
@@ -439,8 +447,34 @@
     var allMembers       = [];
     var deleteTargetId   = "";
     var selectedMemberId = "";
+    var currentAdminId    = "";
+    var scannedCoupon     = null;
     var html5QrCode      = null;
     var isScanning       = false;
+
+    var COUPON_CATALOG = {
+        cp_discount_bingsu_lg_2nd: "ลด 25% บิงซูไซส์ใหญ่ถ้วยที่ 2",
+        cp_discount_50thb: "ส่วนลด 50 บาท",
+        cp_free_small_bingsu: "ฟรี Bingsu ถ้วยเล็ก",
+        cp_free_large_bingsu: "ฟรี Bingsu ถ้วยใหญ่",
+        cp_topping_free: "ท็อปปิ้งฟรี 1 อย่าง",
+        cp_special_bogo: "Buy 1 Get 1 Free"
+    };
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function csvCell(value) {
+        var text = String(value == null ? "" : value);
+        if (/^[=+\-@]/.test(text)) text = "'" + text;
+        return '"' + text.replace(/"/g, '""') + '"';
+    }
 
     // ===== INIT =====
     async function init() {
@@ -452,6 +486,7 @@
 
             setLoading("กำลังตรวจสอบสิทธิ์...");
             var profile = await liff.getProfile();
+            currentAdminId = profile.userId;
 
             var { data, error } = await db
                 .from("profiles")
@@ -544,11 +579,10 @@
             return;
         }
         var html = members.map(function(m, i) {
-            var safeName = (m.full_name || '-').replace(/'/g,"\\'");
             return '<tr>' +
                 '<td><b>' + (i+1) + '</b></td>' +
-                '<td><b>' + (m.full_name||'-') + '</b></td>' +
-                '<td>' + (m.tel||'-') + '</td>' +
+                '<td><b>' + escapeHtml(m.full_name||'-') + '</b></td>' +
+                '<td>' + escapeHtml(m.tel||'-') + '</td>' +
                 '<td><span class="tier-badge tier-' + (m.tier||'Bronze') + '">' + (m.tier||'Bronze') + '</span></td>' +
                 '<td>' + (m.current_points||0).toLocaleString() + '</td>' +
                 '<td>' + (m.current_exp||0).toLocaleString() + '</td>' +
@@ -561,7 +595,7 @@
                 '</td>' +
                 '<td>' +
                     '<button class="action-btn-sm btn-info" onclick="viewHistory(\'' + m.line_user_id + '\')">📜</button> ' +
-                    '<button class="action-btn-sm btn-delete" onclick="showDeleteModal(\'' + m.line_user_id + '\',\'' + safeName + '\')">🗑️</button>' +
+                    '<button class="action-btn-sm btn-delete" onclick="showDeleteModal(\'' + m.line_user_id + '\')">🗑️</button>' +
                 '</td>' +
                 '</tr>';
         }).join('');
@@ -591,9 +625,10 @@
         } catch (err) { showError("อัปเดตไม่สำเร็จ: " + err.message); }
     }
 
-    function showDeleteModal(lineUserId, fullName) {
+    function showDeleteModal(lineUserId) {
         deleteTargetId = lineUserId;
-        document.getElementById("delete-name").textContent = fullName;
+        var member = allMembers.find(function(m) { return m.line_user_id === lineUserId; });
+        document.getElementById("delete-name").textContent = member && member.full_name ? member.full_name : "-";
         document.getElementById("delete-modal").classList.add("show");
     }
     function closeModal() {
@@ -661,6 +696,10 @@
     }
 
     async function processScanResult(qrData) {
+        document.getElementById("scanner-error").style.display = "none";
+        document.getElementById("admin-redeem-coupon-btn").style.display = "none";
+        document.getElementById("admin-add-points-btn").style.display = "none";
+        scannedCoupon = null;
         var mode = document.getElementById("scanner-mode").value;
         if (mode === "member") {
             var m = allMembers.find(function(x) {
@@ -672,23 +711,87 @@
                     "แต้ม: " + (m.current_points||0) + " | EXP: " + (m.current_exp||0) +
                     "<br>Tier: " + m.tier;
                 document.getElementById("scan-result").style.display = "block";
+                selectedMemberId = m.line_user_id;
+                document.getElementById("admin-add-points-btn").style.display = "block";
             } else {
                 document.getElementById("scanner-error").textContent = "ไม่พบสมาชิก";
                 document.getElementById("scanner-error").style.display = "block";
             }
         } else {
-            var { data: coupon } = await db.from("user_coupons")
-                .select("*").eq("id", qrData).single();
-            if (coupon) {
-                document.getElementById("result-name").textContent = "ส่วนลด " + coupon.discount_value + " บาท";
+            if (!qrData.startsWith("FAT_MYTH_BEAR_CLAIMED:")) {
+                document.getElementById("scanner-error").textContent = "QR นี้ไม่ใช่คูปอง Fat Myth Bear";
+                document.getElementById("scanner-error").style.display = "block";
+                return;
+            }
+
+            var { data: coupon, error: couponError } = await db.from("fmb_coupon_claims")
+                .select("*").eq("qr_payload", qrData).single();
+            if (coupon && !couponError) {
+                var expired = !coupon.created_at || (Date.now() - new Date(coupon.created_at).getTime()) > 24 * 60 * 60 * 1000;
+                var { data: owner } = await db.from("profiles")
+                    .select("full_name").eq("line_user_id", coupon.line_user_id).single();
+
+                document.getElementById("result-name").textContent = COUPON_CATALOG[coupon.coupon_id] || coupon.coupon_id;
                 document.getElementById("result-info").innerHTML =
-                    "สถานะ: " + coupon.status + "<br>หมดอายุ: " +
-                    new Date(coupon.expires_at).toLocaleDateString("th-TH");
+                    "สมาชิก: " + (owner && owner.full_name ? owner.full_name : "-") +
+                    "<br>สถานะ: " + (expired ? "expired" : coupon.status) +
+                    "<br>รหัส: Claim #" + coupon.id;
                 document.getElementById("scan-result").style.display = "block";
+                if (coupon.status === "claimed" && !expired) {
+                    scannedCoupon = coupon;
+                    document.getElementById("admin-redeem-coupon-btn").style.display = "block";
+                }
             } else {
                 document.getElementById("scanner-error").textContent = "ไม่พบคูปอง";
                 document.getElementById("scanner-error").style.display = "block";
             }
+        }
+    }
+
+    function openAddPointsForScannedMember() {
+        var member = allMembers.find(function(m) { return m.line_user_id === selectedMemberId; });
+        if (!member) { showError("ไม่พบสมาชิก"); return; }
+
+        document.querySelectorAll(".tab-content").forEach(function(el) { el.classList.remove("show"); });
+        document.querySelectorAll(".tab-btn").forEach(function(el) { el.classList.remove("active"); });
+        document.getElementById("add-points").classList.add("show");
+        var addPointsTab = Array.from(document.querySelectorAll(".tab-btn")).find(function(el) {
+            return el.getAttribute("onclick") && el.getAttribute("onclick").includes("'add-points'");
+        });
+        if (addPointsTab) addPointsTab.classList.add("active");
+
+        document.getElementById("add-points-search").value = member.line_user_id;
+        document.getElementById("ap-name").textContent = member.full_name || "-";
+        document.getElementById("ap-points").textContent = member.current_points || 0;
+        document.getElementById("ap-exp").textContent = member.current_exp || 0;
+        document.getElementById("add-points-result").style.display = "block";
+        document.getElementById("add-points-error").style.display = "none";
+        document.getElementById("points-amount").focus();
+    }
+
+    async function confirmScannedCoupon() {
+        if (!scannedCoupon) return;
+        var button = document.getElementById("admin-redeem-coupon-btn");
+        button.disabled = true;
+        button.textContent = "กำลังยืนยัน...";
+        try {
+            var { data, error } = await db.rpc("fmb_redeem_coupon", {
+                p_staff_line_user_id: currentAdminId,
+                p_qr_payload: scannedCoupon.qr_payload
+            });
+            if (error) throw error;
+            if (!data || data.status !== "used") {
+                throw new Error("คูปองหมดอายุหรือไม่อยู่ในสถานะที่ใช้ได้");
+            }
+            showSuccess("✅ ตัดสิทธิ์คูปองสำเร็จ");
+            document.getElementById("result-info").innerHTML += "<br><b>ใช้แล้ว</b>";
+            scannedCoupon = null;
+            button.style.display = "none";
+        } catch (err) {
+            document.getElementById("scanner-error").textContent = "ยืนยันคูปองไม่สำเร็จ: " + err.message;
+            document.getElementById("scanner-error").style.display = "block";
+            button.disabled = false;
+            button.textContent = "✅ ยืนยันใช้คูปอง";
         }
     }
 
@@ -724,20 +827,13 @@
         if (!confirm("เพิ่ม " + amount + " แต้มให้ " + m.full_name + " ?")) return;
 
         try {
-            var { error: txErr } = await db.from("point_transactions").insert({
-                line_user_id: m.line_user_id, points: amount,
-                exp: amount, type: "earn", description: "Admin เพิ่มแต้ม"
+            var { error: adjustErr } = await db.rpc("fmb_admin_adjust_points", {
+                p_admin_line_user_id: currentAdminId,
+                p_customer_line_user_id: m.line_user_id,
+                p_points: amount,
+                p_description: "Admin เพิ่มแต้ม"
             });
-            if (txErr) throw txErr;
-
-            var newPoints = (m.current_points||0) + amount;
-            var newExp    = (m.current_exp||0)    + amount;
-            var newTier   = calcTier(newExp);
-
-            var { error: upErr } = await db.from("profiles")
-                .update({ current_points: newPoints, current_exp: newExp, tier: newTier })
-                .eq("line_user_id", m.line_user_id);
-            if (upErr) throw upErr;
+            if (adjustErr) throw adjustErr;
 
             showSuccess("✅ เพิ่ม " + amount + " แต้มให้ " + m.full_name + " สำเร็จ");
             document.getElementById("add-points-result").style.display = "none";
@@ -748,17 +844,19 @@
     }
 
     function calcTier(exp) {
-        if (exp >= 5000) return "Platinum";
-        if (exp >= 3000) return "Gold";
-        if (exp >= 1000) return "Silver";
+        if (exp >= 450) return "Platinum";
+        if (exp >= 300) return "Gold";
+        if (exp >= 150) return "Silver";
         return "Bronze";
     }
 
     // ===== ANALYTICS =====
     async function loadAnalytics() {
         try {
-            var { data: tx }      = await db.from("point_transactions").select("points,type");
-            var { data: coupons } = await db.from("user_coupons").select("status");
+            var { data: tx, error: txError } = await db.from("point_transactions").select("points,type");
+            var { data: coupons, error: couponError } = await db.from("fmb_coupon_claims").select("status");
+            if (txError) throw txError;
+            if (couponError) throw couponError;
 
             var earned     = (tx||[]).filter(function(t){ return t.type==="earn"; })
                              .reduce(function(s,t){ return s+(t.points||0); }, 0);
@@ -790,7 +888,7 @@
             document.getElementById("admin-result").style.display = "none"; return;
         }
         var html = f.map(function(m) {
-            return '<tr><td>' + (m.full_name||'-') + '</td><td>' + (m.role||'Customer') + '</td>' +
+            return '<tr><td>' + escapeHtml(m.full_name||'-') + '</td><td>' + escapeHtml(m.role||'Customer') + '</td>' +
                 '<td><button class="action-btn-sm btn-primary" onclick="setAdmin(\'' + m.line_user_id + '\')">' +
                 (m.role==='Admin'?'✓ Admin แล้ว':'⚙️ ตั้งเป็น Admin') + '</button></td></tr>';
         }).join('');
@@ -826,9 +924,8 @@
         try {
             var csv = "\uFEFFลำดับ,ชื่อสมาชิก,เบอร์โทร,Tier,แต้ม,EXP,บทบาท\n";
             allMembers.forEach(function(m,i) {
-                csv += (i+1)+',"'+(m.full_name||'')+'","'+(m.tel||'')+'",'+
-                       (m.tier||'Bronze')+','+(m.current_points||0)+','+(m.current_exp||0)+
-                       ',"'+(m.role||'Customer')+'"\n';
+                csv += [i+1, csvCell(m.full_name), csvCell(m.tel), csvCell(m.tier||'Bronze'),
+                        Number(m.current_points||0), Number(m.current_exp||0), csvCell(m.role||'Customer')].join(',') + '\n';
             });
             var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
             var link = document.createElement("a");

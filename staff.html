@@ -298,8 +298,27 @@
     var foundMember = null;
     var currentMode = "member";
     var selectedCoupon = null;
+    var currentStaffId = "";
     var scanner = null;
     var scannerActive = false;
+
+    var COUPON_CATALOG = {
+        cp_discount_bingsu_lg_2nd: "ลด 25% บิงซูไซส์ใหญ่ถ้วยที่ 2",
+        cp_discount_50thb: "ส่วนลด 50 บาท",
+        cp_free_small_bingsu: "ฟรี Bingsu ถ้วยเล็ก",
+        cp_free_large_bingsu: "ฟรี Bingsu ถ้วยใหญ่",
+        cp_topping_free: "ท็อปปิ้งฟรี 1 อย่าง",
+        cp_special_bogo: "Buy 1 Get 1 Free"
+    };
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
 
     async function init() {
         try {
@@ -310,6 +329,7 @@
             }
 
             var profile = await liff.getProfile();
+            currentStaffId = profile.userId;
             var { data, error } = await db
                 .from("profiles")
                 .select("full_name, role")
@@ -446,8 +466,8 @@
 
             foundMember = data;
             document.getElementById("found-name").textContent   = data.full_name;
-            document.getElementById("found-points").textContent = data.current_points.toLocaleString();
-            document.getElementById("found-exp").textContent    = data.current_exp.toLocaleString();
+            document.getElementById("found-points").textContent = (data.current_points || 0).toLocaleString();
+            document.getElementById("found-exp").textContent    = (data.current_exp || 0).toLocaleString();
             var badge = document.getElementById("found-tier-badge");
             badge.textContent = data.tier;
             badge.className   = "tier-badge tier-" + data.tier;
@@ -461,13 +481,23 @@
         }
     }
 
-    async function lookupCoupon(couponId) {
+    function isClaimExpired(claim) {
+        return !claim.created_at || (Date.now() - new Date(claim.created_at).getTime()) > 24 * 60 * 60 * 1000;
+    }
+
+    async function lookupCoupon(qrPayload) {
         document.getElementById("coupon-scan-error").textContent = "";
         try {
+            qrPayload = String(qrPayload || "").trim();
+            if (!qrPayload.startsWith("FAT_MYTH_BEAR_CLAIMED:")) {
+                document.getElementById("coupon-scan-error").textContent = "QR นี้ไม่ใช่คูปอง Fat Myth Bear";
+                return;
+            }
+
             var { data, error } = await db
-                .from("user_coupons")
+                .from("fmb_coupon_claims")
                 .select("*")
-                .eq("id", couponId)
+                .eq("qr_payload", qrPayload)
                 .single();
 
             if (error || !data) {
@@ -475,21 +505,27 @@
                 return;
             }
 
-            if (data.status !== "active") {
+            if (data.status !== "claimed") {
                 document.getElementById("coupon-scan-error").textContent = "คูปองนี้ " + 
                     (data.status === "used" ? "ใช้แล้ว" : "หมดอายุ") + " แล้ว";
                 return;
             }
 
-            var now = new Date();
-            if (new Date(data.expires_at) <= now) {
-                document.getElementById("coupon-scan-error").textContent = "คูปองหมดอายุแล้ว";
+            if (isClaimExpired(data)) {
+                document.getElementById("coupon-scan-error").textContent = "คูปองหมดอายุแล้ว (ต้องใช้ภายใน 24 ชม.)";
                 return;
             }
 
+            var { data: owner } = await db.from("profiles")
+                .select("full_name")
+                .eq("line_user_id", data.line_user_id)
+                .single();
+
             selectedCoupon = data;
-            document.getElementById("coupon-value").textContent = "ส่วนลด " + data.discount_value + " บาท";
-            document.getElementById("coupon-info").textContent = "ID: " + couponId.slice(0, 8).toUpperCase();
+            document.getElementById("coupon-value").textContent = COUPON_CATALOG[data.coupon_id] || data.coupon_id;
+            document.getElementById("coupon-info").textContent =
+                "สมาชิก: " + (owner && owner.full_name ? owner.full_name : "-") +
+                " | Claim #" + data.id;
 
             document.getElementById("step-scan-coupon").style.display = "none";
             document.getElementById("step-coupon-confirm").style.display = "block";
@@ -511,8 +547,9 @@
         }
 
         if (foundMember && pts > 0) {
-            var todayStart = new Date(); 
-            todayStart.setHours(0,0,0,0);
+            var todayStart = new Date();
+            todayStart.setHours(5,0,0,0);
+            if (new Date() < todayStart) todayStart.setDate(todayStart.getDate() - 1);
             var { data } = await db
                 .from("point_transactions")
                 .select("points")
@@ -543,34 +580,22 @@
         document.getElementById("submit-error").textContent = "";
 
         try {
-            var expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 180);
-
-            var { error: txErr } = await db.from("point_transactions").insert({
-                line_user_id: foundMember.line_user_id,
-                points: pts, 
-                exp: pts, 
-                type: "earn",
-                description: "ซื้อสินค้า " + amount.toLocaleString() + " บาท",
-                amount_spent: amount,
-                expires_at: expiresAt.toISOString()
+            var { data: award, error: awardErr } = await db.rpc("fmb_award_purchase_points", {
+                p_staff_line_user_id: currentStaffId,
+                p_customer_line_user_id: foundMember.line_user_id,
+                p_amount_spent: amount
             });
-            if (txErr) throw txErr;
+            if (awardErr) throw awardErr;
 
-            var newPoints = (foundMember.current_points || 0) + pts;
-            var newExp    = (foundMember.current_exp    || 0) + pts;
-            var newTier   = calcTier(newExp);
-
-            var { error: upErr } = await db.from("profiles")
-                .update({ current_points: newPoints, current_exp: newExp, tier: newTier })
-                .eq("line_user_id", foundMember.line_user_id);
-            if (upErr) throw upErr;
+            var newPoints = award.current_points;
+            var newTier = award.tier;
+            pts = award.points_awarded;
 
             document.getElementById("app").style.display            = "none";
             document.getElementById("success-screen").style.display = "block";
             document.getElementById("success-title").textContent    = "บันทึกแต้มสำเร็จ!";
             document.getElementById("success-detail").innerHTML =
-                '<b>' + foundMember.full_name + '</b><br>' +
+                '<b>' + escapeHtml(foundMember.full_name) + '</b><br>' +
                 'ได้รับ <b style="color:#06c755">' + pts + ' แต้ม</b> จากยอดซื้อ ' + amount.toLocaleString() + ' บาท<br>' +
                 'แต้มรวม: ' + newPoints.toLocaleString() + ' | ระดับ: ' + newTier;
 
@@ -589,16 +614,20 @@
         document.getElementById("coupon-error").textContent = "";
 
         try {
-            var { error: upErr } = await db.from("user_coupons")
-                .update({ status: "used" })
-                .eq("id", selectedCoupon.id);
+            var { data: redeemed, error: upErr } = await db.rpc("fmb_redeem_coupon", {
+                p_staff_line_user_id: currentStaffId,
+                p_qr_payload: selectedCoupon.qr_payload
+            });
             if (upErr) throw upErr;
+            if (!redeemed || redeemed.status !== "used") {
+                throw new Error("คูปองหมดอายุหรือไม่อยู่ในสถานะที่ใช้ได้");
+            }
 
             document.getElementById("app").style.display            = "none";
             document.getElementById("success-screen").style.display = "block";
             document.getElementById("success-title").textContent    = "ยืนยันการใช้คูปองสำเร็จ!";
             document.getElementById("success-detail").innerHTML =
-                'ส่วนลด <b style="color:#06c755">' + selectedCoupon.discount_value + ' บาท</b><br>' +
+                '<b style="color:#06c755">' + (COUPON_CATALOG[redeemed.coupon_id] || redeemed.coupon_id) + '</b><br>' +
                 'คูปองเปลี่ยนเป็น "ใช้แล้ว"';
 
         } catch (err) {
@@ -609,9 +638,9 @@
     }
 
     function calcTier(exp) {
-        if (exp >= 5000) return "Platinum";
-        if (exp >= 3000) return "Gold";
-        if (exp >= 1000) return "Silver";
+        if (exp >= 450) return "Platinum";
+        if (exp >= 300) return "Gold";
+        if (exp >= 150) return "Silver";
         return "Bronze";
     }
 

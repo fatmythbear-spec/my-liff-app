@@ -243,9 +243,7 @@
         </div>
         
         <div class="staff-input-section">
-            <label class="staff-input-label"><i class="fa-solid fa-calculator"></i> คำนวณแต้มเพิ่มจากบิลนี้ (25 บาท = 1 แต้ม)</label>
-            <input type="number" id="staff-bill-amount" class="staff-amount-input" placeholder="0.00" value="0">
-            <button class="staff-trigger-btn" onclick="executeStaffScanAction()">สะสมแต้มเพิ่มและปิดหน้างาน</button>
+            <label class="staff-input-label"><i class="fa-solid fa-store"></i> แสดง QR นี้ให้ Staff หรือ Admin สแกนเพื่อยืนยันการใช้สิทธิ์</label>
         </div>
 
         <button class="btn-modal btn-modal-cancel" style="margin-top: 6px; width: 100%; padding: 10px; font-size: 13px;" onclick="closeQRModal()">ปิดหน้าจอ</button>
@@ -669,65 +667,41 @@
         
         document.getElementById("loading").style.display = "flex";
 
-        var updatedPointsBalance = currentBalance - coupon.pointsCost;
-        if (updatedPointsBalance < 0) updatedPointsBalance = 0;
-
-        // หักแต้ม
-        var { error: updateErr } = await db
-            .from("profiles")
-            .update({ current_points: updatedPointsBalance })
-            .eq("line_user_id", currentUserId);
-
-        if (updateErr) {
-            console.error("Supabase Error (Points Deduction):", updateErr);
-            alert("ระบบ Cloud ขัดข้อง ไม่สามารถตัดแต้มสิทธิ์ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง");
-            document.getElementById("loading").style.display = "none";
-            return;
-        }
-
-        // บันทึกประวัติ
         var compiledPayload = `FAT_MYTH_BEAR_CLAIMED:${currentUserId}:${coupon.id}:${Date.now()}`;
-        var { error: claimErr } = await db
-            .from("fmb_coupon_claims")
-            .insert([{
-                line_user_id: currentUserId,
-                coupon_id: coupon.id,
-                status: 'claimed',
-                qr_payload: compiledPayload
-            }]);
+        var { data: claimResult, error: claimErr } = await db.rpc("fmb_claim_coupon", {
+            p_line_user_id: currentUserId,
+            p_coupon_id: coupon.id,
+            p_points_cost: coupon.pointsCost,
+            p_qr_payload: compiledPayload
+        });
 
-        // Transaction Rollback หากออกตั๋วไม่สำเร็จ
         if (claimErr) {
-            console.error("Insert Claim Error:", claimErr);
-            await db.from("profiles")
-                .update({ current_points: currentBalance })
-                .eq("line_user_id", currentUserId);
-                
-            alert("ระบบขัดข้องในการออกคูปอง ทางเราได้ทำการคืนแต้มให้ท่านเรียบร้อยแล้ว");
-            await loadUserDataAndRender(); 
+            console.error("Claim Coupon Error:", claimErr);
+            alert("ออกคูปองไม่สำเร็จ: " + claimErr.message);
             document.getElementById("loading").style.display = "none";
             return;
         }
 
         activeClaimObj = {
+            id: claimResult.claim_id,
             coupon_id: coupon.id,
             status: 'claimed',
-            qr_payload: compiledPayload,
+            qr_payload: claimResult.qr_payload,
             line_user_id: currentUserId
         };
+        globalUserData.current_points = claimResult.current_points;
 
         document.getElementById("loading").style.display = "none";
         
         document.getElementById("qr-modal-title").textContent = coupon.title;
         document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
-        document.getElementById("staff-bill-amount").value = "0"; 
         document.getElementById("qr-modal").classList.add("show");
 
         var qrTarget = document.getElementById("qr-canvas-render");
         qrTarget.innerHTML = ""; 
 
         new QRCode(qrTarget, {
-            text: compiledPayload,
+            text: claimResult.qr_payload,
             width: 160,
             height: 160,
             colorDark : "#1f2937",
@@ -764,7 +738,6 @@
 
         document.getElementById("qr-modal-title").textContent = coupon.title;
         document.getElementById("qr-modal-id-label").textContent = `VOUCHER ID: ${coupon.id.toUpperCase().slice(-8)}`;
-        document.getElementById("staff-bill-amount").value = "0"; 
         document.getElementById("qr-modal").classList.add("show");
 
         var qrTarget = document.getElementById("qr-canvas-render");
@@ -785,79 +758,6 @@
         selectedCouponData = null;
         activeClaimObj = null;
         await loadUserDataAndRender();
-    }
-
-    async function executeStaffScanAction() {
-        if (!globalUserData) {
-            alert("ข้อผิดพลาด: ไม่พบโปรไฟล์ข้อมูลลูกค้า");
-            return;
-        }
-
-        if (!activeClaimObj || !activeClaimObj.qr_payload) {
-            alert("ไม่พบข้อมูลสิทธิ์คูปอง (QR Payload) ที่กำลังใช้งาน กรุณาลองเปิด QR Code ใหม่อีกครั้ง");
-            return;
-        }
-
-        document.getElementById("loading").style.display = "flex";
-        document.getElementById("qr-modal").classList.remove("show");
-
-        var { error: claimUpdateErr } = await db
-            .from("fmb_coupon_claims")
-            .update({ status: 'used' })
-            .eq("qr_payload", activeClaimObj.qr_payload); 
-
-        if (claimUpdateErr) {
-            console.error("Failed to invalidate coupon:", claimUpdateErr);
-            alert("เกิดข้อผิดพลาดในการตัดสิทธิ์คูปองบนระบบ Cloud กรุณาลองใหม่อีกครั้ง");
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("qr-modal").classList.add("show");
-            return;
-        }
-
-        var billAmountInput = document.getElementById("staff-bill-amount").value;
-        var billAmount = parseFloat(billAmountInput) || 0;
-        
-        if (billAmount <= 0) {
-            alert("🎉 ดำเนินการตัดสิทธิ์คูปองหน้าร้านเรียบร้อยแล้ว! (ไม่มีการสะสมแต้มเพิ่มจากยอดบิล)");
-            activeClaimObj = null;
-            selectedCouponData = null;
-            await loadUserDataAndRender();
-            document.getElementById("loading").style.display = "none";
-            return;
-        }
-        
-        var pointsEarnedFromBill = Math.floor(billAmount / 25);
-
-        var { data: freshProfile } = await db
-            .from("profiles")
-            .select("current_points, total_exp")
-            .eq("line_user_id", currentUserId)
-            .single();
-
-        var currentBalance = freshProfile ? freshProfile.current_points : (parseInt(globalUserData.current_points) || 0);
-        var currentTotalExp = freshProfile ? freshProfile.total_exp : (parseInt(globalUserData.total_exp) || 0);
-
-        var finalPoints = currentBalance + pointsEarnedFromBill;
-        var finalExp = currentTotalExp + pointsEarnedFromBill;
-
-        var { error: pointErr } = await db
-            .from("profiles")
-            .update({ 
-                current_points: finalPoints,
-                total_exp: finalExp
-            })
-            .eq("line_user_id", currentUserId);
-
-        if (pointErr) {
-            alert("คูปองถูกใช้สิทธิ์ไปแล้ว แต่เกิดข้อผิดพลาดในการบันทึกเพิ่มคะแนนบิลลงคลาวด์");
-        } else {
-            alert(`🎉 ดำเนินการสำเร็จ!\nชื่อสมาชิก: ${globalUserData.full_name}\nได้รับแต้มสะสมจากยอดซื้อบิล (25 บ. = 1 แต้ม): +${pointsEarnedFromBill} แต้ม\nคะแนนสุทธิปัจจุบันคงเหลือ: ${finalPoints} แต้ม`);
-        }
-        
-        activeClaimObj = null;
-        selectedCouponData = null;
-        await loadUserDataAndRender();
-        document.getElementById("loading").style.display = "none";
     }
 
     init();
