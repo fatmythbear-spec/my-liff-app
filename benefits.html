@@ -35,8 +35,9 @@
         .app-container { max-width: 500px; margin: 0 auto; min-height: 100vh; background: #ffffff; box-shadow: 0 0 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
 
         /* Navigation Header */
-        .top-nav { display: flex; background: white; border-bottom: 1px solid #edf2f7; position: sticky; top: 0; z-index: 100; }
-        .nav-tab { flex: 1; text-align: center; padding: 15px 0; font-size: 14px; font-weight: 500; color: #718096; cursor: pointer; position: relative; transition: all 0.2s; }
+        .top-nav { display: flex; background: white; border-bottom: 1px solid #edf2f7; position: sticky; top: 0; z-index: 100; overflow-x: auto; scrollbar-width: none; }
+        .top-nav::-webkit-scrollbar { display: none; }
+        .nav-tab { flex: 1 0 105px; text-align: center; padding: 15px 6px; font-size: 13px; font-weight: 500; color: #718096; cursor: pointer; position: relative; transition: all 0.2s; white-space: nowrap; }
         .nav-tab.active { color: var(--primary); font-weight: 600; }
         .nav-tab.active::after { content: ''; position: absolute; bottom: 0; left: 25%; width: 50%; height: 3px; background: var(--primary); border-radius: 3px; }
 
@@ -61,6 +62,9 @@
         .upload-media-btn:hover { color: var(--primary); }
         .submit-post-btn { background: var(--primary); color: white; border: none; padding: 7px 18px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
         .submit-post-btn:hover { background: var(--primary-dark); }
+        .store-post-card { border-color: #f6c453; background: linear-gradient(180deg, #fffdf6 0%, #ffffff 100%); }
+        .store-board-note { background: #fff8e1; color: #8a6116; border: 1px solid #f6dda0; border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; font-size: 12px; line-height: 1.5; }
+        .store-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 999px; background: #fff3cd; color: #9a6700; font-size: 10px; font-weight: 600; }
 
         /* Feed Post Layout */
         .feed-card { background: white; border: 1px solid #edf2f7; border-radius: 16px; padding: 14px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.01); }
@@ -112,6 +116,7 @@
     <nav class="top-nav">
         <div class="nav-tab active" onclick="switchMainTab('perks', this)">🎁 สิทธิพิเศษ</div>
         <div class="nav-tab" onclick="switchMainTab('community', this)">🐻 คอมมูนิตี้หมี</div>
+        <div class="nav-tab" onclick="switchMainTab('store', this)">📣 ข่าวจากร้าน</div>
         <div class="nav-tab" onclick="switchMainTab('reviews', this)">⭐ รีวิวจากลูกค้า</div>
     </nav>
 
@@ -138,7 +143,7 @@
         <div class="create-post-card" id="community-post-card">
             <div class="post-input-group">
                 <img class="post-avatar current-user-avatar" src="" alt="Me" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
-                <textarea class="post-textarea" id="community-textarea" placeholder="แบ่งปันความประทับใจ หรือเรื่องราววันนี้กับเพื่อนๆ หมี..."></textarea>
+                <textarea class="post-textarea" id="community-textarea" maxlength="2000" placeholder="แบ่งปันความประทับใจ หรือเรื่องราววันนี้กับเพื่อนๆ หมี..."></textarea>
             </div>
             <div class="preview-image-container" id="comm-preview-container">
                 <img id="comm-preview-img" src="" alt="Preview">
@@ -155,11 +160,35 @@
         <div id="box-community-feed"></div>
     </div>
 
+    <div id="view-store" class="view-content">
+        <div class="store-board-note" id="store-board-note">
+            ข่าวโปรโมชั่นและเมนูใหม่จากร้าน Fat Myth Bear — สมาชิกสามารถกดถูกใจและหัวใจได้
+        </div>
+        <div class="create-post-card store-post-card" id="store-post-card" style="display:none;">
+            <div class="post-input-group">
+                <img class="post-avatar current-user-avatar" src="" alt="Admin" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
+                <textarea class="post-textarea" id="store-textarea" maxlength="2000" placeholder="ประกาศโปรโมชั่น เมนูใหม่ หรือข่าวสารจากร้าน..."></textarea>
+            </div>
+            <div class="preview-image-container" id="store-preview-container">
+                <img id="store-preview-img" src="" alt="Preview">
+                <button class="remove-preview-btn" onclick="clearSelectedImage('store')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="post-actions-bar">
+                <label class="upload-media-btn">
+                    <i class="fa-solid fa-camera" style="color:#9a6700; font-size:15px;"></i> ถ่ายหรือแนบรูป
+                    <input type="file" accept="image/*" capture="environment" id="store-file-input" style="display:none;" onchange="handleImageSelection(this, 'store')">
+                </label>
+                <button class="submit-post-btn" onclick="publishNewPost('store')">โพสต์ข่าวจากร้าน</button>
+            </div>
+        </div>
+        <div id="box-store-feed"></div>
+    </div>
+
     <div id="view-reviews" class="view-content">
         <div class="create-post-card" id="reviews-post-card">
             <div class="post-input-group">
                 <img class="post-avatar current-user-avatar" src="" alt="Me" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src=window.DEFAULT_AVATAR;">
-                <textarea class="post-textarea" id="review-textarea" placeholder="เมนูไหนอร่อย? รีวิวความอร่อยของเมนูบิงซูที่คุณทานวันนี้เลย..."></textarea>
+                <textarea class="post-textarea" id="review-textarea" maxlength="2000" placeholder="เมนูไหนอร่อย? รีวิวความอร่อยของเมนูบิงซูที่คุณทานวันนี้เลย..."></textarea>
             </div>
             <div class="preview-image-container" id="rev-preview-container">
                 <img id="rev-preview-img" src="" alt="Preview">
@@ -182,8 +211,6 @@
     var SUPABASE_URL = "https://iberkiyorordyculsjyu.supabase.co";
     var SUPABASE_KEY = "sb_publishable_f3Knp7KLRxfHiOJQXaXU1w_uylu5zov";
     
-    var ADMIN_LINE_ID = "U28ba046c85cc8211db48dbe559197cbe"; 
-
     var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // รูปสำรองแบบ Inline SVG ปลอดภัย 100% ไม่มีวันพัง
@@ -195,7 +222,8 @@
     var currentUserRank = "Bronze";
     var currentUserRole = "Customer";
     
-    var base64ImageString = { community: "", reviews: "" };
+    var base64ImageString = { community: "", reviews: "", store: "" };
+    var myReactionKeys = new Set();
 
     async function initializeLIFF() {
         try {
@@ -215,17 +243,28 @@
             
             var { data: memberData } = await db
                 .from("profiles")
-                .select("tier, role")
+                .select("tier, role, full_name")
                 .eq("line_user_id", currentLineId)
                 .single();
                 
             if(memberData) {
                 if(memberData.tier) currentUserRank = memberData.tier;
                 if(memberData.role) currentUserRole = memberData.role;
+                if(memberData.full_name) currentDisplayName = memberData.full_name;
             }
 
             var avatars = document.querySelectorAll(".current-user-avatar");
             avatars.forEach(img => img.src = currentUserAvatar);
+
+            var storeComposer = document.getElementById("store-post-card");
+            var storeNote = document.getElementById("store-board-note");
+            if (currentUserRole === "Admin") {
+                storeComposer.style.display = "block";
+                storeNote.textContent = "โหมดผู้ดูแลร้าน: คุณสามารถโพสต์โปรโมชั่น เมนูใหม่ และข่าวสารให้สมาชิกได้";
+            } else {
+                storeComposer.style.display = "none";
+                storeNote.textContent = "ข่าวโปรโมชั่นและเมนูใหม่จากร้าน Fat Myth Bear — สมาชิกสามารถดู กดถูกใจ และกดหัวใจได้";
+            }
 
             document.getElementById("loader-screen").style.display = "none";
             loadPostsFromSupabase();
@@ -286,9 +325,12 @@
                 if(typeKey === 'community') {
                     document.getElementById("comm-preview-img").src = compressedBase64;
                     document.getElementById("comm-preview-container").style.display = "block";
-                } else {
+                } else if(typeKey === 'reviews') {
                     document.getElementById("rev-preview-img").src = compressedBase64;
                     document.getElementById("rev-preview-container").style.display = "block";
+                } else {
+                    document.getElementById("store-preview-img").src = compressedBase64;
+                    document.getElementById("store-preview-container").style.display = "block";
                 }
             };
             img.onerror = function() {
@@ -324,59 +366,74 @@
             document.getElementById("community-file-input").value = "";
             document.getElementById("comm-preview-container").style.display = "none";
             document.getElementById("comm-preview-img").src = "";
-        } else {
+        } else if(typeKey === 'reviews') {
             document.getElementById("review-file-input").value = "";
             document.getElementById("rev-preview-container").style.display = "none";
             document.getElementById("rev-preview-img").src = "";
+        } else {
+            document.getElementById("store-file-input").value = "";
+            document.getElementById("store-preview-container").style.display = "none";
+            document.getElementById("store-preview-img").src = "";
         }
     }
 
     async function publishNewPost(tabType) {
-        var inputId = (tabType === 'review') ? 'review-textarea' : 'community-textarea';
-        var imgKey = (tabType === 'review') ? 'reviews' : 'community';
+        var config = {
+            community: { inputId: 'community-textarea', imgKey: 'community', card: '#community-post-card', idleText: 'โพสต์ลงบอร์ด' },
+            review: { inputId: 'review-textarea', imgKey: 'reviews', card: '#reviews-post-card', idleText: 'ส่งรีวิว' },
+            store: { inputId: 'store-textarea', imgKey: 'store', card: '#store-post-card', idleText: 'โพสต์ข่าวจากร้าน' }
+        }[tabType];
+        if (!config) return;
+        if (tabType === 'store' && currentUserRole !== 'Admin') {
+            alert("เฉพาะบัญชี Admin เท่านั้นที่โพสต์ข่าวจากร้านได้");
+            return;
+        }
 
-        var textareaElement = document.getElementById(inputId);
+        var textareaElement = document.getElementById(config.inputId);
         var textContent = textareaElement.value.trim();
-        var compressedImage = base64ImageString[imgKey];
+        var compressedImage = base64ImageString[config.imgKey];
         
         if(!textContent && !compressedImage) {
             alert("กรุณาพิมพ์ข้อความหรือเลือกภาพก่อนกดส่งโพสต์ครับ");
             return;
         }
 
-        // เพิ่มการบันทึก author_avatar ส่งไปยังฐานข้อมูล Supabase ด้วย
-        var payload = {
-            type: tabType, 
-            author_name: currentDisplayName,
-            author_avatar: currentUserAvatar, // ตัวบันทึกรูปลงฐานข้อมูล
-            content_text: textContent,
-            image_payload: compressedImage,
-            line_user_id: currentLineId,
-            likes: 0,
-            hearts: 0,
-            comments: [] 
-        };
-
-        var submitButton = document.querySelector(tabType === 'review' ? '#reviews-post-card .submit-post-btn' : '#community-post-card .submit-post-btn');
+        var submitButton = document.querySelector(config.card + ' .submit-post-btn');
         submitButton.disabled = true;
         submitButton.textContent = "กำลังโพสต์...";
-
-        var { error } = await db.from("fmb_community_posts").insert([payload]);
-        if(error) {
+        try {
+            var { error } = await db.rpc("fmb_publish_community_post", {
+                p_line_user_id: currentLineId,
+                p_post_type: tabType,
+                p_content_text: textContent,
+                p_image_payload: compressedImage,
+                p_author_avatar: currentUserAvatar
+            });
+            if(error) throw error;
+            textareaElement.value = "";
+            clearSelectedImage(config.imgKey);
+            await loadPostsFromSupabase();
+        } catch (error) {
             alert("ไม่สามารถบันทึกโพสต์ได้ในขณะนี้: " + error.message);
+        } finally {
             submitButton.disabled = false;
-            submitButton.textContent = tabType === 'review' ? "ส่งรีวิว" : "โพสต์ลงบอร์ด";
-            return;
+            submitButton.textContent = config.idleText;
         }
-
-        textareaElement.value = "";
-        clearSelectedImage(imgKey);
-        await loadPostsFromSupabase();
-        submitButton.disabled = false;
-        submitButton.textContent = tabType === 'review' ? "ส่งรีวิว" : "โพสต์ลงบอร์ด";
     }
 
     async function loadPostsFromSupabase() {
+        var { data: reactionRows, error: reactionError } = await db.rpc("fmb_get_my_community_reactions", {
+            p_line_user_id: currentLineId
+        });
+        if (reactionError) {
+            console.error("Fetch reaction state fault:", reactionError);
+            myReactionKeys = new Set();
+        } else {
+            myReactionKeys = new Set((reactionRows || []).map(function(row) {
+                return row.post_id + ":" + row.reaction;
+            }));
+        }
+
         var { data: postsList, error } = await db
             .from("fmb_community_posts")
             .select("*")
@@ -389,21 +446,22 @@
 
         var commBox = document.getElementById("box-community-feed");
         var revBox = document.getElementById("box-reviews-feed");
+        var storeBox = document.getElementById("box-store-feed");
 
         commBox.innerHTML = "";
         revBox.innerHTML = "";
+        storeBox.innerHTML = "";
 
         var commCount = 0;
         var revCount = 0;
+        var storeCount = 0;
 
         postsList.forEach(function(post) {
-            var isAuthorizedToDelete = (post.line_user_id === currentLineId) || (currentLineId === ADMIN_LINE_ID);
+            var isAuthorizedToDelete = (post.line_user_id === currentLineId) || (currentUserRole === "Admin");
             var deleteButtonHtml = isAuthorizedToDelete ? `<button class="delete-post-btn" onclick="erasePostRecord('${post.id}')"><i class="fa-solid fa-trash-can"></i> ลบโพสต์</button>` : '';
 
-            var permanentLikeKey = `perm_like_${currentLineId}_${post.id}`;
-            var permanentHeartKey = `perm_heart_${currentLineId}_${post.id}`;
-            var isLiked = localStorage.getItem(permanentLikeKey) === "YES";
-            var isHearted = localStorage.getItem(permanentHeartKey) === "YES";
+            var isLiked = myReactionKeys.has(post.id + ":like");
+            var isHearted = myReactionKeys.has(post.id + ":heart");
 
             var totalLikes = post.likes || 0;
             var totalHearts = post.hearts || 0;
@@ -419,6 +477,15 @@
             
             // ดึงรูปจริงที่บันทึกไว้ใน DB หากไม่มีให้ใช้ Default Avatar ป้องกันการเป็นรูปสีเทา
             var displayAvatar = safeImageSource(post.author_avatar, window.DEFAULT_AVATAR);
+            var storeBadge = post.type === 'store' ? '<span class="store-badge"><i class="fa-solid fa-store"></i> ข่าวจากร้าน</span>' : '';
+            var commentsSection = post.type === 'store' ? '' : `
+                    <div class="comments-box">
+                        <div id="comment-list-${post.id}">${commentMarkup}</div>
+                        <div class="comment-input-wrap">
+                            <input type="text" class="comment-field" maxlength="500" id="com-input-${post.id}" placeholder="เขียนคอมเมนต์ตอบกลับ..." onkeydown="handleCommentKeydown(event, '${post.id}')">
+                            <button class="send-comment-btn" onclick="publishComment('${post.id}')"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>`;
 
             var postHtml = `
                 <div class="feed-card">
@@ -428,6 +495,7 @@
                             <div>
                                 <div class="author-name">
                                     ${escapeHtml(post.author_name)}
+                                    ${storeBadge}
                                 </div>
                             </div>
                         </div>
@@ -448,17 +516,14 @@
                         </button>
                     </div>
 
-                    <div class="comments-box">
-                        <div id="comment-list-${post.id}">${commentMarkup}</div>
-                        <div class="comment-input-wrap">
-                            <input type="text" class="comment-field" id="com-input-${post.id}" placeholder="เขียนคอมเมนต์ตอบกลับ...">
-                            <button class="send-comment-btn" onclick="publishComment('${post.id}')"><i class="fa-solid fa-paper-plane"></i></button>
-                        </div>
-                    </div>
+                    ${commentsSection}
                 </div>
             `;
 
-            if(post.type === 'review') {
+            if(post.type === 'store') {
+                storeBox.innerHTML += postHtml;
+                storeCount++;
+            } else if(post.type === 'review') {
                 revBox.innerHTML += postHtml;
                 revCount++;
             } else {
@@ -469,6 +534,7 @@
 
         if(commCount === 0) commBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีการเคลื่อนไหวในคอมมูนิตี้ มาร่วมแชร์คนแรกเลย!</p>';
         if(revCount === 0) revBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีรีวิวจากลูกค้าในขณะนี้</p>';
+        if(storeCount === 0) storeBox.innerHTML = '<p style="text-align:center; padding:30px; color:#a0aec0; font-size:13px;">ยังไม่มีข่าวสารหรือเมนูใหม่จากร้าน</p>';
     }
 
     async function publishComment(postId) {
@@ -491,11 +557,15 @@
         }
     }
 
+    function handleCommentKeydown(event, postId) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            publishComment(postId);
+        }
+    }
+
     async function togglePostVote(postId, actionType) {
         try {
-            var permanentLikeKey = `perm_like_${currentLineId}_${postId}`;
-            var permanentHeartKey = `perm_heart_${currentLineId}_${postId}`;
-
             var { data: voteResult, error: updateError } = await db.rpc("fmb_toggle_community_reaction", {
                 p_post_id: postId,
                 p_line_user_id: currentLineId,
@@ -506,10 +576,10 @@
                 console.error("Supabase Update Fault:", updateError);
                 alert("⚠️ ไม่สามารถบันทึกยอดโหวตได้: " + updateError.message);
             } else {
-                var activeKey = actionType === "like" ? permanentLikeKey : permanentHeartKey;
-                if (voteResult.active) localStorage.setItem(activeKey, "YES");
-                else localStorage.removeItem(activeKey);
-                loadPostsFromSupabase();
+                var reactionKey = postId + ":" + actionType;
+                if (voteResult.active) myReactionKeys.add(reactionKey);
+                else myReactionKeys.delete(reactionKey);
+                await loadPostsFromSupabase();
             }
         } catch (err) {
             console.error("System crash on vote:", err);
@@ -519,7 +589,10 @@
     async function erasePostRecord(postId) {
         if(!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบโพสต์นี้อย่างถาวร?")) return;
 
-        var { error } = await db.from("fmb_community_posts").delete().eq("id", postId);
+        var { error } = await db.rpc("fmb_delete_community_post", {
+            p_post_id: postId,
+            p_line_user_id: currentLineId
+        });
 
         if(error) {
             alert("⚠️ ไม่สามารถลบข้อมูลได้! กรุณาตรวจสอบ RLS Policy สิทธิ์การ Delete บน Supabase ของคุณ");
